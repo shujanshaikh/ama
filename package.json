@@ -20,7 +20,9 @@
     "dev:server": "turbo -F @ama/backend dev",
     "dev:setup": "turbo -F @ama/backend dev:setup"
   },
-  "dependencies": {},
+  "dependencies": {
+    "tsup": "^8.5.1"
+  },
   "devDependencies": {
     "turbo": "^2.5.4"
   },
