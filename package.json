@@ -21,7 +21,9 @@
     "dev:setup": "turbo -F @ama/backend dev:setup"
   },
   "dependencies": {
-    "tsup": "^8.5.1"
+    "@convex-dev/agent": "^0.3.2",
+    "tsup": "^8.5.1",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "turbo": "^2.5.4"
