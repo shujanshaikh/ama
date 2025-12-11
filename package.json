@@ -1,0 +1,28 @@
+{
+  "name": "ama",
+  "private": true,
+  "type": "module",
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "convex": "^1.29.3"
+    }
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "check-types": "turbo check-types",
+    "dev:native": "turbo -F native dev",
+    "dev:web": "turbo -F web dev",
+    "dev:server": "turbo -F @ama/backend dev",
+    "dev:setup": "turbo -F @ama/backend dev:setup"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "turbo": "^2.5.4"
+  },
+  "packageManager": "bun@1.3.1"
+}
