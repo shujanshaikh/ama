@@ -16,7 +16,7 @@ export function getRouter() {
 		unsavedChangesWarning: false,
 	});
 
-	const convexQueryClient = new ConvexQueryClient(convex);
+	const convexQueryClient = new ConvexQueryClient(convex as any);
 
 	const queryClient: QueryClient = new QueryClient({
 		defaultOptions: {
@@ -36,7 +36,7 @@ export function getRouter() {
 			defaultNotFoundComponent: () => <div>Not Found</div>,
 			context: { queryClient, convexClient: convex, convexQueryClient },
 			Wrap: ({ children }) => (
-				<ConvexProvider client={convexQueryClient.convexClient}>
+				<ConvexProvider client={convexQueryClient.convexClient as any}>
 					{children}
 				</ConvexProvider>
 			),

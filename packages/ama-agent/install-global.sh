@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Alternative global installation script for Ama Agent CLI
+
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
+
+echo "🚀 Installing Ama Agent CLI globally..."
+
+# Build first
+echo "🔨 Building CLI..."
+bun run build
+
+# Make sure dist/cli.js is executable
+chmod +x dist/cli.js
+
+# Try npm link first (more reliable)
+if command -v npm &> /dev/null; then
+    echo "📦 Using npm to link globally..."
+    npm link --global
+    echo "✅ Installed via npm link!"
+    exit 0
+fi
+
+# Fallback: Manual symlink
+if [ -z "$BUN_INSTALL" ]; then
+    BUN_INSTALL="$HOME/.bun/bin"
+fi
+
+if [ ! -d "$BUN_INSTALL" ]; then
+    mkdir -p "$BUN_INSTALL"
+fi
+
+CLI_PATH="$SCRIPT_DIR/dist/cli.js"
+SYMLINK_PATH="$BUN_INSTALL/ama-agent"
+
+if [ -L "$SYMLINK_PATH" ]; then
+    rm "$SYMLINK_PATH"
+fi
+
+ln -s "$CLI_PATH" "$SYMLINK_PATH"
+chmod +x "$SYMLINK_PATH"
+
+echo "✅ Created symlink: $SYMLINK_PATH -> $CLI_PATH"
+echo ""
+echo "Make sure $BUN_INSTALL is in your PATH:"
+echo "  export PATH=\"\$PATH:$BUN_INSTALL\""
+echo ""
+echo "Then you can use: ama-agent --help"

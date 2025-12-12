@@ -1,6 +1,7 @@
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
-import { WEB_APP_URL } from "./constant";
+import { internal } from "../../_generated/api";
+import { waitForToolResult } from "../lib/waitForToolResult";
 
 export const stringReplace = createTool({
     description: "Replace a string in a file. You can use either a relative path in the workspace or an absolute path. If an absolute path is provided, it will be preserved as is",
@@ -11,33 +12,51 @@ export const stringReplace = createTool({
     }),
     handler: async (ctx, args) => {
         try {
-            const response = await fetch(`${WEB_APP_URL}/apply-patch`, {
-              method: "POST",
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(args),
-            });
-            if(!response.ok){
-              return {
-                success: false,
-                message: `Failed to apply patch: ${response.status} ${response.statusText}`,
-                error: 'APPLY_PATCH_ERROR',
-              };
+            const activeSession = await ctx.runQuery(
+                internal.agent.toolQueue.getActiveSession,
+                {}
+            );
+
+            if (!activeSession) {
+                return {
+                    success: false,
+                    message: "No CLI session connected. Please start the CLI agent.",
+                    error: 'NO_CLI_CONNECTED',
+                };
             }
-            const patchContent = await response.json();
+
+            const toolCallId = await ctx.runMutation(
+                internal.agent.toolQueue.queueToolCall,
+                {
+                    threadId: ctx.threadId!,
+                    sessionId: activeSession,
+                    toolName: "stringReplace",
+                    args: args,
+                }
+            );
+
+            const result = await waitForToolResult(ctx, toolCallId);
+
+            if (result.success === false) {
+                return {
+                    success: false,
+                    message: result.message || "Failed to apply patch",
+                    error: result.error || 'APPLY_PATCH_ERROR',
+                };
+            }
+
             return {
-              success: true,
-              message: `Successfully applied patch`,
-              content: patchContent,
+                success: true,
+                message: result.message || `Successfully applied patch`,
+                content: result,
             };
-          } catch (error) {
-            console.error(`Error : ${error}`)
+        } catch (error: any) {
+            console.error(`Error applying patch: ${error}`);
             return {
-              success: false,
-              message: `Failed to apply patch: ${error}`,
-              error: 'APPLY_PATCH_ERROR',
+                success: false,
+                message: `Failed to apply patch: ${error.message || error}`,
+                error: 'APPLY_PATCH_ERROR',
             };
-          }
-        },
-    })
+        }
+    },
+})

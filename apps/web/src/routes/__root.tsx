@@ -11,6 +11,8 @@ import appCss from "../index.css?url";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ConvexQueryClient } from "@convex-dev/react-query";
 import type { ConvexReactClient } from "convex/react";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { Sidepanel } from "@/components/side-panel";
 
 export interface RouterAppContext {
 	queryClient: QueryClient;
@@ -50,9 +52,12 @@ function RootDocument() {
 				<HeadContent />
 			</head>
 			<body>
-				<div className="grid h-svh grid-rows-[auto_1fr]">
-					<Outlet />
-				</div>
+				<SidebarProvider>
+					<Sidepanel />
+					<SidebarInset className="h-svh">
+						<Outlet />
+					</SidebarInset>
+				</SidebarProvider>
 				<Toaster richColors />
 				<TanStackRouterDevtools position="bottom-left" />
 				<Scripts />

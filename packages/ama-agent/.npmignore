@@ -1,0 +1,32 @@
+# Source files
+src/
+tsconfig.json
+tsup.config.ts
+
+# Development files
+install-global.sh
+*.log
+
+# Build artifacts (keep dist/)
+*.tsbuildinfo
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.ts
+*.spec.ts
+
+# Documentation (keep README.md)
+docs/
+
+# Git
+.git/
+.gitignore
+

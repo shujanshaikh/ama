@@ -11,13 +11,15 @@ export const listThreads = query({
         paginationOpts: paginationOptsValidator,
     },
     handler : async (ctx, args) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (identity?.subject === null) {
-            throw new Error("Not authenticated");
-        }
+        // const identity = await ctx.auth.getUserIdentity();
+        // if (identity?.subject === null) {
+        //     throw new Error("Not authenticated");
+        // }
         const threads = await ctx.runQuery(
             components.agent.threads.listThreadsByUserId,
-            { userId: identity?.subject, paginationOpts: args.paginationOpts },
+            { 
+                //userId: identity?.subject, 
+                paginationOpts: args.paginationOpts },
           );
           return threads;
     }
@@ -26,13 +28,13 @@ export const listThreads = query({
 export const createNewThread = mutation({
     args: { title: v.optional(v.string()), initialMessage: v.optional(vMessage) },
     handler: async (ctx, { title, initialMessage }) => {
-      const identity = await ctx.auth.getUserIdentity();
-      if (identity?.subject === null) {
-        throw new Error("Not authenticated");
-      }
+    //   const identity = await ctx.auth.getUserIdentity();
+    //   if (identity?.subject === null) {
+    //     throw new Error("Not authenticated");
+    //   }
       
       const threadId = await createThread(ctx, components.agent, {
-        userId: identity?.subject,
+        //userId: identity?.subject,
         title,
       });
       if (initialMessage) {
@@ -93,7 +95,7 @@ export const createNewThread = mutation({
   export const forkThread = mutation({
     args: { threadId: v.string() },
     handler: async (ctx, { threadId }) => {
-      await authorizeThreadAccess(ctx, threadId, true);
+     // await authorizeThreadAccess(ctx, threadId, true);
       const threadDetails = await getThreadMetadata(ctx, components.agent, { threadId });
       
       // Fetch all messages from the original thread
@@ -141,17 +143,17 @@ export const createNewThread = mutation({
     threadId: string,
     requireUser?: boolean,
   ) {
-    const identity = await ctx.auth.getUserIdentity();
-    if (requireUser && !identity?.subject) {
-      throw new Error("Unauthorized: user is required");
-    }
+    // const identity = await ctx.auth.getUserIdentity();
+    // if (requireUser && !identity?.subject) {
+    //   throw new Error("Unauthorized: user is required");
+    // }
     const { userId: threadUserId } = await getThreadMetadata(
       ctx,
       components.agent,
       { threadId },
     );
-    if (requireUser && threadUserId !== identity?.subject) {
-      throw new Error("Unauthorized: user does not match thread user");
-    }
+    // if (requireUser && threadUserId !== identity?.subject) {
+    //   throw new Error("Unauthorized: user does not match thread user");
+    // }
   }
 

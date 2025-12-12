@@ -10,10 +10,10 @@ import { paginationOptsValidator } from "convex/server";
 
 
 export const initiateAsyncStreaming = mutation({
-    args: { prompt: v.string(), threadId: v.string() , model: v.string() , urls: v.optional(v.array(v.string())) , webSearch: v.boolean() },
+    args: { prompt: v.string(), threadId: v.string() , model: v.string() , urls: v.optional(v.array(v.string())) },
     
-    handler: async (ctx, { prompt, threadId, model, urls, webSearch }) => {
-      await authorizeThreadAccess(ctx, threadId);
+    handler: async (ctx, { prompt, threadId, model, urls }) => {
+     // await authorizeThreadAccess(ctx, threadId);
       const content: Array<{ type: "image"; image: string; mimeType: string } | { type: "text"; text: string }> = [];
       
       // Add all image parts
@@ -38,15 +38,14 @@ export const initiateAsyncStreaming = mutation({
       await ctx.scheduler.runAfter(0, internal.agent.chatStreaming.streamAsync, {
         threadId,
         promptMessageId: messageId,
-        model,
-        webSearch,
+        model
       });
     },
   });
   
   export const streamAsync = internalAction({
-    args: { promptMessageId: v.string(), threadId: v.string(), model: v.string() , webSearch: v.boolean() },
-    handler: async (ctx, { promptMessageId, threadId, model, webSearch }) => {
+    args: { promptMessageId: v.string(), threadId: v.string(), model: v.string() },
+    handler: async (ctx, { promptMessageId, threadId, model }) => {
       const result = await amaAgent(model).streamText(
         ctx,
         { threadId },
@@ -67,7 +66,7 @@ export const initiateAsyncStreaming = mutation({
     },
     handler: async (ctx, args) => {
       const { threadId, streamArgs } = args;
-      await authorizeThreadAccess(ctx, threadId);
+     // await authorizeThreadAccess(ctx, threadId);
       const streams = await syncStreams(ctx, components.agent, {
         threadId,
         streamArgs,
@@ -87,7 +86,7 @@ export const initiateAsyncStreaming = mutation({
   export const abortStreamByOrder = mutation({
     args: { threadId: v.string(), order: v.number() },
     handler: async (ctx, { threadId, order }) => {
-      await authorizeThreadAccess(ctx, threadId);
+     // await authorizeThreadAccess(ctx, threadId);
       if (
         await abortStream(ctx, components.agent, {
           threadId,
