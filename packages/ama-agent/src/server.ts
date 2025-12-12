@@ -10,6 +10,7 @@ import { deleteFile } from "./tools/delete-file";
 import { globTool } from "./tools/glob";
 
 const VERSION = process.env.VERSION ?? "0.0.1";
+export const CONVEX_URL = "https://next-fly-527.convex.cloud";
 
 const API_PATHS = {
   createSession: "agent/toolQueue:createSession",
@@ -55,18 +56,10 @@ async function executeToolLocally(
 }
 
 export const startAgent = async (
-  convexUrl: string,
   sessionCode?: string,
   workingDirectory?: string
 ) => {
-  if (!convexUrl) {
-    console.error(
-      pc.red("Error: CONVEX_URL is required. Set it as an environment variable.")
-    );
-    process.exit(1);
-  }
-
-  const client = new ConvexClient(convexUrl);
+  const client = new ConvexClient(CONVEX_URL);
 
   try {
     console.log(
@@ -187,9 +180,8 @@ export const startAgent = async (
 };
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
-  const convexUrl = process.env.CONVEX_URL;
   const sessionCode = process.env.SESSION_CODE;
   const workingDir = process.env.WORKING_DIRECTORY;
 
-  startAgent(convexUrl || "", sessionCode, workingDir).catch(console.error);
+  startAgent(sessionCode, workingDir).catch(console.error);
 }

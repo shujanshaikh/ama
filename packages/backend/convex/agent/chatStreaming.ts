@@ -4,7 +4,7 @@ import { internalAction } from "../_generated/server";
 import { components, internal } from "../_generated/api";
 import {  amaAgent } from "./initAgent";
 import { authorizeThreadAccess } from "./thread";
-import { abortStream, listUIMessages, syncStreams, vStreamArgs } from "@convex-dev/agent";
+import { abortStream, listUIMessages, saveMessage, syncStreams, vStreamArgs } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
 
 
@@ -26,10 +26,8 @@ export const initiateAsyncStreaming = mutation({
       // Add text part
       content.push({ type: "text", text: prompt });
       
-      const { messageId } = await amaAgent(model).saveMessage(ctx, {
+      const { messageId } = await saveMessage(ctx, components.agent, {
         threadId,
-        //prompt,
-        skipEmbeddings: true,
         message: {
           role: "user",
           content: content,

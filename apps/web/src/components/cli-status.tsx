@@ -3,7 +3,7 @@ import { api } from "@ama/backend/convex/_generated/api";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Copy, Check, Terminal, Loader2 } from "lucide-react";
+import { Copy, Check, Terminal } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,35 +21,39 @@ export function CliStatus() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const generateCode = useMutation(api.agent.toolQueue.generateSessionCode);
+  const activeSession = useQuery(api.agent.toolQueue.getCurrentActiveSession);
   const session = useQuery(
     api.agent.toolQueue.getSessionByCode,
     sessionCode ? { sessionCode } : "skip"
   );
 
+  // Use active session code if available and no local session code
+  const currentSessionCode = sessionCode || activeSession?.sessionCode || null;
+  const currentSession = session || activeSession;
+
   const handleGenerateCode = async () => {
     try {
       const result = await generateCode({});
       setSessionCode(result.sessionCode);
-      setIsDialogOpen(true);
     } catch (error) {
       console.error("Failed to generate session code:", error);
     }
   };
 
   const handleCopy = async () => {
-    if (sessionCode) {
-      await navigator.clipboard.writeText(sessionCode);
+    if (currentSessionCode) {
+      await navigator.clipboard.writeText(currentSessionCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const convexUrl = (import.meta as any).env.VITE_CONVEX_URL || "";
+
 
   const isConnected =
-    session?.status === "active" &&
-    session.lastHeartbeat &&
-    Date.now() - session.lastHeartbeat < 30000;
+    currentSession?.status === "active" &&
+    currentSession.lastHeartbeat &&
+    Date.now() - currentSession.lastHeartbeat < 30000;
 
   return (
     <div className="px-2 py-2">
@@ -59,10 +63,12 @@ export function CliStatus() {
             variant="outline"
             size="sm"
             className="w-full justify-start gap-2"
-            onClick={handleGenerateCode}
           >
             <Terminal className="h-4 w-4" />
             <span>Connect CLI</span>
+            {isConnected && (
+              <div className="ml-auto h-2 w-2 rounded-full bg-green-500" />
+            )}
           </Button>
         </DialogTrigger>
         <DialogContent>
@@ -74,13 +80,22 @@ export function CliStatus() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {sessionCode ? (
+            {currentSessionCode ? (
               <>
                 <div className="space-y-2">
-                  <Label>Session Code</Label>
+                  <div className="flex items-center justify-between">
+                    <Label>Session Code</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateCode}
+                    >
+                      Generate New Code
+                    </Button>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Input
-                      value={sessionCode}
+                      value={currentSessionCode}
                       readOnly
                       className="font-mono text-lg tracking-wider"
                     />
@@ -101,16 +116,10 @@ export function CliStatus() {
                   <Label>Command to Run</Label>
                   <div className="rounded-md bg-muted p-3 font-mono text-sm">
                     <div className="text-muted-foreground mb-1">
-                      # Set your Convex URL (if not already set)
-                    </div>
-                    <div className="mb-2">
-                      export CONVEX_URL="{convexUrl}"
-                    </div>
-                    <div className="text-muted-foreground mb-1">
                       # Run the CLI agent
                     </div>
                     <div>
-                      ama-agent --code {sessionCode}
+                      ama-agent --code {currentSessionCode}
                     </div>
                   </div>
                 </div>
@@ -135,15 +144,20 @@ export function CliStatus() {
                 </div>
               </>
             ) : (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center gap-4 py-8">
+                <p className="text-sm text-muted-foreground text-center">
+                  No session code generated yet. Click the button below to create one.
+                </p>
+                <Button onClick={handleGenerateCode}>
+                  Generate Session Code
+                </Button>
               </div>
             )}
           </div>
         </DialogContent>
       </Dialog>
 
-      {sessionCode && (
+      {(currentSessionCode || activeSession) && (
         <div className="mt-2 px-2">
           <div className="flex items-center gap-2 text-xs">
             {isConnected ? (

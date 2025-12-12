@@ -240,3 +240,33 @@ export const getActiveSession = internalQuery({
     return mostRecent._id;
   },
 });
+
+export const getCurrentActiveSession = query({
+  args: {},
+  handler: async (ctx) => {
+    const activeSessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .collect();
+
+    const now = Date.now();
+    const recentSessions = activeSessions.filter(
+      (s) => now - s.lastHeartbeat < 30000
+    );
+
+    if (recentSessions.length === 0) {
+      return null;
+    }
+
+    const mostRecent = recentSessions.reduce((latest, current) =>
+      current.lastHeartbeat > latest.lastHeartbeat ? current : latest
+    );
+
+    return {
+      sessionId: mostRecent._id,
+      sessionCode: mostRecent.sessionCode,
+      status: "active" as const,
+      lastHeartbeat: mostRecent.lastHeartbeat,
+    };
+  },
+});

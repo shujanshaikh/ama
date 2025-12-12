@@ -41,8 +41,6 @@ export function Chat({ threadId }: { threadId: string }) {
   const selectedModelValue = useStoreValue(selectedModel);
   const {
     results: messages,
-    status,
-    loadMore,
   } = useUIMessages(
     api.agent.chatStreaming.listThreadMessages,
     { threadId },
@@ -103,18 +101,6 @@ export function Chat({ threadId }: { threadId: string }) {
           <Conversation className="flex-1 min-h-0">
             <ConversationContent className="pt-4 pb-6">
               <div className="w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto space-y-3">
-                {status === "CanLoadMore" && (
-                  <div className="flex justify-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => loadMore(4)}
-                      className="text-muted-foreground"
-                    >
-                      Load more messages
-                    </Button>
-                  </div>
-                )}
                 {messages.map((m) => (
                   <ChatMessage key={m.key} message={m} />
                 ))}
