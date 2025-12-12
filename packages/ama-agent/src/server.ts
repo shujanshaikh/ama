@@ -3,6 +3,11 @@ import pc from "picocolors";
 import { pathToFileURL } from "node:url";
 import { read_file } from "./tools/read-file";
 import { apply_patch } from "./tools/apply-patch";
+import { list } from "./tools/ls-dir";
+import { grepTool } from "./tools/grep";
+import { editFiles } from "./tools/edit-file";
+import { deleteFile } from "./tools/delete-file";
+import { globTool } from "./tools/glob";
 
 const VERSION = process.env.VERSION ?? "0.0.1";
 
@@ -19,6 +24,8 @@ const API_PATHS = {
 //   args: any;
 // }
 
+
+
 async function executeToolLocally(
   toolName: string,
   args: any
@@ -28,6 +35,16 @@ async function executeToolLocally(
       return await read_file(args);
     case "stringReplace":
       return await apply_patch(args);
+    case "list":
+      return await list(args);
+    case "grep":
+      return await grepTool(args);
+    case "editFiles":
+      return await editFiles(args);
+    case "deleteFile":
+      return await deleteFile(args);
+    case "glob":
+      return await globTool(args);
     default:
       return {
         success: false,

@@ -19,8 +19,12 @@ chmod +x dist/cli.js
 # Try npm link first (more reliable)
 if command -v npm &> /dev/null; then
     echo "📦 Using npm to link globally..."
-    npm link --global
+    bun link
     echo "✅ Installed via npm link!"
+    echo ""
+    echo "The 'ama-agent' command should now be available globally."
+    echo "If it's not found, make sure npm's global bin directory is in your PATH:"
+    echo "  export PATH=\"\$PATH:\$(npm config get prefix)/bin\""
     exit 0
 fi
 

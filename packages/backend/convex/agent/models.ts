@@ -1,4 +1,8 @@
 export const chatModel = [{
+    id : "anthropic/claude-haiku-4.5",
+    name: "Claude Haiku 4.5",
+    description: "Lightning-fast model perfect for quick, intelligent responses.",
+},{
     id: "google/gemini-2.5-flash",
     name: "Gemini 2.5 Flash",
     description: "Google's ultra-fast multimodal model with excellent speed.",
