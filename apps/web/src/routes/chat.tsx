@@ -64,7 +64,7 @@ function Chat() {
   const [input, setInput] = useState('');
   const { messages, sendMessage, status, regenerate } = useChat({
     transport: new DefaultChatTransport({
-      api: `http://localhost:3000/chat`,
+      api: `http://localhost:3000/api/v1/agent`,
     }),
   });
   const handleSubmit = (message: PromptInputMessage) => {

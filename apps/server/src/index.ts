@@ -1,57 +1,19 @@
 import { Hono } from "hono";
-import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, stepCountIs, streamText , smoothStream } from "ai"
 import { WebSocketServer, type WebSocket } from "ws";
 import { createAdaptorServer } from "@hono/node-server";
 import type { Server } from "http";
 import { pendingToolCalls } from "./lib/executeTool"
-import { tool } from "./tools/tool";
-import { SYSTEM_PROMPT } from "@/lib/prompt";
 import { cors } from "hono/cors";
+import { agentRouter } from "./routes/api/v1/agent";
 
 const app = new Hono();
 app.use(cors())
 
+app.route("/api/v1", agentRouter);
 
 export const rpcConnections = new Map<string, WebSocket>();
 
-app.get("/", (c) => c.text("Hello World"));
-
-app.post("/chat", async (c) => {
-	const { messages } = await c.req.json();
-
-	
-	return createUIMessageStreamResponse({
-		stream: createUIMessageStream({
-		  execute: ({ writer: dataStream }) => {
-			const result = streamText({
-			  messages: convertToModelMessages(messages),
-			  model: "anthropic/claude-haiku-4.5",
-			  system: SYSTEM_PROMPT,
-			  temperature: 0.7,
-			  stopWhen: stepCountIs(20),
-			  experimental_transform: smoothStream({
-				delayInMs: 10,
-				chunking: "word",
-			  }),
-			  //maxRetries: 3,
-			  tools: tool,
-
-			});
-			result.consumeStream();
-			dataStream.merge(
-			  result.toUIMessageStream({
-				sendReasoning: true,
-			  }),
-			);
-		  },
-		  onFinish: async ({  }) => {
-			  console.log("Finished");
-			},
-		}),
-	});
-});
-
-
+app.get("/", (c) => c.text("Hello ama"));
 
 const server = createAdaptorServer({ fetch: app.fetch }) as Server;
 const wss = new WebSocketServer({ server, path: '/rpc' });

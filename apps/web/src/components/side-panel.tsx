@@ -21,6 +21,7 @@ export function Sidepanel() {
             variant="sidebar"
             side="left"
             className="sp-sidebar overflow-hidden"
+           
         >
             <SidebarRail />
             <SidebarHeader className="sp-header">

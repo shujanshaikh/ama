@@ -10,11 +10,12 @@
         "start": "bun run dist/index.js"
     },
     "dependencies": {
-        "hono": "catalog:",
-        "@trpc/server": "catalog:",
         "@hono/trpc-server": "^0.4.0",
+        "@openrouter/ai-sdk-provider": "^1.5.3",
+        "@trpc/server": "catalog:",
         "better-auth": "catalog:",
         "dotenv": "catalog:",
+        "hono": "catalog:",
         "zod": "catalog:"
     },
     "devDependencies": {

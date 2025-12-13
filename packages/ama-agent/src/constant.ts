@@ -1,2 +1,1 @@
-export const DEFAULT_PORT = 4567;
-export const CONVEX_URL = "https://next-fly-527.convex.cloud";
+export const DEFAULT_SERVER_URL = "ws://localhost:3000";

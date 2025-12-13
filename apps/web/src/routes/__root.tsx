@@ -31,7 +31,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Ama",
+				title: "Ama"
 			},
 		],
 		links: [
@@ -52,7 +52,7 @@ function RootDocument() {
 				<HeadContent />
 			</head>
 			<body>
-				<SidebarProvider>
+				<SidebarProvider defaultOpen={false}>
 					<Sidepanel />
 					<SidebarInset className="h-svh">
 						<Outlet />

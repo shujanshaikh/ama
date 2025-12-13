@@ -9,7 +9,7 @@ import { ArrowLeftIcon, ArrowRightIcon, RefreshCwIcon } from "lucide-react";
 
 export function PreviewIframe() {
   return (
-    <WebPreview defaultUrl="http://localhost:3000" className="h-full border-0 rounded-none bg-transparent">
+    <WebPreview defaultUrl="http://localhost:3003" className="h-full border-0 rounded-none bg-transparent">
       <WebPreviewNavigation>
         <WebPreviewNavigationButton
           tooltip="Go back"
