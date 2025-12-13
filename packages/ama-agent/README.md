@@ -12,30 +12,43 @@ cd packages/ama-agent
 bun install
 bun run build
 
-# Link globally (recommended - use npm)
-npm link --global
+# Link globally using npm
+npm link
 
-# Or use bun link (if npm doesn't work)
-bun link --global
+# Or use bun link
+bun link
 
 # Or use the install script
 ./install-global.sh
 ```
 
-### Option 2: Install in Your Project
+### Option 2: Link Locally to Another Project
 
 ```bash
-# In your project directory
-npm install ama-agent
-# or
-bun add ama-agent
+# In your other project directory
+npm link /path/to/ama/packages/ama-agent
+# or with bun
+bun link /path/to/ama/packages/ama-agent
 ```
 
-### Option 3: Use via npx/bunx (No Installation)
+### Option 3: Install from Local Path
+
+In your project's `package.json`:
+```json
+{
+  "dependencies": {
+    "ama-agent": "file:../path/to/ama/packages/ama-agent"
+  }
+}
+```
+Then run `npm install` or `bun install`.
+
+### Option 4: Publish to npm (For Sharing)
 
 ```bash
-# Build the package first, then use via npx
-npx ama-agent --code 123456 --url https://your-deployment.convex.cloud
+cd packages/ama-agent
+npm publish
+# Then in your other project: npm install ama-agent
 ```
 
 ## Usage
@@ -46,39 +59,34 @@ ama-agent [options]
 
 ### Options
 
-- `--code, -c <code>` - Session code to link with web UI
-- `--url, -u <url>` - Convex deployment URL (or set CONVEX_URL env var)
-- `--dir, -d <path>` - Working directory (default: current directory)
 - `--help, -h` - Show help message
 
 ### Environment Variables
 
-- `CONVEX_URL` - Convex deployment URL (required)
-- `SESSION_CODE` - Session code to link with web UI
-- `WORKING_DIRECTORY` - Working directory for file operations
+- `SERVER_URL` - WebSocket server URL to connect to (required)
+  - Example: `ws://localhost:3000` or `wss://your-server.com`
 
 ### Examples
 
 ```bash
-# Using command line arguments
-ama-agent --code 123456 --url https://your-deployment.convex.cloud
+# Using environment variable
+SERVER_URL=ws://localhost:3000 ama-agent
 
-# Using environment variables
-export CONVEX_URL=https://your-deployment.convex.cloud
-export SESSION_CODE=123456
+# Or export it first
+export SERVER_URL=ws://localhost:3000
 ama-agent
 
-# Specify a different working directory
-ama-agent --code 123456 --url https://your-deployment.convex.cloud --dir /path/to/project
+# Show help
+ama-agent --help
 ```
 
 ## How It Works
 
-1. The CLI connects to your Convex backend using the provided URL
-2. It creates or links to a session using the session code
-3. It polls for pending tool calls from the backend
-4. When tool calls are queued, it executes them locally on your machine
-5. Results are reported back to the backend
+1. The CLI connects to a WebSocket server at the provided `SERVER_URL`
+2. It listens for tool call messages from the server
+3. When tool calls are received, it executes them locally on your machine
+4. Results are sent back to the server via WebSocket
+5. It automatically reconnects if the connection is lost
 
 ## Development
 
@@ -94,13 +102,13 @@ The built files will be in the `dist/` directory.
 
 ## Troubleshooting
 
-### "Convex URL is required" error
+### "SERVER_URL is required" error
 
-Make sure to provide the Convex URL either via `--url` flag or `CONVEX_URL` environment variable.
+Make sure to provide the server URL via the `SERVER_URL` environment variable.
 
-### "No CLI session connected" error
+### Connection issues
 
-Make sure the CLI is running and connected. Check that:
-1. The session code matches between the web UI and CLI
-2. The CLI is sending heartbeats (check console output)
-3. The Convex URL is correct
+- Check that the server is running and accessible
+- Verify the WebSocket URL format (should start with `ws://` or `wss://`)
+- Check firewall/network settings
+- The CLI will automatically attempt to reconnect every 5 seconds if disconnected

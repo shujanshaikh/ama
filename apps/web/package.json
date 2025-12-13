@@ -8,7 +8,7 @@
     "dev": "vite dev --port=3001"
   },
   "dependencies": {
-    "@ama/backend": "workspace:*",
+    "@ai-sdk/react": "^2.0.115",
     "@convex-dev/agent": "^0.3.2",
     "@convex-dev/react-query": "^0.1.0",
     "@radix-ui/react-collapsible": "^1.1.12",
@@ -35,7 +35,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "convex": "catalog:",
+
     "embla-carousel-react": "^8.6.0",
     "lucide-react": "^0.560.0",
     "motion": "^12.23.26",

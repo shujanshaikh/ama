@@ -17,8 +17,23 @@ export default defineConfig([
     target: "node18",
     platform: "node",
     treeshake: true,
-    // Bundle all dependencies including workspace packages
-    noExternal: [/.*/],
+    // Externalize Node.js built-ins and packages that use dynamic requires
+    external: [
+      // Node.js built-ins
+      "events",
+      "stream",
+      "util",
+      "buffer",
+      "crypto",
+      "http",
+      "https",
+      "net",
+      "tls",
+      "url",
+      "zlib",
+      // Packages that need to be external
+      "ws",
+    ],
     // Add shebang to make CLI executable
     banner: {
       js: "#!/usr/bin/env node",

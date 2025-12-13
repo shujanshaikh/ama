@@ -2,7 +2,7 @@
     "name": "ama-agent",
     "type": "module",
     "version": "0.0.1",
-    "description": "ama cli that connects to convex backend to execute tool calls locally",
+    "description": "ama cli that connects to server backend to execute tool calls locally",
     "keywords": ["convex", "cli", "agent", "local", "tools"],
     "author": "",
     "license": "ISC",
@@ -34,21 +34,22 @@
         "dev": "tsup --watch",
         "build": "rm -rf dist && NODE_ENV=production tsup",
         "prepublishOnly": "bun run build",
-        "install-global": "bun run build && npm link --global || bun link --global"
+        "install-global": "bun run build && npm link || bun link"
     },
     "devDependencies": {
-        "@types/bun": "latest"
+        "@types/bun": "latest",
+        "@types/ws": "^8.18.1"
     },
     "peerDependencies": {
         "typescript": "^5"
     },
     "dependencies": {
         "@hono/node-server": "^1.19.7",
-        "convex": "^1.20.0",
         "hono": "^4.10.7",
         "picocolors": "^1.1.1",
         "react-grab": "^0.0.74",
         "tsup": "^8.5.1",
+        "ws": "^8.18.3",
         "zod": "^4.1.13"
     },
     "publishConfig": {
