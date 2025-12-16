@@ -3,15 +3,15 @@
     "main": "src/index.ts",
     "type": "module",
     "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+        ".": {
+            "types": "./src/index.ts",
+            "default": "./src/index.ts"
+        },
+        "./*": {
+            "types": "./src/*.ts",
+            "default": "./src/*.ts"
+        }
     },
-    "./*": {
-      "types": "./src/*.ts",
-      "default": "./src/*.ts"
-    }
-  },
     "types": "./src/index.ts",
     "scripts": {
         "build": "tsdown",
@@ -24,6 +24,7 @@
         "@hono/trpc-server": "^0.4.0",
         "@openrouter/ai-sdk-provider": "^1.5.3",
         "@trpc/server": "catalog:",
+        "@workos-inc/node": "^7.77.0",
         "better-auth": "catalog:",
         "dotenv": "catalog:",
         "hono": "catalog:",

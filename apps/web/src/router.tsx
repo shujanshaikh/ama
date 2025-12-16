@@ -12,6 +12,7 @@ import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { toast } from "sonner";
 import type { AppRouter } from "@ama/server";
 import { TRPCProvider } from "./utils/trpc";
+import { AuthProvider } from "./lib/auth";
 
 
 
@@ -62,10 +63,12 @@ export const getRouter = () => {
 		Wrap: ({ children }) => (
 			<QueryClientProvider client={queryClient}>
 				<TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-					{children}
+					<AuthProvider>
+						{children}
+					</AuthProvider>
 				</TRPCProvider>
 			</QueryClientProvider>
-	
+
 		),
 	});
 	return router;
