@@ -1,5 +1,5 @@
 {
-    "name": "ama-agent",
+    "name": "ama",
     "type": "module",
     "version": "0.0.1",
     "description": "ama cli that connects to server backend to execute tool calls locally",

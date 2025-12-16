@@ -1,4 +1,4 @@
-import { rpcConnections } from "../index"
+import { agentStreams } from "../index"
 
 export const pendingToolCalls = new Map<string, {
     resolve: (result: any) => void
@@ -7,7 +7,7 @@ export const pendingToolCalls = new Map<string, {
 
 
 export const executeTool = async (toolName: string, inputParameters: Object) => {
-   const wsConnection = rpcConnections.get("")
+   const wsConnection = agentStreams.get("")
    if(!wsConnection) {
     throw new Error("No WebSocket connection found");
    }

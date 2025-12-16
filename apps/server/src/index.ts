@@ -11,16 +11,16 @@ app.use(cors())
 
 app.route("/api/v1", agentRouter);
 
-export const rpcConnections = new Map<string, WebSocket>();
+export const agentStreams = new Map<string, WebSocket>();
 
 app.get("/", (c) => c.text("Hello ama"));
 
 const server = createAdaptorServer({ fetch: app.fetch }) as Server;
-const wss = new WebSocketServer({ server, path: '/rpc' });
+const wss = new WebSocketServer({ server, path: '/agent-streams' });
 
 
 wss.on('connection', (ws, _req) => {
-    rpcConnections.set("", ws)
+    agentStreams.set("", ws)
     console.log("CLI agent connected")
     
     ws.on('message', (data) => {
@@ -41,7 +41,7 @@ wss.on('connection', (ws, _req) => {
     })
     
     ws.on('close', () => {
-      rpcConnections.delete("")
+      agentStreams.delete("")
       console.log("CLI agent disconnected")
     })
   })

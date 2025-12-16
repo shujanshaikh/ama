@@ -45,7 +45,7 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from '@/components/ai-elements/reasoning';
-import { Loader } from '@/components/ai-elements/loader';
+import { Shimmer } from '@/components/ai-elements/shimmer';
 import { DefaultChatTransport } from 'ai';
 import { createFileRoute } from '@tanstack/react-router';
 import { PreviewIframe } from '@/components/web-view';
@@ -56,8 +56,8 @@ import {
 } from '@/components/ui/resizable';
 
 export const Route = createFileRoute('/chat')({
-    component: Chat,
-  })
+  component: Chat,
+})
 
 
 function Chat() {
@@ -74,9 +74,9 @@ function Chat() {
       return;
     }
     sendMessage(
-      { 
+      {
         text: message.text || 'Sent with attachments',
-        files: message.files 
+        files: message.files
       },
     );
     setInput('');
@@ -157,14 +157,18 @@ function Chat() {
                     })}
                   </div>
                 ))}
-                {status === 'submitted' && <Loader />}
+                {status === "submitted" &&  (
+                  <Shimmer className="text-base" duration={1.5}>
+                    Thinking...
+                  </Shimmer>
+                )}
               </div>
             </ConversationContent>
             <ConversationScrollButton />
           </Conversation>
 
-          <div className="sticky bottom-0 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 pb-4 md:pb-6">
-            <div className="w-full px-4 md:px-6">
+          <div className="sticky bottom-0 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 pb-4 md:pb-5">
+            <div className="w-full px-3 md:px-4">
               <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
                 <PromptInput onSubmit={handleSubmit} globalDrop multiple>
                   <PromptInputHeader>
@@ -176,18 +180,20 @@ function Chat() {
                     <PromptInputTextarea
                       onChange={(e) => setInput(e.target.value)}
                       value={input}
+                      placeholder="What would you like to build?"
+                      className="min-h-[44px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-3"
                     />
                   </PromptInputBody>
-                  <PromptInputFooter>
+                  <PromptInputFooter className="px-3 pb-2.5 pt-0">
                     <PromptInputTools>
                       <PromptInputActionMenu>
-                        <PromptInputActionMenuTrigger />
+                        <PromptInputActionMenuTrigger className="rounded-lg hover:bg-muted/60" />
                         <PromptInputActionMenuContent>
                           <PromptInputActionAddAttachments />
                         </PromptInputActionMenuContent>
                       </PromptInputActionMenu>
                       <PromptInputSelect defaultValue="anthropic/claude-haiku-4.5">
-                        <PromptInputSelectTrigger>
+                        <PromptInputSelectTrigger className="rounded-lg text-xs h-7 px-2 border-0 bg-muted/40 hover:bg-muted/60">
                           <PromptInputSelectValue />
                         </PromptInputSelectTrigger>
                         <PromptInputSelectContent>
@@ -197,7 +203,11 @@ function Chat() {
                         </PromptInputSelectContent>
                       </PromptInputSelect>
                     </PromptInputTools>
-                    <PromptInputSubmit disabled={!input && !status} status={status} />
+                    <PromptInputSubmit
+                      disabled={!input && !status}
+                      status={status}
+                      className="h-8 w-8 rounded-xl transition-all duration-200 bg-foreground text-background hover:opacity-90 hover:scale-105 disabled:bg-muted/60 disabled:text-muted-foreground disabled:hover:scale-100"
+                    />
                   </PromptInputFooter>
                 </PromptInput>
               </div>

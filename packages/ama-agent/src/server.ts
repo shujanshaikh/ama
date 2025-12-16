@@ -30,11 +30,11 @@ const toolExecutors: Record<string, (args: any) => Promise<any>> = {
 }
 
 export function connectToServer(serverUrl: string) {
-  const wsUrl = `${serverUrl}/rpc`
+  const wsUrl = `${serverUrl}/agent-streams`
   const ws = new WebSocket(wsUrl)
   
   ws.on('open', () => {
-    console.log(pc.green('Connected to server RPC bridge'))
+    console.log(pc.green('Connected to server agent streams'))
   })
   
   ws.on('message', async (data) => {

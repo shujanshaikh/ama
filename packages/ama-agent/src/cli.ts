@@ -11,7 +11,7 @@ for (let i = 0; i < args.length; i++) {
         console.log(`
 ${pc.bold("Ama Agent CLI")} ${pc.gray(VERSION)}
 
-Usage: ama-agent [options]
+Usage: ama  [options]
 
 Options:
   --help, -h            Show this help message
@@ -20,7 +20,7 @@ Environment Variables:
   SERVER_URL         Server URL to connect to
 
 Example:
-  ama-agent --server-url ws://localhost:3000
+  ama --server-url ws://localhost:3000
     `);
         process.exit(0);
     }

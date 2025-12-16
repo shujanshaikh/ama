@@ -6,7 +6,7 @@ import { grepTool } from "./grep";
 import { globTool } from "./glob";
 import { listDirectory } from "./listDirectory";
 
-export const tool = {
+export const tools = {
     readFile: readFile,
     stringReplace: stringReplace,
     editFile: editFile,

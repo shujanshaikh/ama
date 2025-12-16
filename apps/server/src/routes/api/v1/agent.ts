@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { createUIMessageStreamResponse, createUIMessageStream, stepCountIs, streamText , smoothStream } from "ai"
 import { convertToModelMessages } from "ai"
 import { SYSTEM_PROMPT } from "@/lib/prompt";
-import { tool } from "@/tools/tool";
+import { tools } from "@/tools/tool";
 import { openrouter } from "@openrouter/ai-sdk-provider"
 
 export const agentRouter = new Hono();
@@ -10,7 +10,6 @@ export const agentRouter = new Hono();
 agentRouter.post("/agent", async (c) => {
     const { messages } = await c.req.json();
 
-	
 	return createUIMessageStreamResponse({
 		stream: createUIMessageStream({
 		  execute: ({ writer: dataStream }) => {
@@ -24,7 +23,7 @@ agentRouter.post("/agent", async (c) => {
 				delayInMs: 10,
 				chunking: "word",
 			  }),
-			  tools: tool,
+			  tools: tools,
 
 			});
 			result.consumeStream();
