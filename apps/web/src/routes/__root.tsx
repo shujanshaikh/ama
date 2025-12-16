@@ -9,8 +9,10 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import appCss from "../index.css?url";
 import type { QueryClient } from "@tanstack/react-query";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset, useSidebar } from "@/components/ui/sidebar";
 import { Sidepanel } from "@/components/side-panel";
+import { Button } from "@/components/ui/button";
+import { PanelLeftIcon } from "lucide-react";
 
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import type { AppRouter } from "@ama/server";
@@ -54,7 +56,8 @@ function RootDocument() {
 			<body>
 				<SidebarProvider defaultOpen={false}>
 					<Sidepanel />
-					<SidebarInset className="h-svh">
+					<SidebarInset className="h-svh relative">
+						<CollapsedSidebarTrigger />
 						<Outlet />
 					</SidebarInset>
 				</SidebarProvider>
@@ -63,5 +66,29 @@ function RootDocument() {
 				<Scripts />
 			</body>
 		</html>
+	);
+}
+
+function CollapsedSidebarTrigger() {
+	const { state, toggleSidebar } = useSidebar();
+	
+	if (state === "expanded") {
+		return null;
+	}
+	
+	return (
+		<div className="absolute top-4 left-4 z-10">
+			<Button
+				data-sidebar="trigger"
+				data-slot="sidebar-trigger"
+				variant="ghost"
+				size="icon"
+				className="size-7 h-8 w-8 rounded-md hover:bg-muted transition-colors flex-shrink-0"
+				onClick={toggleSidebar}
+			>
+				<PanelLeftIcon />
+				<span className="sr-only">Toggle Sidebar</span>
+			</Button>
+		</div>
 	);
 }

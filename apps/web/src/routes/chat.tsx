@@ -33,7 +33,7 @@ import {
 } from '@/components/ai-elements/prompt-input';
 import { useState } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { CopyIcon, RefreshCcwIcon } from 'lucide-react';
+import { CopyIcon, GlobeIcon, RefreshCcwIcon } from 'lucide-react';
 import {
   Source,
   Sources,
@@ -55,6 +55,7 @@ import {
   ResizableHandle,
 } from '@/components/ui/resizable';
 import { API_URL } from '@/utils/constant';
+import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/chat')({
   component: Chat,
@@ -63,6 +64,7 @@ export const Route = createFileRoute('/chat')({
 
 function Chat() {
   const [input, setInput] = useState('');
+  const [previewCollapsed, setPreviewCollapsed] = useState(true);
   const { messages, sendMessage, status, regenerate } = useChat({
     transport: new DefaultChatTransport({
         api: `${API_URL}/agent-proxy`,
@@ -84,10 +86,22 @@ function Chat() {
   };
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full w-full">
-      <ResizablePanel defaultSize={40} minSize={30} className="flex flex-col min-h-0">
-        <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">
+      <ResizablePanel defaultSize={previewCollapsed ? 100 : 40} minSize={30} className="flex flex-col min-h-0">
+        <div className="flex flex-col h-full min-h-0 w-full overflow-hidden relative">
+          {previewCollapsed && (
+            <div className="absolute top-4 right-4 z-10">
+              <Button
+                variant="outline"
+                className="gap-2 rounded-full border-border/40 bg-background/80 backdrop-blur-md px-5 py-2.5 text-sm font-medium text-foreground/80 shadow-lg shadow-black/5 transition-all duration-200 hover:bg-background hover:text-foreground hover:border-border/60 hover:shadow-xl hover:shadow-black/10 hover:scale-105 active:scale-100"
+                onClick={() => setPreviewCollapsed(false)}
+              >
+                <GlobeIcon className="size-4" />
+                App Preview
+              </Button>
+            </div>
+          )}
           <Conversation className="flex-1 min-h-0">
-            <ConversationContent className="pt-4 pb-6">
+            <ConversationContent className={`pb-6 ${previewCollapsed ? 'pt-16 pr-32' : 'pt-4'}`}>
               <div className="w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto space-y-3">
                 {messages.map((message) => (
                   <div key={message.id}>
@@ -168,7 +182,7 @@ function Chat() {
             <ConversationScrollButton />
           </Conversation>
 
-          <div className="sticky bottom-0 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 pb-4 md:pb-5">
+          <div className="sticky bottom-0 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 pb-2 md:pb-3">
             <div className="w-full px-3 md:px-4">
               <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
                 <PromptInput onSubmit={handleSubmit} globalDrop multiple>
@@ -182,10 +196,10 @@ function Chat() {
                       onChange={(e) => setInput(e.target.value)}
                       value={input}
                       placeholder="What would you like to build?"
-                      className="min-h-[44px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-3"
+                      className="min-h-[36px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-2"
                     />
                   </PromptInputBody>
-                  <PromptInputFooter className="px-3 pb-2.5 pt-0">
+                  <PromptInputFooter className="px-3 pb-1.5 pt-0">
                     <PromptInputTools>
                       <PromptInputActionMenu>
                         <PromptInputActionMenuTrigger className="rounded-lg hover:bg-muted/60" />
@@ -194,7 +208,7 @@ function Chat() {
                         </PromptInputActionMenuContent>
                       </PromptInputActionMenu>
                       <PromptInputSelect defaultValue="anthropic/claude-haiku-4.5">
-                        <PromptInputSelectTrigger className="rounded-lg text-xs h-7 px-2 border-0 bg-muted/40 hover:bg-muted/60">
+                        <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">
                           <PromptInputSelectValue />
                         </PromptInputSelectTrigger>
                         <PromptInputSelectContent>
@@ -217,11 +231,14 @@ function Chat() {
         </div>
       </ResizablePanel>
 
-      <ResizableHandle />
-
-      <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-h-0">
-        <PreviewIframe />
-      </ResizablePanel>
+      {!previewCollapsed && (
+        <>
+          <ResizableHandle />
+          <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-h-0">
+            <PreviewIframe onCollapsedChange={setPreviewCollapsed} />
+          </ResizablePanel>
+        </>
+      )}
     </ResizablePanelGroup>
   );
-};
+}

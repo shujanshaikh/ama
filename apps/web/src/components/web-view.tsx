@@ -1,4 +1,3 @@
-
 import {  WebPreview,
   WebPreviewBody,
   WebPreviewNavigation,
@@ -7,14 +6,23 @@ import {  WebPreview,
 } from "@/components/ai-elements/web-preview";
 import { ArrowLeftIcon, ArrowRightIcon, RefreshCwIcon } from "lucide-react";
 
-export function PreviewIframe() {
+export type PreviewIframeProps = {
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
+};
+
+export function PreviewIframe({ collapsed, onCollapsedChange }: PreviewIframeProps) {
   return (
-    <WebPreview defaultUrl="http://localhost:3003" className="h-full border-0 rounded-none bg-transparent">
+    <WebPreview 
+      defaultUrl="http://localhost:3003" 
+      className="h-full border-0 rounded-none bg-transparent"
+      defaultCollapsed={collapsed}
+      onCollapsedChange={onCollapsedChange}
+    >
       <WebPreviewNavigation>
         <WebPreviewNavigationButton
           tooltip="Go back"
           onClick={() => {
-            // Navigation handled by iframe
             const iframe = document.querySelector("iframe");
             iframe?.contentWindow?.history.back();
           }}
