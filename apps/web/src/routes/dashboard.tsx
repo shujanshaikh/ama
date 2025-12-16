@@ -14,25 +14,21 @@ function DashboardPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <div className="flex w-full max-w-2xl flex-col items-center gap-10">
-        <div className="flex flex-col items-center gap-6">
-          <AmaLogo size={24} />
-          <div className="flex flex-col items-center gap-2">
-            <h1 className="text-2xl font-medium tracking-tight text-foreground">
-              What would you like to build?
-            </h1>
-            <p className="text-sm text-muted-foreground/70">
-              Ask me anything about code, design, or ideas
-            </p>
+    <div className="flex min-h-screen flex-col bg-background px-4">
+      <div className="flex flex-1 items-center justify-center">
+        <div className="flex w-full max-w-2xl flex-col items-center gap-10 -mt-40">
+          <div className="flex items-center w-full max-w-2xl mx-auto pt-6 pb-4">
+            <AmaLogo size={32} />
+            <span className="text-[32px] text-muted-foreground/70 font-bold leading-none ml-0">
+              ma
+            </span>
           </div>
+          <PromptBox
+            onSubmit={handleSubmit}
+            placeholder="Start typing to build something amazing..."
+            className="w-full"
+          />
         </div>
-
-        <PromptBox
-          onSubmit={handleSubmit}
-          placeholder="Start typing to build something amazing..."
-          className="w-full"
-        />
       </div>
     </div>
   );
