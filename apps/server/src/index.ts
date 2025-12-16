@@ -1,53 +1,57 @@
 import { Hono } from "hono";
-import { WebSocketServer, type WebSocket } from "ws";
-import { createAdaptorServer } from "@hono/node-server";
-import type { Server } from "http";
 import { pendingToolCalls } from "./lib/executeTool"
 import { cors } from "hono/cors";
 import { agentRouter } from "./routes/api/v1/agent";
+import { upgradeWebSocket, websocket } from 'hono/bun'
+import type { WSContext } from "hono/ws";
 
 const app = new Hono();
 app.use(cors())
 
 app.route("/api/v1", agentRouter);
 
-export const agentStreams = new Map<string, WebSocket>();
+
+export const agentStreams = new Map<string, WSContext>();
 
 app.get("/", (c) => c.text("Hello ama"));
 
-const server = createAdaptorServer({ fetch: app.fetch }) as Server;
-const wss = new WebSocketServer({ server, path: '/agent-streams' });
-
-
-wss.on('connection', (ws, _req) => {
-    agentStreams.set("", ws)
-    console.log("CLI agent connected")
-    
-    ws.on('message', (data) => {
-      const message = JSON.parse(data.toString())
+app.get(
+  '/agent-streams',
+  upgradeWebSocket((_c) => {
+    return {
+      onOpen: (_evt, ws) => {
+        agentStreams.set("", ws)
+        console.log("CLI agent connected")
+      },
+      onMessage(_evt) {
+        const message = JSON.parse(_evt.data.toString())
       
-      if (message.type === 'tool_result') {
-        const callId = message.callId || message.id
-        const pending = pendingToolCalls.get(callId)
-        if (pending) {
-          if (message.error) {
-            pending.reject(new Error(message.error))
-          } else {
-            pending.resolve(message.result)
+        if (message.type === 'tool_result') {
+          const callId = message.callId || message.id
+          const pending = pendingToolCalls.get(callId)
+          if (pending) {
+            if (message.error) {
+              pending.reject(new Error(message.error))
+            } else {
+              pending.resolve(message.result)
+            }
+            pendingToolCalls.delete(callId)
           }
-          pendingToolCalls.delete(callId)
         }
-      }
-    })
-    
-    ws.on('close', () => {
-      agentStreams.delete("")
-      console.log("CLI agent disconnected")
-    })
+      },
+      onClose: () => {
+        agentStreams.delete("")
+        console.log("CLI agent disconnected")
+      },
+    }
   })
-  server.listen(3000, () => {
-    console.log('Server running on http://localhost:3000')
-  })
+)
+
+export default {
+  fetch: app.fetch,
+  websocket,
+}
+
   
 
 

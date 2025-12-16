@@ -5,9 +5,10 @@ import { SYSTEM_PROMPT } from "@/lib/prompt";
 import { tools } from "@/tools/tool";
 import { openrouter } from "@openrouter/ai-sdk-provider"
 
+
 export const agentRouter = new Hono();
 
-agentRouter.post("/agent", async (c) => {
+agentRouter.post("/agent-proxy", async (c) => {
     const { messages } = await c.req.json();
 
 	return createUIMessageStreamResponse({
