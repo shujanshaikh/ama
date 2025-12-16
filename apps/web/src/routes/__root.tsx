@@ -12,7 +12,11 @@ import type { QueryClient } from "@tanstack/react-query";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Sidepanel } from "@/components/side-panel";
 
+import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import type { AppRouter } from "@ama/server";
+
 export interface RouterAppContext {
+	trpc: TRPCOptionsProxy<AppRouter>;
 	queryClient: QueryClient;
 }
 

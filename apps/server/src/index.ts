@@ -4,12 +4,36 @@ import { cors } from "hono/cors";
 import { agentRouter } from "./routes/api/v1/agent";
 import { upgradeWebSocket, websocket } from 'hono/bun'
 import type { WSContext } from "hono/ws";
+import { trpcServer } from "@hono/trpc-server";
+import { appRouter } from "./routers/index";
+import { logger } from "hono/logger";
+export type { AppRouter } from "./routers/index";
 
 const app = new Hono();
-app.use(cors())
+
+app.use(logger());
+
+app.use(
+	"/*",
+	cors({
+		origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV !== "production" ? "http://localhost:3001" : "*"),
+		allowMethods: ["GET", "POST", "OPTIONS"],
+		allowHeaders: ["Content-Type", "Authorization"],
+		credentials: true,
+	}),
+);
+
 
 app.route("/api/v1", agentRouter);
-
+app.use(
+	"/trpc/*",
+	trpcServer({
+		router: appRouter,
+		createContext: () => {
+			return {};
+		},
+	}),
+);
 
 export const agentStreams = new Map<string, WSContext>();
 

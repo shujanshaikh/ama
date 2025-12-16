@@ -54,6 +54,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable';
+import { API_URL } from '@/utils/constant';
 
 export const Route = createFileRoute('/chat')({
   component: Chat,
@@ -64,7 +65,7 @@ function Chat() {
   const [input, setInput] = useState('');
   const { messages, sendMessage, status, regenerate } = useChat({
     transport: new DefaultChatTransport({
-      api: `http://localhost:3000/api/v1/agent-proxy`,
+        api: `${API_URL}/agent-proxy`,
     }),
   });
   const handleSubmit = (message: PromptInputMessage) => {
