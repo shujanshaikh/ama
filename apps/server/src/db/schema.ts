@@ -1,0 +1,63 @@
+import { relations, type InferSelectModel } from "drizzle-orm";
+import {
+    jsonb,
+    pgTableCreator,
+    text,
+    timestamp,
+    uuid,
+    varchar,
+} from "drizzle-orm/pg-core";
+
+export const createTable = pgTableCreator((name) => `ama_${name}`);
+
+export const project = createTable("project", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    userId: text("user_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type Project = InferSelectModel<typeof project>;
+
+export const chat = createTable("chat", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: text("title").notNull(),
+    projectId: uuid("project_id").notNull().references(() => project.id),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type Chat = InferSelectModel<typeof chat>;
+
+export const message = createTable("message", {
+    id: uuid("id").primaryKey().defaultRandom().notNull(),
+    chatId: uuid("chat_id").notNull().references(() => chat.id),
+    model: text("model"),
+    parts: jsonb("parts").notNull(),
+    role: varchar("role").notNull(),
+    attachments: jsonb("attachments"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type DBMessage = InferSelectModel<typeof message>;
+
+export const projectRelations = relations(project, ({ many }) => ({
+    chats: many(chat),
+}));
+
+export const chatRelations = relations(chat, ({ one, many }) => ({
+    project: one(project, {
+        fields: [chat.projectId],
+        references: [project.id],
+    }),
+    messages: many(message),
+}));
+
+export const messageRelations = relations(message, ({ one }) => ({
+    chat: one(chat, {
+        fields: [message.chatId],
+        references: [chat.id],
+    }),
+}));

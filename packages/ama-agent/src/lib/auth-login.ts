@@ -187,3 +187,25 @@ export async function login() {
 }
 
 
+interface StoredTokens {
+    access_token: string;
+    refresh_token: string;
+    expires_at: number; // Unix timestamp
+  }
+
+
+  async function refreshToken(): Promise<StoredTokens> { 
+    const tokens = getTokens();
+    if (!tokens) {
+      throw new Error('No tokens found');
+    }
+    const newTokens = await pollForTokens({
+      clientId: 'client_01K4Y8A5Q3FYGXD362BJQ6AGYD',
+      deviceCode: tokens.refresh_token,
+      expiresIn: 300,
+      interval: 5,
+    });
+    saveTokens(newTokens);
+    return newTokens as StoredTokens;
+   }
+

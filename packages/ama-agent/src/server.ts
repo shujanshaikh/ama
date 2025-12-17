@@ -9,6 +9,7 @@ import { globTool } from './tools/glob'
 import { list } from './tools/ls-dir'
 import pc from 'picocolors'
 import { startHttpServer } from './http'
+import { getTokens } from './lib/auth-login'
 
 
 interface ToolCall {
@@ -37,8 +38,16 @@ export function getConnectionStatus(ws: WebSocket): 'connecting' | 'open' | 'clo
 }
 
 export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
+  const tokens = getTokens()
+  if (!tokens) {
+    throw new Error('No tokens found')
+  }
   const wsUrl = `${serverUrl}/agent-streams`
-  const ws = new WebSocket(wsUrl)
+  const ws = new WebSocket(wsUrl, {
+    headers: {
+      'Authorization': `Bearer ${tokens.access_token}`
+    }
+  })
   
   ws.on('open', () => {
     console.log(pc.green('Connected to server agent streams'))

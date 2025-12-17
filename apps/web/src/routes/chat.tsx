@@ -173,10 +173,10 @@ function Chat() {
                     })}
                   </div>
                 ))}
-                {status === "submitted" &&  (
-                  <Shimmer className="text-base" duration={1.5}>
-                    Thinking...
-                  </Shimmer>
+                {status === "submitted" && (
+                    <Shimmer className="text-xs" duration={2}>
+                      Thinking...
+                    </Shimmer>
                 )}
               </div>
             </ConversationContent>
@@ -186,6 +186,15 @@ function Chat() {
           <div className="sticky bottom-4 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 pb-2 md:pb-3">
             <div className="w-full px-3 md:px-4">
               <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
+                {status === 'streaming' && (
+                  <div className="flex justify-center">
+                    <div className="w-[90%] flex items-center rounded-t-2xl border border-b-0 border-border/40 bg-gradient-to-r from-card/90 via-card/70 to-card/90 px-4 py-1.5 backdrop-blur-md shadow-sm">
+                      <Shimmer className="text-xs" duration={2}>
+                        Generating...
+                      </Shimmer>
+                    </div>
+                  </div>
+                )}
                 <PromptInput onSubmit={handleSubmit} globalDrop multiple>
                   <PromptInputHeader>
                     <PromptInputAttachments>

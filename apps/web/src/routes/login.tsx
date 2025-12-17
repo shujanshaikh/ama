@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export const Route = createFileRoute("/auth-test")({
-  component: AuthTestComponent,
+export const Route = createFileRoute("/login")({
+  component: LoginComponent,
 });
 
-function AuthTestComponent() {
+function LoginComponent() {
   const { user, isLoading, isAuthenticated, signIn, signUp, signOut } = useAuthStatus();
 
 
