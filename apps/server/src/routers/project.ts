@@ -7,17 +7,21 @@ import { eq } from "drizzle-orm";
 export const projectRouter = router({
     createProject: protectedProcedure.input(z.object({
         name: z.string(),
+        cwd: z.string(),
+        gitRepo: z.string(),
     })).mutation(async ({ ctx, input }) => {
-        const { name } = input;
+        const { name, cwd, gitRepo } = input;
         const newProject = await db.insert(project).values({
             name,
             userId: ctx.userId,
+            cwd,
+            gitRepo,
         });
         return newProject;
     }),
 
     getProjects: protectedProcedure.query(async ({ ctx }) => {
         const projects = await db.select().from(project).where(eq(project.userId, ctx.userId));
-        return { data: projects };
+        return projects;
     }),
 });

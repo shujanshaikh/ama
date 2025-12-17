@@ -14,6 +14,8 @@ export const project = createTable("project", {
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     userId: text("user_id").notNull(),
+    cwd: text("cwd").notNull(),
+    gitRepo: text("git_repo").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -2,6 +2,9 @@ import { Hono } from "hono"
 import { serve } from "@hono/node-server"
 import { connectToServer, getConnectionStatus } from "./server"
 import { cors } from "hono/cors"
+import * as fs from "fs";
+import * as path from "path";
+import { execSync } from "node:child_process";  
 import { upgradeWebSocket } from "hono/bun"
 
 let wsConnection: ReturnType<typeof connectToServer> | null = null
@@ -54,6 +57,37 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
           'Connection': 'keep-alive'
         }
       });
+    });
+
+    
+
+    app.get("/cwd", (c) => {
+      const cwd = process.cwd();
+      let projectName = path.basename(cwd);
+      let isGitRepo = false;
+
+      try {
+        if (fs.existsSync(path.join(cwd, ".git")) && fs.lstatSync(path.join(cwd, ".git")).isDirectory()) {
+          isGitRepo = true;
+        } else {
+          try {
+            execSync("git rev-parse --is-inside-work-tree", { cwd, stdio: "ignore" });
+            isGitRepo = true;
+          } catch {
+            isGitRepo = false;
+          }
+        }
+      } catch {
+        isGitRepo = false;
+      }   
+
+      return c.body(
+        JSON.stringify({
+          cwd,
+          projectName,
+          isGitRepo,
+        })
+      );
     });
 
     serve({ fetch: app.fetch, port: 3456 });

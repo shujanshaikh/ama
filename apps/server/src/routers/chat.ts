@@ -3,6 +3,8 @@ import { protectedProcedure, router } from "./trpc";
 import { z } from "zod";
 import { chat } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getMessagesByChatId } from "@/db/queries";
+import { convertToUIMessages } from "@/lib/convertoUiMessages";
 
 export const chatRouter = router({
     createChat: protectedProcedure.input(z.object({
@@ -23,5 +25,14 @@ export const chatRouter = router({
         const { projectId } = input;
         const chats = await db.select().from(chat).where(eq(chat.projectId, projectId));
         return chats;
+    }),
+
+    getMessages: protectedProcedure.input(z.object({
+        chatId: z.string(),
+    })).query(async ({ input }) => {
+        const { chatId } = input;
+        const dbMessages = await getMessagesByChatId({ chatId });
+        const uiMessages = convertToUIMessages(dbMessages);
+        return uiMessages;
     }),
 });
