@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { calculateDiffStats } from "../lib/diff";
 
 const apply_patchSchema = z.object({
     file_path: z.string().describe("The path to the file you want to search and replace in. You can use either a relative path in the workspace or an absolute path. If an absolute path is provided, it will be preserved as is"),
@@ -84,10 +85,11 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
 
             try {
                 await writeFile(absolute_file_path, newContent, 'utf-8');
+                const diffStats = calculateDiffStats(fileContent, newContent);
                 return {
                     success: true,
-                    old_string: old_string,
-                    new_string: new_string,
+                    linesAdded: diffStats.linesAdded,
+                    linesRemoved: diffStats.linesRemoved,
                     message: `Successfully replaced string in file: ${file_path}`,
                 };
             } catch (error: any) {

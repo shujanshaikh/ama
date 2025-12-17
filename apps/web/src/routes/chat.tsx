@@ -56,6 +56,8 @@ import {
 } from '@/components/ui/resizable';
 import { API_URL } from '@/utils/constant';
 import { Button } from '@/components/ui/button';
+import { ToolRenderer } from '@/components/tool-render';
+import type { ChatMessage } from '@ama/server/lib/tool-types';
 
 export const Route = createFileRoute('/chat')({
   component: Chat,
@@ -65,7 +67,7 @@ export const Route = createFileRoute('/chat')({
 function Chat() {
   const [input, setInput] = useState('');
   const [previewCollapsed, setPreviewCollapsed] = useState(true);
-  const { messages, sendMessage, status, regenerate } = useChat({
+  const { messages, sendMessage, status, regenerate } = useChat<ChatMessage>({
     transport: new DefaultChatTransport({
         api: `${API_URL}/agent-proxy`,
     }),
@@ -166,7 +168,7 @@ function Chat() {
                             </Reasoning>
                           );
                         default:
-                          return null;
+                          return <ToolRenderer key={`${message.id}-${i}`} part={part} />;
                       }
                     })}
                   </div>

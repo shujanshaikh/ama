@@ -2,7 +2,7 @@ import { z } from "zod"
 import path from "node:path";
 import fs from "node:fs";
 import { mkdir } from "node:fs/promises";
-
+import { calculateDiffStats } from "../lib/diff";
 const editFilesSchema = z.object({
   target_file: z
     .string()
@@ -39,13 +39,14 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>) 
 
       // Write the new content
       await fs.promises.writeFile(filePath, content);
-
+      const diffStats = calculateDiffStats(existingContent, content);
       if (isNewFile) {
         return {
           success: true,
           isNewFile: true,
           message: `Created new file: ${target_file}`,
-          linesAdded: content.split("\n").length,
+          linesAdded: diffStats.linesAdded,
+          linesRemoved: diffStats.linesRemoved,
         };
       } else {
 
@@ -53,6 +54,8 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>) 
           success: true,
           isNewFile: false,
           message: `Modified file: ${target_file}`,
+          linesAdded: diffStats.linesAdded,
+          linesRemoved: diffStats.linesRemoved,
         };
       }
       
