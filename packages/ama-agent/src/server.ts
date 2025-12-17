@@ -8,6 +8,7 @@ import { grepTool } from './tools/grep'
 import { globTool } from './tools/glob'
 import { list } from './tools/ls-dir'
 import pc from 'picocolors'
+import { startHttpServer } from './http'
 
 
 interface ToolCall {
@@ -29,7 +30,13 @@ const toolExecutors: Record<string, (args: any) => Promise<any>> = {
 
 }
 
-export function connectToServer(serverUrl: string) {
+export function getConnectionStatus(ws: WebSocket): 'connecting' | 'open' | 'closing' | 'closed' {
+  return ws.readyState === WebSocket.CONNECTING ? 'connecting' :
+         ws.readyState === WebSocket.OPEN ? 'open' :
+         ws.readyState === WebSocket.CLOSING ? 'closing' : 'closed'
+}
+
+export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
   const wsUrl = `${serverUrl}/agent-streams`
   const ws = new WebSocket(wsUrl)
   
@@ -82,9 +89,11 @@ export function connectToServer(serverUrl: string) {
   return ws
 }
 
+
 export async function main() {
  const serverUrl = DEFAULT_SERVER_URL
   console.log(pc.green('Starting local ama-agent...'))
   console.log(pc.gray(`Connecting to server at ${serverUrl}`))
-  connectToServer(serverUrl)
+  const connection = connectToServer(serverUrl)
+  startHttpServer(connection)
 }

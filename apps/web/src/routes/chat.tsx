@@ -33,7 +33,7 @@ import {
 } from '@/components/ai-elements/prompt-input';
 import { useState } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { CopyIcon, GlobeIcon, RefreshCcwIcon } from 'lucide-react';
+import { CopyIcon, RefreshCcwIcon } from 'lucide-react';
 import {
   Source,
   Sources,
@@ -92,11 +92,10 @@ function Chat() {
             <div className="absolute top-4 right-4 z-10">
               <Button
                 variant="outline"
-                className="gap-2 rounded-full border-border/40 bg-background/80 backdrop-blur-md px-5 py-2.5 text-sm font-medium text-foreground/80 shadow-lg shadow-black/5 transition-all duration-200 hover:bg-background hover:text-foreground hover:border-border/60 hover:shadow-xl hover:shadow-black/10 hover:scale-105 active:scale-100"
+                className="rounded-lg border-border/40 bg-background/80 backdrop-blur-md px-5 py-2.5 text-sm font-medium text-foreground/80 shadow-lg shadow-black/5 transition-all duration-200 hover:bg-background hover:text-foreground hover:border-border/60 hover:shadow-xl hover:shadow-black/10 hover:scale-105 active:scale-100"
                 onClick={() => setPreviewCollapsed(false)}
               >
-                <GlobeIcon className="size-4" />
-                App Preview
+                Web
               </Button>
             </div>
           )}
@@ -182,7 +181,7 @@ function Chat() {
             <ConversationScrollButton />
           </Conversation>
 
-          <div className="sticky bottom-0 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 pb-2 md:pb-3">
+          <div className="sticky bottom-4 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 pb-2 md:pb-3">
             <div className="w-full px-3 md:px-4">
               <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
                 <PromptInput onSubmit={handleSubmit} globalDrop multiple>

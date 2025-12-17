@@ -16,6 +16,7 @@ import { PanelLeftIcon } from "lucide-react";
 
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import type { AppRouter } from "@ama/server";
+import { FetchConnection } from "@/components/fetchCOnnection";
 
 export interface RouterAppContext {
 	trpc: TRPCOptionsProxy<AppRouter>;
@@ -57,6 +58,7 @@ function RootDocument() {
 				<SidebarProvider defaultOpen={false}>
 					<Sidepanel />
 					<SidebarInset className="h-svh relative">
+						<FetchConnection />
 						<CollapsedSidebarTrigger />
 						<Outlet />
 					</SidebarInset>
