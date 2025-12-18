@@ -44,6 +44,8 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>) 
         return {
           success: true,
           isNewFile: true,
+          old_string: "",
+          new_string: content,
           message: `Created new file: ${target_file}`,
           linesAdded: diffStats.linesAdded,
           linesRemoved: diffStats.linesRemoved,
@@ -53,6 +55,8 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>) 
         return {
           success: true,
           isNewFile: false,
+          old_string: existingContent,
+          new_string: content,
           message: `Modified file: ${target_file}`,
           linesAdded: diffStats.linesAdded,
           linesRemoved: diffStats.linesRemoved,

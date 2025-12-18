@@ -1,5 +1,6 @@
 import type { ChatMessage } from '@ama/server/lib/tool-types';
 import { motion } from 'motion/react';
+import DiffShow from './diff-show';
 
 // Subtle streaming indicator - just animated dots
 const StreamingDots = () => (
@@ -60,8 +61,8 @@ const getFileName = (path?: string) => {
 };
 
 export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) => {
-  // Edit Files
-  if (part.type === "tool-editFiles") {
+  // Edit File
+  if (part.type === "tool-editFile") {
     const { toolCallId, state } = part;
     const fileName = getFileName(part.input?.target_file);
 
@@ -77,8 +78,17 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
     }
 
     if (state === "output-available") {
-      const output = part.output as { success?: boolean; linesAdded?: number; linesRemoved?: number; isNewFile?: boolean } | undefined;
+      const output = part.output as {
+        success?: boolean;
+        linesAdded?: number;
+        linesRemoved?: number;
+        isNewFile?: boolean;
+        old_string?: string;
+        new_string?: string;
+      } | undefined;
       const action = output?.isNewFile ? 'Created' : 'Modified';
+      const oldString = output?.old_string || '';
+      const newString = output?.new_string || '';
 
       return (
         <ToolItem key={toolCallId}>
@@ -86,6 +96,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
             {action} <span className="font-medium">{fileName}</span>
             <DiffBadge added={output?.linesAdded} removed={output?.linesRemoved} />
           </span>
+          <DiffShow oldString={oldString} newString={newString} fileName={fileName} />
         </ToolItem>
       );
     }
@@ -149,8 +160,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
     }
   }
 
-  // List Directory
-  if (part.type === "tool-list") {
+  if (part.type === "tool-listDirectory") {
     const { toolCallId, state } = part;
     const dirName = getFileName(part.input?.path);
 
@@ -186,7 +196,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
   }
 
   // Glob Tool
-  if (part.type === "tool-globTool") {
+  if (part.type === "tool-glob") {
     const { toolCallId, state } = part;
 
     if (state === "input-streaming") {
@@ -215,7 +225,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
   }
 
   // Grep Tool
-  if (part.type === "tool-grepTool") {
+  if (part.type === "tool-grep") {
     const { toolCallId, state } = part;
 
     if (state === "input-streaming") {
@@ -247,6 +257,8 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
   if (part.type === "tool-stringReplace") {
     const { toolCallId, state } = part;
     const fileName = getFileName(part.input?.file_path);
+    const inputOldString = part.input?.old_string || '';
+    const inputNewString = part.input?.new_string || '';
 
     if (state === "input-streaming") {
       return (
@@ -255,12 +267,20 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
             Replacing in <span className="text-zinc-200 font-medium">{fileName}</span>
             <StreamingDots />
           </span>
+          <DiffShow oldString={inputOldString} newString={inputNewString} fileName={fileName} />
         </ToolItem>
       );
     }
 
     if (state === "output-available") {
-      const output = part.output as { linesAdded?: number; linesRemoved?: number } | undefined;
+      const output = part.output as {
+        linesAdded?: number;
+        linesRemoved?: number;
+        old_string?: string;
+        new_string?: string;
+      } | undefined;
+      const oldString = output?.old_string || inputOldString;
+      const newString = output?.new_string || inputNewString;
 
       return (
         <ToolItem key={toolCallId}>
@@ -268,6 +288,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
             Replaced in <span className="font-medium">{fileName}</span>
             <DiffBadge added={output?.linesAdded} removed={output?.linesRemoved} />
           </span>
+          <DiffShow oldString={oldString} newString={newString} fileName={fileName} />
         </ToolItem>
       );
     }

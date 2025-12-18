@@ -10,34 +10,34 @@ import z from "zod"
 
 
 export interface FileType {
-    name: string
-    type: "file" | "directory"
-    isOpen?: boolean
-    children?: FileType[]
-    path: string
+  name: string
+  type: "file" | "directory"
+  isOpen?: boolean
+  children?: FileType[]
+  path: string
 }
 
 export interface FileEdit {
-    relative_file_path: string
-    code_edit: string
-    instructions: string
-    timestamp: Date
-    toolName: string
+  relative_file_path: string
+  code_edit: string
+  instructions: string
+  timestamp: Date
+  toolName: string
 }
 
 export interface ToolCallFile {
-    relative_file_path: string
-    code_edit: string
-    instructions: string
-    old_string?: string
-    new_string?: string
-    replace_all?: boolean
+  relative_file_path: string
+  code_edit: string
+  instructions: string
+  old_string?: string
+  new_string?: string
+  replace_all?: boolean
 }
 
 export interface CodeMapping {
-    currentFile: FileEdit | null
-    editHistory: FileEdit[]
-    fileList: Set<string>
+  currentFile: FileEdit | null
+  editHistory: FileEdit[]
+  fileList: Set<string>
 }
 
 export type DataPart = { type: 'append-message'; message: string };
@@ -49,20 +49,20 @@ export const messageMetadataSchema = z.object({
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 type stringReplace = InferUITool<typeof stringReplace>;
 type readFile = InferUITool<typeof readFile>;
-type list = InferUITool<typeof listDirectory>;
-type globTool = InferUITool<typeof globTool>;
-type grepTool = InferUITool<typeof grepTool>;
-type editFiles = InferUITool<typeof editFile>;
-type deleteFile = InferUITool<typeof deleteFile>;
+type listDirectory = InferUITool<typeof listDirectory>;
+type globToolType = InferUITool<typeof globTool>;
+type grepToolType = InferUITool<typeof grepTool>;
+type editFileType = InferUITool<typeof editFile>;
+type deleteFileType = InferUITool<typeof deleteFile>;
 
 export type ChatTools = {
   stringReplace: stringReplace;
   readFile: readFile;
-  list: list;
-  globTool: globTool;
-  grepTool: grepTool;
-  editFiles: editFiles;
-  deleteFile: deleteFile;
+  listDirectory: listDirectory;
+  glob: globToolType;
+  grep: grepToolType;
+  editFile: editFileType;
+  deleteFile: deleteFileType;
 };
 
 export type CustomUIDataTypes = {
@@ -129,6 +129,8 @@ export interface EditFilesOutput {
   linesAdded?: number;
   linesRemoved?: number;
   isNewFile?: boolean;
+  old_string?: string;
+  new_string?: string;
 }
 
 export interface DeleteFileOutput {

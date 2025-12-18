@@ -7,13 +7,7 @@ import { useAuthStatus } from "@/hooks/use-user";
 import { useNavigate } from "@tanstack/react-router";
 import { queryOptions } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+
 
 
 export const Route = createFileRoute("/dashboard")({
@@ -43,7 +37,7 @@ function DashboardPage() {
   });
 
   const handleCreateProject = async (name: string, cwd: string, gitRepo: string) => {
-    await createProject({ name, cwd, gitRepo });
+    createProject({ name, cwd, gitRepo });
   };
 
   const handleProjectClick = async (project: Project) => {
@@ -108,135 +102,132 @@ function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background overflow-hidden">
-      <div className="flex flex-1 items-center justify-center px-4 py-8 overflow-y-auto">
-        <div className="flex w-full max-w-3xl flex-col items-center gap-6">
-          <div className="flex flex-col items-center gap-6 w-full">
-            <div className="flex items-center gap-2">
-              <AmaLogo size={40} />
-              <span className="text-[40px] text-muted-foreground/70 font-bold leading-none">
-                ma
+    <div className="flex h-screen flex-col bg-background text-foreground overflow-hidden font-sans selection:bg-primary/10">
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-5xl px-6 py-16 md:py-24 flex flex-col gap-12">
+
+          {/* Hero Section */}
+          <div className="flex flex-col items-center gap-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex items-center gap-3 select-none hover:scale-105 transition-transform duration-300">
+              <div className="relative">
+                <div className="absolute inset-0 blur-xl bg-primary/20 rounded-full" />
+                <AmaLogo size={56} />
+              </div>
+              <span className="text-5xl font-bold tracking-tight text-foreground/80">
+                ama
               </span>
             </div>
-            <PromptBox
-              onSubmit={handleSubmit}
-              placeholder="Start typing to build something amazing..."
-              className="w-full"
-            />
+
+            <div className="w-full max-w-2xl mt-2 relative z-10">
+              <PromptBox
+                onSubmit={handleSubmit}
+                placeholder="What would you like to build?"
+                className="shadow-2xl shadow-primary/5 border-primary/10 focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/30 text-lg rounded-2xl transition-all duration-300 hover:shadow-primary/10"
+              />
+            </div>
           </div>
 
-          {currentProject && (
-            <Card className="w-full border-primary/20 bg-primary/5">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <span>Current Project</span>
-                      <span className="text-xs font-normal text-muted-foreground bg-primary/10 px-2 py-0.5 rounded-full">
-                        Active
-                      </span>
-                    </CardTitle>
-                    <CardDescription className="mt-1.5">
-                      Working in {currentProject.name}
-                    </CardDescription>
-                  </div>
+          <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100">
+            {/* Active Project Section */}
+            {currentProject && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Active Session
+                  </h2>
                 </div>
-              </CardHeader>
-              <CardContent>
                 <div
                   onClick={() => handleProjectClick(currentProject)}
-                  className="group flex items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50 cursor-pointer"
+                  className="group relative overflow-hidden rounded-2xl border bg-card p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 cursor-pointer"
                 >
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="flex flex-col gap-1 flex-1 min-w-0">
-                      <span className="font-semibold text-sm">
-                        {currentProject.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate">
+                  <div className="absolute inset-0 from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                  <div className="flex items-start justify-between relative z-10">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-xl tracking-tight">
+                          {currentProject.name}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600 ring-1 ring-inset ring-green-500/20">
+                          Active
+                        </span>
+                      </div>
+                      <span className="font-mono text-xs text-muted-foreground/80 flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
                         {currentProject.cwd}
                       </span>
                     </div>
+                    {currentProject.gitRepo && (
+                      <div className="text-muted-foreground/40 group-hover:text-foreground/60 transition-colors">
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
-                  {currentProject.gitRepo && (
-                    <div className="ml-4 flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1">
-                      <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                        Git
-                      </span>
-                    </div>
-                  )}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </section>
+            )}
 
-          <Card className="w-full">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">Your Projects</CardTitle>
-                  <CardDescription className="mt-1.5">
-                    {otherProjects.length > 0
-                      ? `${otherProjects.length} project${otherProjects.length > 1 ? 's' : ''}`
-                      : "No other projects"}
-                  </CardDescription>
-                </div>
+
+            <section className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  {otherProjects.length > 0 ? "Recent Projects" : "No other projects"}
+                </h2>
               </div>
-            </CardHeader>
-            <CardContent>
+
               {otherProjects.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    No other projects
-                  </p>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    {currentProject
-                      ? "All your projects are shown above."
-                      : "Import a project to get started."}
-                  </p>
-                </div>
+                !currentProject && (
+                  <div className="rounded-2xl border border-dashed p-12 text-center">
+                    <p className="text-muted-foreground">Import a project to get started</p>
+                  </div>
+                )
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {otherProjects.map((project) => (
                     <div
                       key={project.id}
                       onClick={() => handleProjectClick(project)}
-                      className="group flex items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50 cursor-pointer"
+                      className="group flex flex-col justify-between h-full rounded-xl border bg-card/50 hover:bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 cursor-pointer"
                     >
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="flex flex-col gap-1 flex-1 min-w-0">
-                          <span className="font-semibold text-sm">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-base group-hover:text-primary transition-colors">
                             {project.name}
                           </span>
-                          <span className="text-xs text-muted-foreground truncate">
-                            {project.cwd}
-                          </span>
+                          {project.gitRepo && (
+                            <svg className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground/60" viewBox="0 0 24 24" fill="currentColor">
+                              <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+                            </svg>
+                          )}
                         </div>
+                        <span className="text-xs text-muted-foreground truncate font-mono opacity-60">
+                          {project.cwd}
+                        </span>
                       </div>
-                      {project.gitRepo && (
-                        <div className="ml-4 flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1">
-                          <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                            Git
-                          </span>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </section>
 
-          {cwd?.projectName && !currentProject && (
-            <Card className="w-full border-dashed">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">Import Project</CardTitle>
-                    <CardDescription className="mt-1.5">
-                      Detected project: {cwd.projectName}
-                    </CardDescription>
+            {cwd?.projectName && !currentProject && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Detected Project
+                  </h2>
+                </div>
+                <div className="rounded-2xl border-2 border-dashed border-primary/20 bg-primary/5 p-6 flex items-center justify-between">
+                  <div className="flex flex-col gap-1">
+                    <span className="font-semibold text-lg">{cwd.projectName}</span>
+                    <span className="text-sm text-muted-foreground font-mono">{cwd.cwd}</span>
                   </div>
                   <Button
+                    size="lg"
                     onClick={() =>
                       handleCreateProject(
                         cwd.projectName,
@@ -245,31 +236,12 @@ function DashboardPage() {
                       )
                     }
                   >
-                    Import "{cwd.projectName}"
+                    Import Project
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-4">
-                  <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <span className="font-semibold text-sm">
-                      {cwd.projectName}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {cwd.cwd}
-                    </span>
-                    {cwd.isGitRepo && (
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">
-                          Git repository detected
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+              </section>
+            )}
+          </div>
         </div>
       </div>
     </div>

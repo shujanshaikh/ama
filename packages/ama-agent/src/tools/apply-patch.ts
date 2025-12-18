@@ -88,6 +88,8 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
                 const diffStats = calculateDiffStats(fileContent, newContent);
                 return {
                     success: true,
+                    old_string: old_string,
+                    new_string: new_string,
                     linesAdded: diffStats.linesAdded,
                     linesRemoved: diffStats.linesRemoved,
                     message: `Successfully replaced string in file: ${file_path}`,

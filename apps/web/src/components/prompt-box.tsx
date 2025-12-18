@@ -1,5 +1,3 @@
-"use client";
-
 import {
     PromptInput,
     PromptInputBody,
@@ -16,6 +14,7 @@ export type DashboardPromptBoxProps = {
     placeholder?: string;
     disabled?: boolean;
     className?: string;
+    containerClassName?: string;
 };
 
 export function PromptBox({
@@ -23,6 +22,7 @@ export function PromptBox({
     placeholder = "What would you like to build?",
     disabled = false,
     className,
+    containerClassName,
 }: DashboardPromptBoxProps) {
     const [input, setInput] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,11 +43,12 @@ export function PromptBox({
     const canSubmit = input.trim().length > 0 && !isSubmitting && !disabled;
 
     return (
-        <div className={cn("w-full max-w-2xl mx-auto", className)}>
+        <div className={cn("w-full max-w-2xl mx-auto", containerClassName)}>
             <PromptInput
                 onSubmit={handleSubmit}
                 className={cn(
-                    disabled && "opacity-60 cursor-not-allowed"
+                    disabled && "opacity-60 cursor-not-allowed",
+                    className
                 )}
             >
                 <PromptInputBody>
