@@ -1,4 +1,5 @@
-import {  WebPreview,
+import {
+  WebPreview,
   WebPreviewBody,
   WebPreviewNavigation,
   WebPreviewNavigationButton,
@@ -12,9 +13,11 @@ export type PreviewIframeProps = {
 };
 
 export function PreviewIframe({ collapsed, onCollapsedChange }: PreviewIframeProps) {
+
+
   return (
-    <WebPreview 
-      defaultUrl="http://localhost:3003" 
+    <WebPreview
+      defaultUrl="http://localhost:3003"
       className="h-full border-0 rounded-none bg-transparent"
       defaultCollapsed={collapsed}
       onCollapsedChange={onCollapsedChange}

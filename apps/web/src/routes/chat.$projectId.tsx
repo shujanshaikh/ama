@@ -273,7 +273,7 @@ function Chat() {
             <ConversationScrollButton />
           </Conversation>
 
-          <div className="sticky bottom-4 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 pb-2 md:pb-3">
+          <div className=" bottom-4 pb-2 md:pb-3">
             <div className="w-full px-3 md:px-4">
               <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
                 {status === 'streaming' && (
@@ -285,7 +285,7 @@ function Chat() {
                     </div>
                   </div>
                 )}
-                <PromptInput onSubmit={handleSubmit} globalDrop multiple>
+                <PromptInput onSubmit={handleSubmit} >
                   <PromptInputHeader>
                     <PromptInputAttachments>
                       {(attachment) => <PromptInputAttachment data={attachment} />}
@@ -295,14 +295,14 @@ function Chat() {
                     <PromptInputTextarea
                       onChange={(e) => setInput(e.target.value)}
                       value={input}
-                      placeholder="What would you like to build?"
+                      placeholder="ask ama"
                       className="min-h-[36px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-2"
                     />
                   </PromptInputBody>
                   <PromptInputFooter className="px-3 pb-1.5 pt-0">
                     <PromptInputTools>
                       <PromptInputActionMenu>
-                        <PromptInputActionMenuTrigger className="rounded-lg hover:bg-muted/60" />
+                        <PromptInputActionMenuTrigger className="rounded-xl hover:bg-muted/60" />
                         <PromptInputActionMenuContent>
                           <PromptInputActionAddAttachments />
                         </PromptInputActionMenuContent>
