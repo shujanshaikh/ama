@@ -5,6 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { ArrowLeftIcon, CodeIcon, GlobeIcon, RefreshCwIcon, XIcon } from "lucide-react";
 import type { ComponentProps } from "react";
@@ -77,18 +78,24 @@ export function CodeEditor({
 
   const currentUrl = activeTab === "editor" ? editorUrl : webUrl;
 
+  const { state: sidebarState } = useSidebar();
+  const isSidebarCollapsed = sidebarState === "collapsed";
+
   return (
     <CodeEditorContext.Provider value={contextValue}>
       <div
         className={cn(
-          "flex size-full flex-col overflow-hidden rounded-xl border border-border/50 bg-background shadow-sm",
+          "flex size-full flex-col overflow-hidden border border-border/50 bg-background shadow-sm",
           isFullscreen && "fixed inset-0 z-50 rounded-none",
           className
         )}
         {...props}
       >
-        <div className="flex items-center gap-2 border-b border-border/50 bg-muted/30 px-3 py-2.5">
-          {onReturnToChat && (
+        <div className={cn(
+          "flex items-center gap-2 border-b border-border/50 bg-muted/30 px-3 py-2.5",
+          isSidebarCollapsed && "pl-16"
+        )}>
+          {onReturnToChat && !isSidebarCollapsed && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -108,9 +115,10 @@ export function CodeEditor({
             </TooltipProvider>
           )}
 
-          {onReturnToChat && (
+          {onReturnToChat && !isSidebarCollapsed && (
             <div className="h-4 w-px bg-border/50" />
           )}
+
 
           <div className="flex items-center rounded-lg bg-muted/50 p-0.5">
             <TooltipProvider>

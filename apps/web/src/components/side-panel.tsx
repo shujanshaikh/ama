@@ -35,12 +35,12 @@ export function Sidepanel() {
     const trpc = useTRPC();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    
+
     const { data: chatsData, isLoading } = useQuery({
         ...trpc.chat.getChats.queryOptions({ projectId: projectId || "" }),
         enabled: !!projectId,
     });
-    
+
     const chats: Chat[] = (chatsData as Chat[] | undefined) ?? [];
 
     const { mutate: createChat, isPending: isCreatingChat } = useMutation({
@@ -77,13 +77,13 @@ export function Sidepanel() {
             });
         }
     };
- 
+
     return (
         <Sidebar
             variant="sidebar"
             side="left"
             className="sp-sidebar overflow-hidden"
-           
+
         >
             <SidebarRail />
             <SidebarHeader className="sp-header">
@@ -96,14 +96,14 @@ export function Sidepanel() {
                     <div className="w-8 flex-shrink-0" />
                 </div>
             </SidebarHeader>
-  
-        
+
+
             <SidebarContent className="sp-content px-2 py-2 overflow-hidden flex flex-col">
                 <SidebarGroup>
                     <SidebarGroupContent>
                     </SidebarGroupContent>
                 </SidebarGroup>
-                
+
                 <SidebarGroup className="flex-1 min-h-0 flex flex-col">
                     {projectId && (
                         <div className="flex items-center justify-between px-2 mb-2">

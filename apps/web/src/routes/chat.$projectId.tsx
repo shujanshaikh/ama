@@ -33,7 +33,7 @@ import {
 } from '@/components/ai-elements/prompt-input';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { CopyIcon, RefreshCcwIcon, CodeIcon } from 'lucide-react';
+import { CopyIcon, RefreshCcwIcon, CodeIcon, SquareIcon } from 'lucide-react';
 import {
   Source,
   Sources,
@@ -103,7 +103,7 @@ function Chat() {
     },
   }), [_chatId]);
 
-  const { messages, sendMessage, status, regenerate, setMessages } = useChat<ChatMessage>({
+  const { messages, sendMessage, status, regenerate, setMessages, stop } = useChat<ChatMessage>({
     transport,
     id: _chatId || 'new-chat',
   });
@@ -182,7 +182,7 @@ function Chat() {
             </div>
           )}
           <Conversation className="flex-1 min-h-0">
-            <ConversationContent className={`pb-6 ${previewCollapsed ? 'pt-16 pr-32' : 'pt-4'}`}>
+            <ConversationContent className={`pb-6 ${previewCollapsed ? 'pt-16' : 'pt-4'}`}>
               <div className="w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto space-y-3">
                 {isLoadingMessages && _chatId && messages.length === 0 && (
                   <div className="space-y-4">
@@ -318,11 +318,22 @@ function Chat() {
                         </PromptInputSelectContent>
                       </PromptInputSelect>
                     </PromptInputTools>
-                    <PromptInputSubmit
-                      disabled={!input && !status}
-                      status={status}
-                      className="h-8 w-8 rounded-xl transition-all duration-200 bg-foreground text-background hover:opacity-90 hover:scale-105 disabled:bg-muted/60 disabled:text-muted-foreground disabled:hover:scale-100"
-                    />
+                    {(status === 'streaming' || status === 'submitted') ? (
+                      <button
+                        type="button"
+                        onClick={() => stop()}
+                        className="h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-200 bg-red-500/90 text-white hover:bg-red-500 hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20 animate-pulse"
+                        aria-label="Stop generating"
+                      >
+                        <SquareIcon className="size-3.5 fill-current" />
+                      </button>
+                    ) : (
+                      <PromptInputSubmit
+                        disabled={!input}
+                        status={status}
+                        className="h-8 w-8 rounded-xl transition-all duration-200 bg-foreground text-background hover:opacity-90 hover:scale-105 disabled:bg-muted/60 disabled:text-muted-foreground disabled:hover:scale-100"
+                      />
+                    )}
                   </PromptInputFooter>
                 </PromptInput>
               </div>
