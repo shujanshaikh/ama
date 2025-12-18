@@ -33,7 +33,7 @@ import {
 } from '@/components/ai-elements/prompt-input';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { CopyIcon, RefreshCcwIcon } from 'lucide-react';
+import { CopyIcon, RefreshCcwIcon, CodeIcon } from 'lucide-react';
 import {
   Source,
   Sources,
@@ -49,6 +49,7 @@ import { Shimmer } from '@/components/ai-elements/shimmer';
 import { DefaultChatTransport } from 'ai';
 import { createFileRoute } from '@tanstack/react-router';
 import { PreviewIframe } from '@/components/web-view';
+import { CodeEditor } from '@/components/code-editor';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -76,8 +77,9 @@ function Chat() {
   const { chat: _chatId } = Route.useSearch();
   const [input, setInput] = useState('');
   const [previewCollapsed, setPreviewCollapsed] = useState(true);
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
   const trpc = useTRPC();
-  
+
   const currentChatIdRef = useRef<string | undefined>(_chatId);
   const hasInitializedRef = useRef(false);
 
@@ -117,9 +119,9 @@ function Chat() {
 
   useEffect(() => {
     if (!_chatId || isLoadingMessages) return;
-    
+
     if (hasInitializedRef.current && currentChatIdRef.current === _chatId) return;
-    
+
     if (status === 'streaming' || status === 'submitted') return;
 
     if (initialMessages && initialMessages.length > 0) {
@@ -141,12 +143,35 @@ function Chat() {
     sendMessage({ text: input });
     setInput('');
   }, [input, sendMessage]);
+
+
+
+  // If code editor is open in fullscreen, show only the editor
+  if (showCodeEditor) {
+    return (
+      <CodeEditor
+        editorUrl="http://localhost:8081"
+        webUrl="http://localhost:3003"
+        onReturnToChat={() => setShowCodeEditor(false)}
+        onCollapsedChange={() => setShowCodeEditor(false)}
+      />
+    );
+  }
+
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full w-full">
       <ResizablePanel defaultSize={previewCollapsed ? 100 : 40} minSize={30} className="flex flex-col min-h-0">
         <div className="flex flex-col h-full min-h-0 w-full overflow-hidden relative">
           {previewCollapsed && (
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="rounded-lg border-border/40 bg-background/80 backdrop-blur-md px-5 py-2.5 text-sm font-medium text-foreground/80 shadow-lg shadow-black/5 transition-all duration-200 hover:bg-background hover:text-foreground hover:border-border/60 hover:shadow-xl hover:shadow-black/10 hover:scale-105 active:scale-100 flex items-center gap-2"
+                onClick={() => setShowCodeEditor(true)}
+              >
+                <CodeIcon className="size-4" />
+                Editor
+              </Button>
               <Button
                 variant="outline"
                 className="rounded-lg border-border/40 bg-background/80 backdrop-blur-md px-5 py-2.5 text-sm font-medium text-foreground/80 shadow-lg shadow-black/5 transition-all duration-200 hover:bg-background hover:text-foreground hover:border-border/60 hover:shadow-xl hover:shadow-black/10 hover:scale-105 active:scale-100"
@@ -239,9 +264,9 @@ function Chat() {
                   </div>
                 ))}
                 {status === "submitted" && (
-                    <Shimmer className="text-xs" duration={2}>
-                      Thinking...
-                    </Shimmer>
+                  <Shimmer className="text-xs" duration={2}>
+                    Thinking...
+                  </Shimmer>
                 )}
               </div>
             </ConversationContent>

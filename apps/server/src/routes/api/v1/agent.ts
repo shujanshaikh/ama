@@ -14,8 +14,6 @@ export const agentRouter = new Hono();
 
 agentRouter.post("/agent-proxy", async (c) => {
 	const { message, chatId } = await c.req.json();
-	console.log(message);
-	console.log(chatId);
 
 	const [token] = agentStreams.keys();
 
