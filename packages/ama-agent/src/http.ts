@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { execSync } from "node:child_process";  
 import { upgradeWebSocket } from "hono/bun"
+import { getContext } from "./lib/get-files";
 
 let wsConnection: ReturnType<typeof connectToServer> | null = null
 
@@ -37,7 +38,7 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
     //   )
 
 
-    app.get("/daemon.status/stream", (c) => {
+    app.post("/daemon/status/stream", (c) => {
       return c.body(new ReadableStream({
         start(controller) {
           const sendStatus = () => {
@@ -59,6 +60,10 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
       });
     });
 
+    app.get("context",async (c) => {
+      const context = getContext(process.cwd());
+      return c.body(JSON.stringify(context));
+    });
     
 
     app.get("/cwd", (c) => {

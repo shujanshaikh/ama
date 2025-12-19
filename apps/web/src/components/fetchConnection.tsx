@@ -12,32 +12,69 @@ export function FetchConnection() {
 	const [connected, setConnected] = useState(false)
 
 	useEffect(() => {
-		const eventSource = new EventSource('http://localhost:3456/daemon.status/stream')
-		
-		eventSource.onmessage = (event) => {
+		const controller = new AbortController();
+		const { signal } = controller;
+
+		let eventSource: EventSource | null = null;
+
+		const createSSEFromFetch = async () => {
 			try {
-				const { connected: isConnected } = JSON.parse(event.data)
-				setConnected(isConnected)
-				
-				// Auto-close dialog when connected
-				if (isConnected) {
-					setOpen(false)
+				const response = await fetch('http://localhost:3456/daemon/status/stream', {
+					method: 'POST',
+					headers: {
+						'Accept': 'text/event-stream',
+					},
+					signal,
+				});
+
+				if (!response.body) {
+					throw new Error('No response body for SSE');
 				}
+
+				const reader = response.body.getReader();
+				let buffer = '';
+
+				const read = async () => {
+					while (true) {
+						const { done, value } = await reader.read();
+						if (done) break;
+						const chunk = new TextDecoder().decode(value);
+						buffer += chunk;
+
+						let split;
+						while ((split = buffer.indexOf('\n\n')) !== -1) {
+							const eventChunk = buffer.slice(0, split).trim();
+							buffer = buffer.slice(split + 2);
+
+							if (eventChunk.startsWith('data:')) {
+								try {
+									const jsonString = eventChunk.replace(/^data:\s*/, '');
+									const { connected: isConnected } = JSON.parse(jsonString);
+									setConnected(isConnected);
+
+									// Auto-close dialog when connected
+									if (isConnected) {
+										setOpen(false);
+									}
+								} catch (error) {
+									console.error('Failed to parse EventSource message:', error);
+								}
+							}
+						}
+					}
+				};
+				read();
 			} catch (error) {
-				console.error('Failed to parse EventSource message:', error)
+				console.error('SSE fetch error:', error);
 			}
-		}
+		};
 
-		eventSource.onerror = (error) => {
-			console.error('EventSource error:', error)
-			eventSource.close()
-		}
+		createSSEFromFetch();
 
-		// Cleanup on unmount
 		return () => {
-			eventSource.close()
-		}
-	}, [])
+			controller.abort();
+		};
+	}, []);
 
 	// Don't render anything if connected
 	if (connected) {
