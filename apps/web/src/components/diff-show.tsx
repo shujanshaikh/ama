@@ -70,7 +70,7 @@ const customStyles = {
     fontStyle: 'italic',
   },
   diffContainer: {
-    borderRadius: '8px',
+   // borderRadius: '2px',
     overflow: 'hidden',
   },
   diffRemoved: {
@@ -103,12 +103,12 @@ export const DiffShow = ({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: 'easeOut' }}
-      className="mt-3 rounded-xl overflow-hidden border border-zinc-700/40 bg-gradient-to-b from-zinc-900/50 to-zinc-900/30 backdrop-blur-sm shadow-lg shadow-black/10"
+      className="mt-3 rounded-sm overflow-hidden border border-zinc-700/40 bg-gradient-to-b from-zinc-900/50 to-zinc-900/30 backdrop-blur-sm shadow-lg shadow-black/10"
     >
       {showHeader && (
         <motion.button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between px-3.5 py-2.5 bg-zinc-800/20 hover:bg-zinc-800/40 transition-all duration-200 border-b border-zinc-700/30 rounded-t-xl"
+          className="w-full flex items-center justify-between px-3.5 py-2.5 bg-zinc-800/20 hover:bg-zinc-800/40 transition-all duration-200 border-b border-zinc-700/30 rounded-t-sm"
         >
           <div className="flex items-center gap-2">
             <motion.div

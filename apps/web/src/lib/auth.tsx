@@ -68,7 +68,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, [signUpUrlData]);
 
     const signOut = useCallback(async () => {
-        // Navigate to the backend logout endpoint which handles WorkOS logout
         const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
         window.location.href = `${serverUrl}/api/v1/auth/logout`;
     }, []);

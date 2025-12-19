@@ -295,7 +295,6 @@ function Chat() {
                     <PromptInputTextarea
                       onChange={(e) => setInput(e.target.value)}
                       value={input}
-                      placeholder="ask ama"
                       className="min-h-[36px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-2"
                     />
                   </PromptInputBody>
@@ -307,7 +306,7 @@ function Chat() {
                           <PromptInputActionAddAttachments />
                         </PromptInputActionMenuContent>
                       </PromptInputActionMenu>
-                      <PromptInputSelect defaultValue="anthropic/claude-haiku-4.5">
+                      {/* <PromptInputSelect defaultValue="anthropic/claude-haiku-4.5">
                         <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">
                           <PromptInputSelectValue />
                         </PromptInputSelectTrigger>
@@ -316,7 +315,7 @@ function Chat() {
                             Claude Haiku 4.5
                           </PromptInputSelectItem>
                         </PromptInputSelectContent>
-                      </PromptInputSelect>
+                      </PromptInputSelect> */}
                     </PromptInputTools>
                     {(status === 'streaming' || status === 'submitted') ? (
                       <button

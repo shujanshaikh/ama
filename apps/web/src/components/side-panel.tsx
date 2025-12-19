@@ -151,8 +151,9 @@ export function Sidepanel() {
         >
             <SidebarRail />
             <div className="flex flex-col h-full p-4">
-                <div className="mb-4">
+                <div className="mb-4 flex items-center gap-1">
                     <AmaLogo size={40} />
+                    <span className="text-2xl font-semibold text-foreground/90 leading-none pl-0.5" style={{ lineHeight: '40px' }}>ama</span>
                 </div>
 
                 {projectId && (

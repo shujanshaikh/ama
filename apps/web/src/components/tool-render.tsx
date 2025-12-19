@@ -65,17 +65,20 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
   if (part.type === "tool-editFile") {
     const { toolCallId, state } = part;
     const fileName = getFileName(part.input?.target_file);
+    // const targetFile = part.input?.target_file;
+    // const content = part.input?.content;
 
-    if (state === "input-streaming") {
-      return (
-        <ToolItem key={toolCallId} isStreaming>
-          <span className="text-sm">
-            Editing <span className="text-zinc-200 font-medium">{fileName}</span>
-            <StreamingDots />
-          </span>
-        </ToolItem>
-      );
-    }
+    // if (state === "input-streaming") {
+    //   return (
+    //     <ToolItem key={toolCallId} isStreaming>
+    //       <span className="text-sm">
+    //         Editing <span className="text-zinc-200 font-medium">{targetFile}</span>
+    //         <span className="text-zinc-200 font-medium">{content}</span>
+    //         <StreamingDots />
+    //       </span>
+    //     </ToolItem>
+    //   );
+    // }
 
     if (state === "output-available") {
       const output = part.output as {
@@ -86,16 +89,11 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
         old_string?: string;
         new_string?: string;
       } | undefined;
-      const action = output?.isNewFile ? 'Created' : 'Modified';
       const oldString = output?.old_string || '';
       const newString = output?.new_string || '';
 
       return (
         <ToolItem key={toolCallId}>
-          <span className="text-sm">
-            {action} <span className="font-medium">{fileName}</span>
-            <DiffBadge added={output?.linesAdded} removed={output?.linesRemoved} />
-          </span>
           <DiffShow oldString={oldString} newString={newString} fileName={fileName} />
         </ToolItem>
       );
@@ -263,10 +261,6 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
     if (state === "input-streaming") {
       return (
         <ToolItem key={toolCallId} isStreaming>
-          <span className="text-sm">
-            Replacing in <span className="text-zinc-200 font-medium">{fileName}</span>
-            <StreamingDots />
-          </span>
           <DiffShow oldString={inputOldString} newString={inputNewString} fileName={fileName} />
         </ToolItem>
       );
@@ -284,10 +278,6 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
       return (
         <ToolItem key={toolCallId}>
-          <span className="text-sm">
-            Replaced in <span className="font-medium">{fileName}</span>
-            <DiffBadge added={output?.linesAdded} removed={output?.linesRemoved} />
-          </span>
           <DiffShow oldString={oldString} newString={newString} fileName={fileName} />
         </ToolItem>
       );
