@@ -24,4 +24,14 @@ export const projectRouter = router({
         const projects = await db.select().from(project).where(eq(project.userId, ctx.userId));
         return projects;
     }),
+
+    getProject: protectedProcedure.input(z.object({
+        projectId: z.string(),
+    })).query(async ({ ctx, input }) => {
+        const projectData = await db.select().from(project).where(eq(project.id, input.projectId));
+        if (projectData.length === 0) {
+            throw new Error("Project not found");
+        }
+        return projectData[0];
+    }),
 });

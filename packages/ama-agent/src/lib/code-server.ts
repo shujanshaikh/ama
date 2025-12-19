@@ -94,6 +94,23 @@ export async function installCodeServer(): Promise<void> {
     console.log(pc.green('✓ code-server installed successfully'))
 }
 
+async function killExistingCodeServer(): Promise<void> {
+    try {
+        if (process.platform === 'win32') {
+            await execAsync('netstat -ano | findstr :8081 | findstr LISTENING').then(async ({ stdout }) => {
+                const pid = stdout.trim().split(/\s+/).pop()
+                if (pid) await execAsync(`taskkill /PID ${pid} /F`)
+            }).catch(() => { })
+        } else {
+            await execAsync('lsof -ti:8081').then(async ({ stdout }) => {
+                const pid = stdout.trim()
+                if (pid) await execAsync(`kill -9 ${pid}`)
+            }).catch(() => { })
+        }
+    } catch {
+    }
+}
+
 export async function startCodeServer(cwd?: string): Promise<ReturnType<typeof spawn>> {
     const binPath = getCodeServerBin()
     const workDir = cwd || process.cwd()
@@ -102,15 +119,34 @@ export async function startCodeServer(cwd?: string): Promise<ReturnType<typeof s
         throw new Error('code-server is not installed. Run installCodeServer() first.')
     }
 
-    console.log(pc.cyan('Starting code-server...'))
+    await killExistingCodeServer()
+
+    const workspaceStoragePath = path.join(STORAGE_DIR, 'User', 'workspaceStorage')
+    const globalStoragePath = path.join(STORAGE_DIR, 'User', 'globalStorage')
+    try {
+        // Remove workspace storage to clear "last opened folder" memory
+        if (fs.existsSync(workspaceStoragePath)) {
+            await fs.promises.rm(workspaceStoragePath, { recursive: true, force: true })
+        }
+        // Also remove the state.vscdb if it exists (stores recent workspaces)
+        const stateDbPath = path.join(STORAGE_DIR, 'User', 'globalStorage', 'state.vscdb')
+        if (fs.existsSync(stateDbPath)) {
+            await fs.promises.unlink(stateDbPath)
+        }
+    } catch {
+        // Ignore errors during cleanup
+    }
+
+    console.log(pc.cyan(`Starting code-server in ${workDir}...`))
 
     const codeServer = spawn(
         binPath,
         [
             "--port", "8081",
             "--host", "0.0.0.0",
-            "--auth", "none", 
+            "--auth", "none",
             "--user-data-dir", STORAGE_DIR,
+            "--disable-workspace-trust",
             workDir,
         ],
         {
@@ -118,7 +154,7 @@ export async function startCodeServer(cwd?: string): Promise<ReturnType<typeof s
         }
     )
 
-    console.log(pc.green(`✓ code-server running at http://localhost:8081`))
+    console.log(pc.green(`✓ code-server running at http://localhost:8081/?folder=${encodeURIComponent(workDir)}`))
 
     return codeServer
 }

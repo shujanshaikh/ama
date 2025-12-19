@@ -5,6 +5,9 @@ import { isCodeServerInstalled, installCodeServer, startCodeServer } from "./lib
 
 const VERSION = process.env.VERSION ?? "0.0.1";
 
+// Capture the current working directory at startup before any async operations change it
+const PROJECT_DIR = process.cwd();
+
 // Start server with code-server
 async function startWithCodeServer() {
     // First run detection - install code-server if not present
@@ -21,7 +24,7 @@ async function startWithCodeServer() {
     // Start code-server if installed
     if (isCodeServerInstalled()) {
         try {
-            await startCodeServer();
+            await startCodeServer(PROJECT_DIR);
         } catch (error: any) {
             console.error(pc.red(`Failed to start code-server: ${error.message}`));
         }

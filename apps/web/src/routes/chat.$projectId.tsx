@@ -21,11 +21,6 @@ import {
   PromptInputBody,
   PromptInputHeader,
   type PromptInputMessage,
-  PromptInputSelect,
-  PromptInputSelectContent,
-  PromptInputSelectItem,
-  PromptInputSelectTrigger,
-  PromptInputSelectValue,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputFooter,
@@ -61,6 +56,7 @@ import { ToolRenderer } from '@/components/tool-render';
 import type { ChatMessage } from '@ama/server/lib/tool-types';
 import { useTRPC } from '@/utils/trpc';
 import { useQuery } from '@tanstack/react-query';
+import { getEditorUrl } from '@/utils/get-editor-url';
 
 export const Route = createFileRoute('/chat/$projectId')({
   component: Chat,
@@ -79,6 +75,8 @@ function Chat() {
   const [previewCollapsed, setPreviewCollapsed] = useState(true);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const trpc = useTRPC();
+
+  const editorUrl = getEditorUrl(_projectId!);
 
   const currentChatIdRef = useRef<string | undefined>(_chatId);
   const hasInitializedRef = useRef(false);
@@ -150,7 +148,7 @@ function Chat() {
   if (showCodeEditor) {
     return (
       <CodeEditor
-        editorUrl="http://localhost:8081"
+        editorUrl={editorUrl}
         webUrl="http://localhost:3003"
         onReturnToChat={() => setShowCodeEditor(false)}
         onCollapsedChange={() => setShowCodeEditor(false)}
