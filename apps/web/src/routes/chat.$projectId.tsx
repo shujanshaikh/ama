@@ -55,7 +55,7 @@ import { Button } from '@/components/ui/button';
 import { ToolRenderer } from '@/components/tool-render';
 import type { ChatMessage } from '@ama/server/lib/tool-types';
 import { useTRPC } from '@/utils/trpc';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getEditorUrl } from '@/utils/get-editor-url';
 
 export const Route = createFileRoute('/chat/$projectId')({
@@ -75,6 +75,8 @@ function Chat() {
   const [previewCollapsed, setPreviewCollapsed] = useState(true);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const hasGeneratedTitleRef = useRef(false);
 
   const editorUrl = getEditorUrl(_projectId!);
 
@@ -106,10 +108,22 @@ function Chat() {
     id: _chatId || 'new-chat',
   });
 
+  const { mutate: generateTitle } = useMutation({
+    ...trpc.generateTitle.generateTitle.mutationOptions(),
+    onSuccess: () => {
+      if (_projectId) {
+        queryClient.invalidateQueries({
+          queryKey: trpc.chat.getChats.queryKey({ projectId: _projectId }),
+        });
+      }
+    },
+  });
+
   useEffect(() => {
     if (_chatId !== currentChatIdRef.current) {
       currentChatIdRef.current = _chatId;
       hasInitializedRef.current = false;
+      hasGeneratedTitleRef.current = false;
       setMessages([]);
     }
   }, [_chatId, setMessages]);
@@ -138,13 +152,27 @@ function Chat() {
     if (!(hasText || hasAttachments)) {
       return;
     }
+    
+
+    const isFirstMessage = messages.length === 0 && 
+      !isLoadingMessages && 
+      (!initialMessages || initialMessages.length === 0);
+    
     sendMessage({ text: input });
+    const messageText = input.trim();
     setInput('');
-  }, [input, sendMessage]);
+    
+    if (isFirstMessage && _chatId && !hasGeneratedTitleRef.current && hasText) {
+      hasGeneratedTitleRef.current = true;
+      generateTitle({
+        message: messageText,
+        chatId: _chatId,
+      });
+    }
+  }, [input, sendMessage, messages.length, initialMessages, isLoadingMessages, _chatId, generateTitle]);
 
 
 
-  // If code editor is open in fullscreen, show only the editor
   if (showCodeEditor) {
     return (
       <CodeEditor

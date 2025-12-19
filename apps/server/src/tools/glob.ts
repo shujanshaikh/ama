@@ -1,8 +1,8 @@
-    import { executeTool } from "@/lib/executeTool";
+import { executeTool } from "@/lib/executeTool";
 import { tool } from "ai";
-    import { z } from "zod";
+import { z } from "zod";
     
-    const globSchema = z.object({
+const globSchema = z.object({
     pattern: z.string().describe('Glob pattern (e.g., "**/*.js")'),
     path: z.string().optional().describe('Relative directory path to search in'),
 })

@@ -39,20 +39,28 @@ function DashboardPage() {
   };
 
   const handleProjectClick = async (project: Project) => {
-    try {
-      const chatId = await createChat({
-        title: "New Chat",
-        projectId: project.id,
-      });
-      if (chatId) {
-        navigate({
-          to: '/chat/$projectId',
-          params: { projectId: project.id },
-          search: { chat: chatId },
+    if (project.id) {
+      navigate({
+        to: '/chat/$projectId',
+        params: { projectId: project.id },
+        search: { chat: "" },
+      })
+    } else {
+      try {
+        const chatId = await createChat({
+          title: "New Chat",
+          projectId: project.id,
         });
+        if (chatId) {
+          navigate({
+            to: '/chat/$projectId',
+            params: { projectId: project.id },
+            search: { chat: chatId },
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create chat:', error);
       }
-    } catch (error) {
-      console.error('Failed to create chat:', error);
     }
   };
 

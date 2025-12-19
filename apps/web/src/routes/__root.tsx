@@ -12,7 +12,6 @@ import type { QueryClient } from "@tanstack/react-query";
 import { SidebarProvider, SidebarInset, useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { PanelLeftIcon } from "lucide-react";
-
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import type { AppRouter } from "@ama/server";
 import { FetchConnection } from "@/components/fetchConnection";
@@ -34,13 +33,18 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "ama"
+				title: "ama",
 			},
 		],
 		links: [
 			{
 				rel: "stylesheet",
 				href: appCss,
+			},
+			{
+				rel: "icon",
+				type: "image/svg+xml",
+				href: "/ama.svg",
 			},
 		],
 	}),
