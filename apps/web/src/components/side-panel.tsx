@@ -60,6 +60,11 @@ export function Sidepanel() {
         enabled: !!projectId,
     });
 
+    const { data: projectData } = useQuery({
+        ...trpc.project.getProject.queryOptions({ projectId: projectId || "" }),
+        enabled: !!projectId,
+    });
+
     const chats: Chat[] = (chatsData as Chat[] | undefined) ?? [];
 
     const filteredChats = useMemo(() => {
@@ -160,7 +165,7 @@ export function Sidepanel() {
                     <>
                         <button className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/50 hover:bg-muted/40 transition-colors mb-4 w-fit">
                             <div className="w-2.5 h-2.5 rounded-sm bg-rose-400" />
-                            <span className="text-sm text-foreground/90">ama</span>
+                            <span className="text-sm text-foreground/90">{projectData?.name || projectId}</span>
                             <ChevronDown className="w-3 h-3 text-muted-foreground" />
                         </button>
 

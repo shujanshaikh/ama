@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -17,11 +16,6 @@ import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as AuthenticatedChatProjectIdRouteImport } from './routes/_authenticated/chat.$projectId'
 
-const ChatRoute = ChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -55,7 +49,6 @@ const AuthenticatedChatProjectIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/chat': typeof ChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -63,7 +56,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/chat': typeof ChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -73,7 +65,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/chat': typeof ChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -83,7 +74,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/chat'
     | '/dashboard'
     | '/chat/$projectId'
     | '/api/auth/callback'
@@ -91,7 +81,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/chat'
     | '/dashboard'
     | '/chat/$projectId'
     | '/api/auth/callback'
@@ -100,7 +89,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/chat'
     | '/_authenticated/dashboard'
     | '/_authenticated/chat/$projectId'
     | '/api/auth/callback'
@@ -110,20 +98,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  ChatRoute: typeof ChatRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/chat': {
-      id: '/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof ChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -186,7 +166,6 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  ChatRoute: ChatRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }

@@ -6,17 +6,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { queryOptions } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { getSignInUrl } from "@/authkit/serverFunction";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
-  // loader: async ({ context }) => {
-  //   const { user } = context;
-  //   const url = await getSignInUrl();
-  //   return { user, url };
-  // },
-
-});
+ });
 
 interface Project {
   id: string;
@@ -24,6 +17,7 @@ interface Project {
   cwd: string;
   gitRepo: string;
 }
+
 
 function DashboardPage() {
   const trpc = useTRPC();

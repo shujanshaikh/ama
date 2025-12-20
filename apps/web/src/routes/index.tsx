@@ -1,13 +1,26 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AmaLogo } from "../components/ama-logo";
 import { motion } from "motion/react";
 import { PromptBox } from "@/components/prompt-box";
+import { getSignInUrl } from "@/authkit/serverFunction";
+import SignInButton from "@/components/sign-in-components";
 
 export const Route = createFileRoute("/")({
 	component: LandingPage,
+	beforeLoad: async ({ context }) => {
+		if (context.user) {
+			throw redirect({ to: "/dashboard" });
+		}
+	},
+	loader: async ({ context }) => {
+		const { user } = context;
+		const url = await getSignInUrl();
+		return { user, url };
+	  },
 });
 
 function LandingPage() {
+	const { user, url } = Route.useLoaderData();
 	return (
 		<div className="min-h-screen  flex flex-col font-sans">
 			<header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -17,9 +30,7 @@ function LandingPage() {
 						{/* <span className="font-bold text-xl tracking-tight hidden md:block">ama</span> */}
 					</div>
 					<div className="flex items-center gap-4">
-						{/* <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground hidden sm:block">
-							Log in
-						</Link> */}
+						<SignInButton user={user} url={url} />
 					</div>
 				</div>
 			</header>

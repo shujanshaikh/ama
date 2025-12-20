@@ -78,6 +78,12 @@ agentRouter.post("/agent-proxy", async (c) => {
 						})),
 					});
 				},
+				onError : (error : unknown) => {
+					if (error instanceof Error) {
+						return error.message;
+					}
+					return String(error);
+				},
 			}),
 		});
 	});
