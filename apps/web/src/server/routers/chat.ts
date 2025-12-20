@@ -1,10 +1,9 @@
-import { db } from "@/db";
-import { protectedProcedure, router } from "./trpc";
+import { db, chat, getMessagesByChatId } from "@ama/db";
+import { protectedProcedure, router } from "../index";
+import { convertToUIMessages } from "../lib/convertToUIMessage";
 import { z } from "zod";
-import { chat } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { getMessagesByChatId } from "@/db/queries";
-import { convertToUIMessages } from "@/lib/convertoUiMessages";
+
 
 export const chatRouter = router({
     createChat: protectedProcedure.input(z.object({

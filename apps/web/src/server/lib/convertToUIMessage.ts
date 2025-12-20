@@ -1,8 +1,8 @@
-import type { ChatMessage } from "./tool-types";
-import type { DBMessage } from "@/db/schema";
+import type { ChatMessage } from "@ama/server/lib/tool-types";
+import type { DBMessage } from "@ama/db";
 import type { UIMessagePart } from "ai";
-import type { CustomUIDataTypes } from "./tool-types";
-import type { ChatTools } from "./tool-types";
+import type { CustomUIDataTypes } from "@ama/server/lib/tool-types";
+import type { ChatTools } from "@ama/server/lib/tool-types";
 
 export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
     return messages.map((message) => ({
@@ -14,3 +14,4 @@ export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
       },
     }));
   }
+

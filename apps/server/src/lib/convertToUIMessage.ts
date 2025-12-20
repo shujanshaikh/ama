@@ -1,0 +1,17 @@
+import type { ChatMessage } from "@/lib/tool-types";
+import type { DBMessage } from "@ama/db";
+import type { UIMessagePart } from "ai";
+import type { CustomUIDataTypes } from "@/lib/tool-types";
+import type { ChatTools } from "@/lib/tool-types";
+
+export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
+    return messages.map((message) => ({
+      id: message.id,
+      role: message.role as 'user' | 'assistant' | 'system',
+      parts: message.parts as UIMessagePart<CustomUIDataTypes, ChatTools>[],
+      metadata: {
+        createdAt: message.createdAt.toISOString(),
+      },
+    }));
+  }
+

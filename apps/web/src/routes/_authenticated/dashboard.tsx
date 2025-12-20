@@ -3,13 +3,19 @@ import { AmaLogo } from "@/components/ama-logo";
 import { PromptBox } from "@/components/prompt-box";
 import { useTRPC } from "@/utils/trpc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthStatus } from "@/hooks/use-user";
 import { useNavigate } from "@tanstack/react-router";
 import { queryOptions } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { getSignInUrl } from "@/authkit/serverFunction";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
+  // loader: async ({ context }) => {
+  //   const { user } = context;
+  //   const url = await getSignInUrl();
+  //   return { user, url };
+  // },
+
 });
 
 interface Project {
@@ -89,22 +95,7 @@ function DashboardPage() {
     console.log("Submitted:", message);
   };
 
-  const { user, isLoading, isAuthenticated } = useAuthStatus();
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen overflow-hidden bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <AmaLogo size={48} />
-          <span className="text-sm text-muted-foreground animate-pulse">Loading...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !user) {
-    navigate({ to: "/login" });
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">

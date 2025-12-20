@@ -1,7 +1,9 @@
-import { trpc } from "@/router";
+
 import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "./trpc";
 
 export function getEditorUrl(projectId: string) {
+  const trpc = useTRPC();
     const { data: projectData } = useQuery({
         ...trpc.project.getProject.queryOptions({ projectId }),
         enabled: !!projectId,

@@ -9,25 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ChatProjectIdRouteImport } from './routes/chat.$projectId'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
+import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
+import { Route as AuthenticatedChatProjectIdRouteImport } from './routes/_authenticated/chat.$projectId'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -35,70 +31,104 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChatProjectIdRoute = ChatProjectIdRouteImport.update({
-  id: '/$projectId',
-  path: '/$projectId',
-  getParentRoute: () => ChatRoute,
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
+  id: '/api/trpc/$',
+  path: '/api/trpc/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
+  id: '/api/auth/callback',
+  path: '/api/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedChatProjectIdRoute =
+  AuthenticatedChatProjectIdRouteImport.update({
+    id: '/chat/$projectId',
+    path: '/chat/$projectId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/chat': typeof ChatRouteWithChildren
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
-  '/chat/$projectId': typeof ChatProjectIdRoute
+  '/chat': typeof ChatRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/chat': typeof ChatRouteWithChildren
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
-  '/chat/$projectId': typeof ChatProjectIdRoute
+  '/chat': typeof ChatRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/chat': typeof ChatRouteWithChildren
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
-  '/chat/$projectId': typeof ChatProjectIdRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/chat': typeof ChatRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/chat' | '/dashboard' | '/login' | '/chat/$projectId'
+  fullPaths:
+    | '/'
+    | '/chat'
+    | '/dashboard'
+    | '/chat/$projectId'
+    | '/api/auth/callback'
+    | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chat' | '/dashboard' | '/login' | '/chat/$projectId'
-  id: '__root__' | '/' | '/chat' | '/dashboard' | '/login' | '/chat/$projectId'
+  to:
+    | '/'
+    | '/chat'
+    | '/dashboard'
+    | '/chat/$projectId'
+    | '/api/auth/callback'
+    | '/api/trpc/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/chat'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/chat/$projectId'
+    | '/api/auth/callback'
+    | '/api/trpc/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ChatRoute: typeof ChatRouteWithChildren
-  DashboardRoute: typeof DashboardRoute
-  LoginRoute: typeof LoginRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  ChatRoute: typeof ChatRoute
+  ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
+  ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/chat': {
       id: '/chat'
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -108,31 +138,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chat/$projectId': {
-      id: '/chat/$projectId'
-      path: '/$projectId'
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/trpc/$': {
+      id: '/api/trpc/$'
+      path: '/api/trpc/$'
+      fullPath: '/api/trpc/$'
+      preLoaderRoute: typeof ApiTrpcSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/callback': {
+      id: '/api/auth/callback'
+      path: '/api/auth/callback'
+      fullPath: '/api/auth/callback'
+      preLoaderRoute: typeof ApiAuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/chat/$projectId': {
+      id: '/_authenticated/chat/$projectId'
+      path: '/chat/$projectId'
       fullPath: '/chat/$projectId'
-      preLoaderRoute: typeof ChatProjectIdRouteImport
-      parentRoute: typeof ChatRoute
+      preLoaderRoute: typeof AuthenticatedChatProjectIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
-interface ChatRouteChildren {
-  ChatProjectIdRoute: typeof ChatProjectIdRoute
+interface AuthenticatedRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedChatProjectIdRoute: typeof AuthenticatedChatProjectIdRoute
 }
 
-const ChatRouteChildren: ChatRouteChildren = {
-  ChatProjectIdRoute: ChatProjectIdRoute,
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedChatProjectIdRoute: AuthenticatedChatProjectIdRoute,
 }
 
-const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ChatRoute: ChatRouteWithChildren,
-  DashboardRoute: DashboardRoute,
-  LoginRoute: LoginRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  ChatRoute: ChatRoute,
+  ApiAuthCallbackRoute: ApiAuthCallbackRoute,
+  ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

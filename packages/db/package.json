@@ -1,0 +1,32 @@
+{
+  "name": "@ama/db",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./schema": {
+      "types": "./src/schema.ts",
+      "default": "./src/schema.ts"
+    },
+    "./queries": {
+      "types": "./src/queries.ts",
+      "default": "./src/queries.ts"
+    }
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1"
+  },
+  "devDependencies": {
+    "@ama/config": "workspace:*",
+    "@types/node": "^22.10.5",
+    "drizzle-kit": "^0.31.8",
+    "typescript": "^5.9.2"
+  }
+}

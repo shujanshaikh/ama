@@ -1,16 +1,15 @@
-import { router, protectedProcedure } from "./trpc";
+import { router, protectedProcedure } from "../index";
 import { z } from "zod";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import { db } from "@/db";
-import { chat } from "@/db/schema";
+import { db, chat } from "@ama/db";
 import { eq } from "drizzle-orm";
 
 export const generateTitleRouter = router({
     generateTitle: protectedProcedure.input(z.object({
         message: z.string(),
         chatId: z.string(),
-    })).mutation(async ({ ctx, input }) => {
+    })).mutation(async ({ input }) => {
         const { message, chatId } = input;
         const title = await generateTitle(message);
         if (!title) {

@@ -4,8 +4,8 @@ import { convertToModelMessages } from "ai"
 import { SYSTEM_PROMPT } from "@/lib/prompt";
 import { tools } from "@/tools/tool";
 import { openrouter } from "@openrouter/ai-sdk-provider"
-import { getMessagesByChatId, saveMessages } from "@/db/queries";
-import { convertToUIMessages } from "@/lib/convertoUiMessages";
+import { getMessagesByChatId, saveMessages } from "@ama/db";
+import { convertToUIMessages } from "@/lib/convertToUIMessage";
 import { requestContext } from "@/lib/context";
 import { agentStreams } from "@/index";
 

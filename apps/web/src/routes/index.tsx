@@ -17,9 +17,9 @@ function LandingPage() {
 						{/* <span className="font-bold text-xl tracking-tight hidden md:block">ama</span> */}
 					</div>
 					<div className="flex items-center gap-4">
-						<Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground hidden sm:block">
+						{/* <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground hidden sm:block">
 							Log in
-						</Link>
+						</Link> */}
 					</div>
 				</div>
 			</header>

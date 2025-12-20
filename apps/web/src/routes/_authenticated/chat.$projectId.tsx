@@ -53,12 +53,13 @@ import {
 import { API_URL } from '@/utils/constant';
 import { Button } from '@/components/ui/button';
 import { ToolRenderer } from '@/components/tool-render';
-import type { ChatMessage } from '@ama/server/lib/tool-types';
+
 import { useTRPC } from '@/utils/trpc';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getEditorUrl } from '@/utils/get-editor-url';
+import type { ChatMessage } from '@ama/server/lib/tool-types';
 
-export const Route = createFileRoute('/chat/$projectId')({
+export const Route = createFileRoute('/_authenticated/chat/$projectId')({
   component: Chat,
   validateSearch: (search: Record<string, unknown>) => {
     return {
@@ -138,7 +139,7 @@ function Chat() {
 
     if (initialMessages && initialMessages.length > 0) {
       if (messages.length === 0 || !hasInitializedRef.current) {
-        setMessages(initialMessages);
+        setMessages(initialMessages as ChatMessage[]);
         hasInitializedRef.current = true;
       }
     } else {
