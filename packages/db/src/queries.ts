@@ -1,4 +1,4 @@
-import { message, type DBMessage } from "./schema";
+import { message, type DBMessage, chat, project } from "./schema";
 import { db } from "./index";
 import { eq } from "drizzle-orm";
 import { asc } from "drizzle-orm";
@@ -25,6 +25,25 @@ export async function saveMessages({
         .orderBy(asc(message.createdAt));
     } catch (error) {
       throw new Error("Failed to get messages by chat id" + error);
+    }
+  }
+
+  export async function getProjectByChatId({ chatId }: { chatId: string }) {
+    try {
+      const result = await db
+        .select({
+          projectId: project.id,
+          projectCwd: project.cwd,
+          projectName: project.name,
+        })
+        .from(chat)
+        .innerJoin(project, eq(chat.projectId, project.id))
+        .where(eq(chat.id, chatId))
+        .limit(1);
+      
+      return result[0] || null;
+    } catch (error) {
+      throw new Error("Failed to get project by chat id: " + error);
     }
   }
 

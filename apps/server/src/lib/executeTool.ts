@@ -1,5 +1,5 @@
 import { agentStreams } from "../index"
-import { getToken } from "./context"
+import { getToken, getProjectInfo } from "./context"
 
 export const pendingToolCalls = new Map<string, {
     resolve: (result: any) => void
@@ -7,8 +7,12 @@ export const pendingToolCalls = new Map<string, {
 }>()
 
 
-export const executeTool = async (toolName: string, inputParameters: Object) => {
+export const executeTool = async (
+  toolName: string, 
+  inputParameters: Object
+) => {
    const token = getToken()
+   const { projectId, projectCwd } = getProjectInfo()
    const wsConnection = agentStreams.get(token)
    if(!wsConnection) {
     throw new Error("No WebSocket connection found");
@@ -19,6 +23,8 @@ export const executeTool = async (toolName: string, inputParameters: Object) => 
     id: callId,
     tool: toolName,
     args: inputParameters,
+    projectId,
+    projectCwd,
    }))
 
    return new Promise((resolve, reject) => {

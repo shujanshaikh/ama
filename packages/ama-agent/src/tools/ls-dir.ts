@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { access, readdir, stat } from "node:fs/promises";
 import path from "node:path";
+import { validatePath, resolveProjectPath } from "../lib/sandbox";
 
 const excludePatterns = [
   "node_modules",
@@ -21,7 +22,7 @@ const listSchema = z.object({
   includeDirectories: z.boolean().optional().describe("Whether to include directories in results (default: true)"),
   includeFiles: z.boolean().optional().describe("Whether to include files in results (default: true)"),
 })
-export const list = async function(input: z.infer<typeof listSchema>) {
+export const list = async function(input: z.infer<typeof listSchema>, projectCwd?: string) {
   const { path: relativePath, recursive, maxDepth, pattern, includeDirectories, includeFiles } = input;
 
     if (maxDepth !== undefined) {
@@ -45,8 +46,24 @@ export const list = async function(input: z.infer<typeof listSchema>) {
         error: 'INVALID_INCLUDE_OPTIONS',
       };
     }
+    
     try {
-      const absolutePath = relativePath ? path.resolve(relativePath) : process.cwd();
+      const basePath = projectCwd || process.cwd();
+      const absolutePath = relativePath 
+        ? resolveProjectPath(relativePath, basePath)
+        : basePath;
+      
+      // Validate path if projectCwd is provided and relativePath is given
+      if (projectCwd && relativePath) {
+        const validation = validatePath(relativePath, projectCwd);
+        if (!validation.valid) {
+          return {
+            success: false,
+            message: validation.error || 'Path validation failed',
+            error: 'ACCESS_DENIED',
+          };
+        }
+      }
       try {
         await access(absolutePath);
       } catch {

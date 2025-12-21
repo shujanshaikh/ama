@@ -8,6 +8,7 @@ export default defineConfig([
     entry: {
       cli: "./src/cli.ts",
       server: "./src/server.ts",
+      "lib/daemon-entry": "./src/lib/daemon-entry.ts",
     },
     format: ["cjs", "esm"],
     dts: true,

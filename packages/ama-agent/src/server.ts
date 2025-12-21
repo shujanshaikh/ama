@@ -17,10 +17,12 @@ interface ToolCall {
   id: string
   tool: string
   args: Record<string, any>
+  projectId?: string
+  projectCwd?: string
 }
 
 
-const toolExecutors: Record<string, (args: any) => Promise<any>> = {
+const toolExecutors: Record<string, (args: any, projectCwd?: string) => Promise<any>> = {
   editFile: editFiles,
   deleteFile: deleteFile,
   grep: grepTool,
@@ -57,7 +59,7 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
     const message: ToolCall = JSON.parse(data.toString())
     
     if (message.type === 'tool_call') {
-      console.log(`Executing tool: ${message.tool}`)
+      console.log(`Executing tool: ${message.tool}${message.projectCwd ? ` (project: ${message.projectCwd})` : ''}`)
       
       try {
         const executor = toolExecutors[message.tool]
@@ -65,7 +67,8 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
           throw new Error(`Unknown tool: ${message.tool}`)
         }
         
-        const result = await executor(message.args)
+        // Pass projectCwd to executor if provided
+        const result = await executor(message.args, message.projectCwd)
         
         ws.send(JSON.stringify({
           type: 'tool_result',

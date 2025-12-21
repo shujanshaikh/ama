@@ -3,16 +3,13 @@ import { exec } from "child_process"
 import { promisify } from "util"
 import fs from "fs"
 import path from "path"
-import os from "os"
 import pc from "picocolors"
-
+import { AMA_DIR, CODE_DIR, STORAGE_DIR } from "../constant"
 const execAsync = promisify(exec)
 
-const AMA_DIR = path.join(os.homedir(), '.ama')
-const CODE_DIR = path.join(AMA_DIR, 'code')
-const STORAGE_DIR = path.join(AMA_DIR, 'storage')
 
-const CODE_SERVER_VERSION = "4.96.4"
+
+export const CODE_SERVER_VERSION = "4.96.4"
 
 function getPlatformInfo(): { platform: string; arch: string; ext: string } {
     const platform = process.platform

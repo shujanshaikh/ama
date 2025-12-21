@@ -3,6 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { calculateDiffStats } from "../lib/diff";
+import { validatePath, resolveProjectPath } from "../lib/sandbox";
 const editFilesSchema = z.object({
   target_file: z
     .string()
@@ -11,10 +12,23 @@ const editFilesSchema = z.object({
   providedNewFile : z.boolean().describe("The new file content to write to the file").optional(),
 })
 
-export const editFiles = async function(input: z.infer<typeof editFilesSchema>) {
+export const editFiles = async function(input: z.infer<typeof editFilesSchema>, projectCwd?: string) {
     const { target_file, content, providedNewFile } = input;
     try {
-      const filePath = path.resolve(process.cwd(), target_file);
+      // Validate path if projectCwd is provided
+      if (projectCwd) {
+        const validation = validatePath(target_file, projectCwd);
+        if (!validation.valid) {
+          return {
+            success: false,
+            error: validation.error || 'Path validation failed',
+            message: `Failed to edit file: ${target_file}`,
+          };
+        }
+      }
+      
+      const basePath = projectCwd || process.cwd();
+      const filePath = resolveProjectPath(target_file, basePath);
       const dirPath = path.dirname(filePath);
 
       // Ensure directory exists

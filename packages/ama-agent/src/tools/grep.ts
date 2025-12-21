@@ -1,6 +1,8 @@
 import { exec } from "node:child_process";
 import { promisify } from "util";
 import { z } from "zod";
+import path from "node:path";
+import { validatePath } from "../lib/sandbox";
 
 
 export const GREP_LIMITS = {
@@ -22,10 +24,21 @@ const grepSchema = z.object({
 
 export const execAsync = promisify(exec);
 
-export const grepTool = async function(input: z.infer<typeof grepSchema>) {
+export const grepTool = async function(input: z.infer<typeof grepSchema>, projectCwd?: string) {
     const { query, options } = input;
     try {
       const { includePattern, excludePattern, caseSensitive } = options || {};
+      
+      const searchDir = projectCwd || process.cwd();
+      
+      // Validate that we can search in this directory
+      if (projectCwd && !path.isAbsolute(projectCwd)) {
+        return {
+          success: false,
+          message: 'Invalid project directory',
+          error: 'INVALID_PROJECT_DIR',
+        };
+      }
 
       let command = `rg -n --with-filename "${query}"`;
       if (caseSensitive) {
@@ -39,6 +52,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>) {
       }
 
       command += ` --max-count 50`;
+      command += ` "${searchDir}"`;
 
       const { stdout } = await execAsync(command);
 

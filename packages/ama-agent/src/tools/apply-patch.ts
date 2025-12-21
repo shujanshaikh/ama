@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { calculateDiffStats } from "../lib/diff";
+import { validatePath, resolveProjectPath } from "../lib/sandbox";
 
 const apply_patchSchema = z.object({
     file_path: z.string().describe("The path to the file you want to search and replace in. You can use either a relative path in the workspace or an absolute path. If an absolute path is provided, it will be preserved as is"),
@@ -9,7 +9,7 @@ const apply_patchSchema = z.object({
     old_string: z.string().describe("The text to replace (must be unique within the file, and must match the file contents exactly, including all whitespace and indentation)"),
 })
 
-export const apply_patch = async function(input: z.infer<typeof apply_patchSchema>) {
+export const apply_patch = async function(input: z.infer<typeof apply_patchSchema>, projectCwd?: string) {
     const { file_path, new_string, old_string } = input;    
     try {
             if (!file_path) {
@@ -44,7 +44,20 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
                 };
             }
 
-            const absolute_file_path = path.resolve(file_path);
+            // Validate path if projectCwd is provided
+            if (projectCwd) {
+                const validation = validatePath(file_path, projectCwd);
+                if (!validation.valid) {
+                    return {
+                        success: false,
+                        message: validation.error || 'Path validation failed',
+                        error: 'ACCESS_DENIED',
+                    };
+                }
+            }
+
+            const basePath = projectCwd || process.cwd();
+            const absolute_file_path = resolveProjectPath(file_path, basePath);
 
             let fileContent: string;
             try {

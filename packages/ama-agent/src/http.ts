@@ -1,13 +1,10 @@
 import { Hono } from "hono"
 import { serve } from "@hono/node-server"
 import { connectToServer, getConnectionStatus } from "./server"
-import { cors } from "hono/cors"
-import * as fs from "fs";
-import * as path from "path";
-import { execSync } from "node:child_process";  
-import { upgradeWebSocket } from "hono/bun"
+import { cors } from "hono/cors" 
 import { getContext } from "./lib/get-files";
 import { scanIdeProjects } from "./lib/ide-projects";
+import { projectRegistry } from "./lib/project-registry";
 
 let wsConnection: ReturnType<typeof connectToServer> | null = null
 
@@ -59,6 +56,40 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
       } catch (error) {
         return c.json({ error: "Failed to scan IDE projects" }, 500);
       }
+    });
+
+    // Project registration endpoints
+    app.post("/projects/register", async (c) => {
+      try {
+        const { projectId, cwd, name } = await c.req.json();
+        if (!projectId || !cwd) {
+          return c.json({ error: "projectId and cwd are required" }, 400);
+        }
+        projectRegistry.register(projectId, cwd, name);
+        return c.json({ success: true, projectId, cwd });
+      } catch (error: any) {
+        return c.json({ error: error.message || "Failed to register project" }, 500);
+      }
+    });
+
+    app.get("/projects", (c) => {
+      const projects = projectRegistry.list();
+      return c.json({ projects });
+    });
+
+    app.get("/projects/:projectId", (c) => {
+      const projectId = c.req.param("projectId");
+      const project = projectRegistry.getProject(projectId);
+      if (!project) {
+        return c.json({ error: "Project not found" }, 404);
+      }
+      return c.json({ project });
+    });
+
+    app.delete("/projects/:projectId", (c) => {
+      const projectId = c.req.param("projectId");
+      projectRegistry.unregister(projectId);
+      return c.json({ success: true });
     });
 
 

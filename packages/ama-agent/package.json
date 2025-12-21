@@ -3,7 +3,7 @@
     "type": "module",
     "version": "0.0.1",
     "description": "ama cli that connects to server backend to execute tool calls locally",
-    "keywords": ["convex", "cli", "agent", "local", "tools"],
+    "keywords": ["ama", "cli", "agent", "local", "tools"],
     "author": "",
     "license": "ISC",
     "repository": {
@@ -13,6 +13,7 @@
     },
     "prepare": "bun run build",
     "bin": {
+        "ama": "./dist/cli.js",
         "ama-agent": "./dist/cli.js"
     },
     "main": "./dist/cli.js",

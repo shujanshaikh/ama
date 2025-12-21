@@ -1,7 +1,7 @@
 
 import { z } from "zod";
 import { readFile, unlink } from "node:fs/promises";
-import path from "node:path";
+import { validatePath, resolveProjectPath } from "../lib/sandbox";
 
 
 const deleteFileSchema = z.object({
@@ -9,7 +9,7 @@ const deleteFileSchema = z.object({
 });
 
 
-export const deleteFile = async function(input: z.infer<typeof deleteFileSchema>) {
+export const deleteFile = async function(input: z.infer<typeof deleteFileSchema>, projectCwd?: string) {
     const { path: realPath } = input;
         if (!realPath) {
             return {
@@ -18,8 +18,22 @@ export const deleteFile = async function(input: z.infer<typeof deleteFileSchema>
                 error: 'MISSING_PATH',
             };
         }
+        
+        // Validate path if projectCwd is provided
+        if (projectCwd) {
+            const validation = validatePath(realPath, projectCwd);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    message: validation.error || 'Path validation failed',
+                    error: 'ACCESS_DENIED',
+                };
+            }
+        }
+        
         try {
-            const absolute_file_path = path.resolve(realPath)
+            const basePath = projectCwd || process.cwd();
+            const absolute_file_path = resolveProjectPath(realPath, basePath);
             if (!absolute_file_path) {
                 return {
                     success: false,
