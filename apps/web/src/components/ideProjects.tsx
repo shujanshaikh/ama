@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 type IdeProject = {
   name: string;
   path: string;
-  // older clients might send `ide`, current scanner sends `type`
   ide?: string;
   type?: string;
 };
@@ -175,9 +174,6 @@ export function IdeProjects() {
                     {project.name}
                   </div>
                 </div>
-                {/* <div className="mt-0.5 font-mono text-[11px] text-muted-foreground/70 truncate">
-                  {project.path}
-                </div> */}
               </div>
             </div>
 
@@ -188,8 +184,6 @@ export function IdeProjects() {
                 <span className="size-3 rounded-full border border-muted-foreground/30" />
                 <span className="truncate">{subtitleForProject(project)}</span>
               </div>
-              {/* Placeholder to match the screenshot layout; backend doesn't provide timestamps yet */}
-              <span className="shrink-0">1d ago</span>
             </div>
           </div>
         ))}

@@ -2,10 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AmaLogo } from "@/components/ama-logo";
 import { PromptBox } from "@/components/prompt-box";
 import { useTRPC } from "@/utils/trpc";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { queryOptions } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { Folder } from "lucide-react";
 import { IdeProjects } from "@/components/ideProjects";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -22,23 +21,12 @@ interface Project {
 
 function DashboardPage() {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: projects } = useQuery(trpc.project.getProjects.queryOptions());
-  const { mutate: createProject } = useMutation({
-    ...trpc.project.createProject.mutationOptions(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: trpc.project.getProjects.queryOptions().queryKey });
-    },
-  });
 
   const { mutateAsync: createChat } = useMutation({
     ...trpc.chat.createChat.mutationOptions(),
   });
-
-  const handleCreateProject = async (name: string, cwd: string, gitRepo: string) => {
-    createProject({ name, cwd, gitRepo });
-  };
 
   const handleProjectClick = async (project: Project) => {
     if (project.id) {
@@ -67,25 +55,6 @@ function DashboardPage() {
   };
 
   const projectsList: Project[] = (projects as Project[] | undefined) ?? [];
-  const { data: cwd } = useQuery(
-    queryOptions(
-      {
-        queryKey: ['cwd'],
-        queryFn: async () => {
-          const response = await fetch(`http://localhost:3456/cwd`);
-          return response.json();
-        },
-      }
-    )
-  );
-
-  const currentProject = cwd?.projectName
-    ? projectsList.find(p => p.name === cwd.projectName || p.cwd === cwd.cwd)
-    : null;
-
-  const otherProjects = currentProject
-    ? projectsList.filter(p => p.id !== currentProject.id)
-    : projectsList;
 
   const handleSubmit = async (message: string) => {
     console.log("Submitted:", message);
@@ -109,89 +78,34 @@ function DashboardPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 pb-20 bg-background">
-        {currentProject && (
-          <section className="mb-8">
-            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3 px-1">
-              Active
-            </h2>
-            <div
-              onClick={() => handleProjectClick(currentProject)}
-              className="group p-4 cursor-pointer transition-colors hover:bg-muted/40 rounded-lg -mx-4"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-sm">{currentProject.name}</h3>
-                  <p className="font-mono text-[11px] text-muted-foreground/60 truncate max-w-[400px] mt-0.5">
-                    {currentProject.cwd}
-                  </p>
-                </div>
-                <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                  Open
-                </span>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {otherProjects.length > 0 && (
+        {projectsList.length > 0 && (
           <section className="mb-8">
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3 px-1">
               Projects
             </h2>
-            <div className="rounded-xl border border-border overflow-hidden divide-y divide-border">
-              {otherProjects.map((project) => (
-                <div
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {projectsList.map((project) => (
+                <button
                   key={project.id}
                   onClick={() => handleProjectClick(project)}
-                  className="group bg-card/50 p-4 cursor-pointer transition-colors hover:bg-muted/50"
+                  className="group relative flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-card/50 hover:bg-card hover:border-primary/20 hover:shadow-sm transition-all duration-300 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-sm text-foreground/85 group-hover:text-foreground transition-colors">
-                        {project.name}
-                      </h3>
-                      <p className="font-mono text-[11px] text-muted-foreground/60 truncate max-w-[350px] mt-0.5">
-                        {project.cwd}
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                      Open
-                    </span>
+                  <Folder className="size-4 text-muted-foreground/70 group-hover:text-primary transition-colors shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm text-foreground/90 truncate group-hover:text-foreground transition-colors">
+                      {project.name}
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground/50 truncate font-mono mt-0.5">
+                      {project.cwd}
+                    </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </section>
         )}
 
-        {cwd?.projectName && !currentProject && (
-          <section className="mb-8">
-            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3 px-1">
-              Detected
-            </h2>
-            <div className="rounded-xl p-5 flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-[15px] mb-1">{cwd.projectName}</h3>
-                <p className="font-mono text-xs text-muted-foreground">{cwd.cwd}</p>
-              </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() =>
-                  handleCreateProject(
-                    cwd.projectName,
-                    cwd.cwd,
-                    cwd.isGitRepo ? cwd.cwd : ""
-                  )
-                }
-              >
-                Import
-              </Button>
-            </div>
-          </section>
-        )}
-
-        {projectsList.length === 0 && !cwd?.projectName && (
+        {projectsList.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <p className="text-muted-foreground text-sm">No projects yet</p>
             <p className="text-muted-foreground/60 text-xs mt-1">

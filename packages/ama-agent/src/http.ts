@@ -62,35 +62,6 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
     });
 
 
-    app.get("/cwd", (c) => {
-      const cwd = process.cwd();
-      let projectName = path.basename(cwd);
-      let isGitRepo = false;
-
-      try {
-        if (fs.existsSync(path.join(cwd, ".git")) && fs.lstatSync(path.join(cwd, ".git")).isDirectory()) {
-          isGitRepo = true;
-        } else {
-          try {
-            execSync("git rev-parse --is-inside-work-tree", { cwd, stdio: "ignore" });
-            isGitRepo = true;
-          } catch {
-            isGitRepo = false;
-          }
-        }
-      } catch {
-        isGitRepo = false;
-      }   
-
-      return c.body(
-        JSON.stringify({
-          cwd,
-          projectName,
-          isGitRepo,
-        })
-      );
-    });
-
     serve({ fetch: app.fetch, port: 3456 });
 
 }
