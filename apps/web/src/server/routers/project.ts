@@ -10,12 +10,12 @@ export const projectRouter = router({
         gitRepo: z.string(),
     })).mutation(async ({ ctx, input }) => {
         const { name, cwd, gitRepo } = input;
-        const newProject = await db.insert(project).values({
+        const [newProject] = await db.insert(project).values({
             name,
             userId: ctx.session.user?.id!,
             cwd,
             gitRepo,
-        });
+        }).returning();
         return newProject;
     }),
 

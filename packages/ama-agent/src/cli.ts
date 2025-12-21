@@ -67,7 +67,7 @@ Usage: ama [command] [options]
 Commands:
   login                 Authorize device
   logout                Log out and remove credentials
-  start                  Start background daemon
+  start                 Start background daemon (background mode is highly recommended for better performance and stability)
   stop                  Stop background daemon
   status                Check daemon status
   project add <path>    Register a project directory

@@ -1,10 +1,12 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, useMutation } from "@tanstack/react-query";
 import * as React from "react";
-import { LayoutGrid, List, Search } from "lucide-react";
+import { LayoutGrid, List, Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { useTRPC } from "@/utils/trpc";
+import { useNavigate } from "@tanstack/react-router";
 
 type IdeProject = {
   name: string;
@@ -44,6 +46,8 @@ function subtitleForProject(p: IdeProject) {
 }
 
 export function IdeProjects() {
+  const trpc = useTRPC();
+  const navigate = useNavigate();
   const { data: ideProjects, isLoading } = useQuery(
     queryOptions({
       queryKey: ["ide-projects"],
@@ -54,9 +58,14 @@ export function IdeProjects() {
     })
   );
 
+  const { mutateAsync: createProject } = useMutation({
+    ...trpc.project.createProject.mutationOptions(),
+  });
+
   const projects: IdeProject[] = ideProjects?.projects ?? [];
   const [search, setSearch] = React.useState("");
   const [view, setView] = React.useState<"grid" | "list">("grid");
+  const [creatingProjectId, setCreatingProjectId] = React.useState<string | null>(null);
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -68,8 +77,30 @@ export function IdeProjects() {
     });
   }, [projects, search]);
 
-  const recentProjects = filtered.slice(0, 4);
-  const suggestedProjects = filtered.slice(4);
+  const suggestedProjects = filtered;
+
+  const handleCreateProject = async (project: IdeProject) => {
+    setCreatingProjectId(project.path);
+    try {
+      const newProject = await createProject({
+        name: project.name,
+        cwd: project.path,
+        gitRepo: "", // Empty for now, can be updated later
+      });
+      
+      if (newProject?.id) {
+        navigate({
+          to: '/chat/$projectId',
+          params: { projectId: newProject.id },
+          search: { chat: "" },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create project:', error);
+    } finally {
+      setCreatingProjectId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -111,7 +142,7 @@ export function IdeProjects() {
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-sm font-medium text-foreground/90">Open existing project</h2>
+        <h2 className="text-sm font-medium text-foreground/90">Suggested projects</h2>
 
         <div className="flex items-center gap-1 rounded-md border border-border bg-card/30 p-1">
           <Button
@@ -154,10 +185,10 @@ export function IdeProjects() {
             : "flex flex-col gap-2"
         )}
       >
-        {recentProjects.map((project) => (
+        {suggestedProjects.map((project) => (
           <div
             key={project.path}
-            className="group cursor-pointer rounded-md border border-border bg-card/30 hover:bg-muted/40 transition-colors p-3"
+            className="group rounded-md border border-border bg-card/30 hover:bg-muted/40 transition-colors p-3"
           >
             <div className="flex items-start gap-2">
               <div
@@ -173,6 +204,23 @@ export function IdeProjects() {
                   <div className="text-sm font-medium text-foreground/90 truncate">
                     {project.name}
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="h-7 w-7 rounded-md shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCreateProject(project);
+                    }}
+                    disabled={creatingProjectId === project.path}
+                  >
+                    {creatingProjectId === project.path ? (
+                      <div className="w-3 h-3 border-2 border-muted-foreground/30 border-t-muted-foreground/70 rounded-full animate-spin" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -188,30 +236,6 @@ export function IdeProjects() {
           </div>
         ))}
       </div>
-
-      {suggestedProjects.length > 0 && (
-        <div className="mt-8">
-          <div className="mb-3">
-            <h3 className="text-sm font-medium text-foreground/90">Suggested</h3>
-            <p className="text-xs text-muted-foreground/70 mt-1">
-              Based on folders you recently opened in Claude Code or VSCode
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            {suggestedProjects.map((project) => (
-              <div
-                key={project.path}
-                className="cursor-pointer rounded-md border border-border bg-card/30 hover:bg-muted/40 transition-colors px-3 py-2"
-              >
-                <div className="text-sm font-medium text-foreground/90 truncate">
-                  {project.name}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </section>
   );
 }
