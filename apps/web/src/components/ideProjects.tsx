@@ -4,6 +4,10 @@ import { LayoutGrid, List, Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/utils/trpc";
 import { useNavigate } from "@tanstack/react-router";
@@ -66,6 +70,7 @@ export function IdeProjects() {
   const [search, setSearch] = React.useState("");
   const [view, setView] = React.useState<"grid" | "list">("grid");
   const [creatingProjectId, setCreatingProjectId] = React.useState<string | null>(null);
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -77,7 +82,16 @@ export function IdeProjects() {
     });
   }, [projects, search]);
 
-  const suggestedProjects = filtered;
+  // Reset to page 1 when search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const itemsPerPage = view === "grid" ? 6 : 10;
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const suggestedProjects = filtered.slice(startIndex, endIndex);
 
   const handleCreateProject = async (project: IdeProject) => {
     setCreatingProjectId(project.path);
@@ -87,7 +101,7 @@ export function IdeProjects() {
         cwd: project.path,
         gitRepo: "", // Empty for now, can be updated later
       });
-      
+
       if (newProject?.id) {
         navigate({
           to: '/chat/$projectId',
@@ -236,6 +250,30 @@ export function IdeProjects() {
           </div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-4">
+          <PaginationPrevious
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentPage((prev) => Math.max(1, prev - 1));
+            }}
+            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+          />
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <PaginationNext
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+            }}
+            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+          />
+        </div>
+      )}
     </section>
   );
 }
