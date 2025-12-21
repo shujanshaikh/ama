@@ -6,10 +6,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { queryOptions } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { IdeProjects } from "@/components/ideProjects";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
- });
+});
 
 interface Project {
   id: string;
@@ -22,6 +23,7 @@ interface Project {
 function DashboardPage() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: projects } = useQuery(trpc.project.getProjects.queryOptions());
   const { mutate: createProject } = useMutation({
     ...trpc.project.createProject.mutationOptions(),
@@ -84,7 +86,7 @@ function DashboardPage() {
   const otherProjects = currentProject
     ? projectsList.filter(p => p.id !== currentProject.id)
     : projectsList;
-  const navigate = useNavigate();
+
   const handleSubmit = async (message: string) => {
     console.log("Submitted:", message);
   };
@@ -92,8 +94,8 @@ function DashboardPage() {
 
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="flex flex-col justify-center min-h-[45vh] px-6 pt-24 pb-12">
+    <div className="w-full h-full bg-background text-foreground">
+      <div className="flex flex-col justify-center min-h-[45vh] px-6 pt-24 pb-12 bg-background">
         <div className="w-full max-w-2xl mx-auto">
           <div className="mb-8">
             <AmaLogo size={52} />
@@ -106,7 +108,7 @@ function DashboardPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 pb-20">
+      <div className="max-w-2xl mx-auto px-6 pb-20 bg-background">
         {currentProject && (
           <section className="mb-8">
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3 px-1">
@@ -197,6 +199,8 @@ function DashboardPage() {
             </p>
           </div>
         )}
+
+        <IdeProjects />
       </div>
     </div>
   );

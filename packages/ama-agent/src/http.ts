@@ -7,6 +7,7 @@ import * as path from "path";
 import { execSync } from "node:child_process";  
 import { upgradeWebSocket } from "hono/bun"
 import { getContext } from "./lib/get-files";
+import { scanIdeProjects } from "./lib/ide-projects";
 
 let wsConnection: ReturnType<typeof connectToServer> | null = null
 
@@ -39,25 +40,8 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
 
 
     app.post("/daemon/status/stream", (c) => {
-      return c.body(new ReadableStream({
-        start(controller) {
-          const sendStatus = () => {
-            const status = wsConnection ? getConnectionStatus(wsConnection) : 'closed';
-            controller.enqueue(`data: ${JSON.stringify({ connected: status === 'open' })}\n\n`);
-          };
-
-          sendStatus();
-          wsConnection?.addEventListener('close', () => {
-            controller.enqueue(`data: ${JSON.stringify({ connected: false })}\n\n`);
-          });
-        }
-      }), {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive'
-        }
-      });
+      const status = wsConnection ? getConnectionStatus(wsConnection) : 'closed';
+      return c.json({ connected: status === 'open' });
     });
 
     app.get("context",async (c) => {
@@ -65,6 +49,18 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
       return c.body(JSON.stringify(context));
     });
     
+    app.get("/ide-projects", async (c) => {
+      try {
+        const projects = await scanIdeProjects();
+        if (!projects) {
+          return c.json({ error: "No projects found" }, 500);
+        }
+        return c.json({ projects });
+      } catch (error) {
+        return c.json({ error: "Failed to scan IDE projects" }, 500);
+      }
+    });
+
 
     app.get("/cwd", (c) => {
       const cwd = process.cwd();

@@ -21,10 +21,10 @@ export interface RouterAppContext {
 export const Route = createRootRouteWithContext<RouterAppContext>()({
 	beforeLoad: async () => {
 		const { user } = await getAuth();
-	
+
 		return { user };
-	  },
-	
+	},
+
 	head: () => ({
 		meta: [
 			{
@@ -50,15 +50,15 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			},
 		],
 	}),
-    loader: async ({ context }) => {
+	loader: async ({ context }) => {
 		const { user } = context;
 		const url = await getSignInUrl();
 		return {
-		  user,
-		  url,
+			user,
+			url,
 		};
-	  },
-	
+	},
+
 	component: RootDocument,
 	notFoundComponent: () => <div>Not Found</div>,
 });
@@ -79,7 +79,7 @@ function RootDocument() {
 					</SidebarInset>
 				</SidebarProvider>
 				<Toaster richColors />
-				<TanStackRouterDevtools position="bottom-left" />
+				<TanStackRouterDevtools position="bottom-left" initialIsOpen={false} />
 				<Scripts />
 			</body>
 		</html>
@@ -95,14 +95,14 @@ function CollapsedSidebarTrigger() {
 
 	return (
 		<div className="absolute top-4 left-4 z-10">
-		<Button
-			data-sidebar="trigger"
-			data-slot="sidebar-trigger"
-			variant="ghost"
-			size="icon-sm"
-			className="rounded-md hover:bg-muted transition-colors flex-shrink-0"
-			onClick={toggleSidebar}
-		>
+			<Button
+				data-sidebar="trigger"
+				data-slot="sidebar-trigger"
+				variant="ghost"
+				size="icon-sm"
+				className="rounded-md hover:bg-muted transition-colors flex-shrink-0"
+				onClick={toggleSidebar}
+			>
 				<PanelLeftIcon />
 				<span className="sr-only">Toggle Sidebar</span>
 			</Button>

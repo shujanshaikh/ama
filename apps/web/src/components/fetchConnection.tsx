@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Terminal, AlertTriangle } from "lucide-react"
 import {
 	Dialog,
@@ -9,72 +10,32 @@ import {
 
 export function FetchConnection() {
 	const [open, setOpen] = useState(true)
-	const [connected, setConnected] = useState(false)
 
-	useEffect(() => {
-		const controller = new AbortController();
-		const { signal } = controller;
+	const { data: connectionData } = useQuery({
+		queryKey: ['connection-status'],
+		queryFn: async () => {
+			const response = await fetch('http://localhost:3456/daemon/status/stream', {
+				method: 'POST',
+			});
 
-		let eventSource: EventSource | null = null;
-
-		const createSSEFromFetch = async () => {
-			try {
-				const response = await fetch('http://localhost:3456/daemon/status/stream', {
-					method: 'POST',
-					headers: {
-						'Accept': 'text/event-stream',
-					},
-					signal,
-				});
-
-				if (!response.body) {
-					throw new Error('No response body for SSE');
-				}
-
-				const reader = response.body.getReader();
-				let buffer = '';
-
-				const read = async () => {
-					while (true) {
-						const { done, value } = await reader.read();
-						if (done) break;
-						const chunk = new TextDecoder().decode(value);
-						buffer += chunk;
-
-						let split;
-						while ((split = buffer.indexOf('\n\n')) !== -1) {
-							const eventChunk = buffer.slice(0, split).trim();
-							buffer = buffer.slice(split + 2);
-
-							if (eventChunk.startsWith('data:')) {
-								try {
-									const jsonString = eventChunk.replace(/^data:\s*/, '');
-									const { connected: isConnected } = JSON.parse(jsonString);
-									setConnected(isConnected);
-
-									// Auto-close dialog when connected
-									if (isConnected) {
-										setOpen(false);
-									}
-								} catch (error) {
-									console.error('Failed to parse EventSource message:', error);
-								}
-							}
-						}
-					}
-				};
-				read();
-			} catch (error) {
-				console.error('SSE fetch error:', error);
+			if (!response.ok) {
+				throw new Error('Failed to fetch connection status');
 			}
-		};
 
-		createSSEFromFetch();
+			return response.json();
+		},
+		refetchInterval: 2000, // Poll every 2 seconds
+		retry: false,
+	});
 
-		return () => {
-			controller.abort();
-		};
-	}, []);
+	const connected = connectionData?.connected ?? false;
+
+	// Auto-close dialog when connected
+	useEffect(() => {
+		if (connected) {
+			setOpen(false);
+		}
+	}, [connected]);
 
 	// Don't render anything if connected
 	if (connected) {
