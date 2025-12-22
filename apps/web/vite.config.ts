@@ -9,7 +9,7 @@ import { nitro } from 'nitro/vite'
 export default defineConfig({
 	server: {
 		port: 3001,
-	  },
+	},
 	ssr: {
 		external: [
 			'@workos-inc/node',
@@ -19,9 +19,9 @@ export default defineConfig({
 			'iron-session',
 			'jose',
 			'@ai-sdk/google',
-			'uploadthing/server',
 			'ai',
 		],
+		noExternal: ['uploadthing', '@uploadthing/shared'],
 	},
 	build: {
 		rollupOptions: {
@@ -33,7 +33,6 @@ export default defineConfig({
 				'iron-session',
 				'jose',
 				'@ai-sdk/google',
-				'uploadthing/server',
 			],
 		},
 	},
