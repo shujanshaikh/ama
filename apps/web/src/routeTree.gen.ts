@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiUploadthingRouteImport } from './routes/api/uploadthing'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
@@ -23,6 +24,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUploadthingRoute = ApiUploadthingRouteImport.update({
+  id: '/api/uploadthing',
+  path: '/api/uploadthing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -50,6 +56,7 @@ const AuthenticatedChatProjectIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/uploadthing': typeof ApiUploadthingRoute
   '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/uploadthing': typeof ApiUploadthingRoute
   '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
@@ -66,6 +74,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/uploadthing': typeof ApiUploadthingRoute
   '/_authenticated/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
@@ -75,6 +84,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/api/uploadthing'
     | '/chat/$projectId'
     | '/api/auth/callback'
     | '/api/trpc/$'
@@ -82,6 +92,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard'
+    | '/api/uploadthing'
     | '/chat/$projectId'
     | '/api/auth/callback'
     | '/api/trpc/$'
@@ -90,6 +101,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/_authenticated/dashboard'
+    | '/api/uploadthing'
     | '/_authenticated/chat/$projectId'
     | '/api/auth/callback'
     | '/api/trpc/$'
@@ -98,6 +110,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  ApiUploadthingRoute: typeof ApiUploadthingRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
@@ -116,6 +129,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/uploadthing': {
+      id: '/api/uploadthing'
+      path: '/api/uploadthing'
+      fullPath: '/api/uploadthing'
+      preLoaderRoute: typeof ApiUploadthingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -166,6 +186,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  ApiUploadthingRoute: ApiUploadthingRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }

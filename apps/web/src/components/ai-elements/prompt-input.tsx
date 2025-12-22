@@ -69,6 +69,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useUploadThing } from "@/utils/uploadthing";
 
 // ============================================================================
 // Provider Context & Types
@@ -413,16 +414,46 @@ export const PromptInputActionAddAttachments = ({
   ...props
 }: PromptInputActionAddAttachmentsProps) => {
   const attachments = usePromptInputAttachments();
+  const { startUpload, isUploading } = useUploadThing("imageUploader", {
+    onClientUploadComplete: async (res) => {
+      if (!res) return;
+
+      // Fetch each uploaded file and add to attachments
+      for (const file of res) {
+        try {
+          const response = await fetch(file.url);
+          const blob = await response.blob();
+          const fileObj = new File([blob], file.name, { type: file.type || blob.type });
+          attachments.add([fileObj]);
+        } catch (error) {
+          console.error('Error fetching uploaded file:', error);
+        }
+      }
+    },
+  });
 
   return (
     <DropdownMenuItem
       {...props}
       onSelect={(e) => {
         e.preventDefault();
-        attachments.openFileDialog();
+        // Trigger file input click for UploadThing
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.accept = 'image/*';
+        input.onchange = async (e) => {
+          const files = (e.target as HTMLInputElement).files;
+          if (files && files.length > 0) {
+            await startUpload(Array.from(files));
+          }
+        };
+        input.click();
       }}
+      disabled={isUploading}
     >
-      <ImageIcon className="mr-2 size-4" /> {label}
+      <ImageIcon className="mr-2 size-4" />
+      {isUploading ? 'Uploading...' : label}
     </DropdownMenuItem>
   );
 };
@@ -826,6 +857,23 @@ export const PromptInputTextarea = ({
   const controller = useOptionalPromptInputController();
   const attachments = usePromptInputAttachments();
   const [isComposing, setIsComposing] = useState(false);
+  const { startUpload } = useUploadThing("imageUploader", {
+    onClientUploadComplete: async (res) => {
+      if (!res) return;
+
+      // Fetch each uploaded file and add to attachments
+      for (const file of res) {
+        try {
+          const response = await fetch(file.url);
+          const blob = await response.blob();
+          const fileObj = new File([blob], file.name, { type: file.type || blob.type });
+          attachments.add([fileObj]);
+        } catch (error) {
+          console.error('Error fetching uploaded file:', error);
+        }
+      }
+    },
+  });
 
   const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.key === "Enter") {
@@ -863,7 +911,7 @@ export const PromptInputTextarea = ({
     }
   };
 
-  const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = (event) => {
+  const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = async (event) => {
     const items = event.clipboardData?.items;
 
     if (!items) {
@@ -883,7 +931,8 @@ export const PromptInputTextarea = ({
 
     if (files.length > 0) {
       event.preventDefault();
-      attachments.add(files);
+      // Upload files via UploadThing
+      await startUpload(files);
     }
   };
 

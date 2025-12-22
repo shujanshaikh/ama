@@ -9,6 +9,8 @@ import {
   MessageResponse,
   MessageActions,
   MessageAction,
+  MessageAttachments,
+  MessageAttachment,
 } from '@/components/ai-elements/message';
 import {
   PromptInput,
@@ -67,7 +69,6 @@ export const Route = createFileRoute('/_authenticated/chat/$projectId')({
     };
   },
 });
-
 
 function Chat() {
   const { projectId: _projectId } = Route.useParams();
@@ -153,16 +154,19 @@ function Chat() {
     if (!(hasText || hasAttachments)) {
       return;
     }
-    
 
-    const isFirstMessage = messages.length === 0 && 
-      !isLoadingMessages && 
+
+    const isFirstMessage = messages.length === 0 &&
+      !isLoadingMessages &&
       (!initialMessages || initialMessages.length === 0);
-    
-    sendMessage({ text: input });
-    const messageText = input.trim();
+
+    sendMessage({
+      text: message.text || '',
+      files: message.files || []
+    });
+    const messageText = message.text.trim();
     setInput('');
-    
+
     if (isFirstMessage && _chatId && !hasGeneratedTitleRef.current && hasText) {
       hasGeneratedTitleRef.current = true;
       generateTitle({
@@ -170,7 +174,7 @@ function Chat() {
         chatId: _chatId,
       });
     }
-  }, [input, sendMessage, messages.length, initialMessages, isLoadingMessages, _chatId, generateTitle]);
+  }, [sendMessage, messages.length, initialMessages, isLoadingMessages, _chatId, generateTitle]);
 
 
 
@@ -249,6 +253,13 @@ function Chat() {
                           return (
                             <Message key={`${message.id}-${i}`} from={message.role}>
                               <MessageContent>
+                                <MessageAttachments>
+                                  {message.parts
+                                    ?.filter((part) => part.type === "file")
+                                    .map((part, index) => (
+                                      <MessageAttachment key={`${message.id}-${index}`} data={part} />
+                                    ))}
+                                </MessageAttachments>
                                 <MessageResponse>
                                   {part.text}
                                 </MessageResponse>
@@ -314,7 +325,7 @@ function Chat() {
                 )}
                 <PromptInput onSubmit={handleSubmit} >
                   <PromptInputHeader>
-                    <PromptInputAttachments>
+                    <PromptInputAttachments >
                       {(attachment) => <PromptInputAttachment data={attachment} />}
                     </PromptInputAttachments>
                   </PromptInputHeader>
