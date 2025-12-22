@@ -36,6 +36,7 @@
     "@trpc/server": "catalog:",
     "@trpc/tanstack-react-query": "^11.8.0",
     "@uploadthing/react": "^7.3.3",
+    "@workos-inc/node": "^7.77.0",
     "@xyflow/react": "^12.10.0",
     "ai": "^5.0.111",
     "class-variance-authority": "^0.7.1",

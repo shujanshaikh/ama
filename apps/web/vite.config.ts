@@ -9,6 +9,14 @@ import { nitro } from 'nitro/vite'
 export default defineConfig({
 	server: {
 		port: 3001,
-	  },	
+	  },
+	ssr: {
+		external: ['@workos-inc/node'],
+	},
+	build: {
+		rollupOptions: {
+			external: ['@workos-inc/node'],
+		},
+	},
 	plugins: [tsconfigPaths(), tailwindcss(), tanstackStart(), viteReact(), nitro()],
 });
