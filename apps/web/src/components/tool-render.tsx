@@ -1,6 +1,8 @@
 import type { ChatMessage } from '@ama/server/lib/tool-types';
 import { motion } from 'motion/react';
 import DiffShow from './diff-show';
+import { useEditHistoryStore } from '@/lib/useEditHistoryStore';
+import { useMutation } from '@tanstack/react-query';
 
 // Subtle streaming indicator - just animated dots
 const StreamingDots = () => (
@@ -21,25 +23,79 @@ const StreamingDots = () => (
   </span>
 );
 
-// Diff badge component for showing +/- lines
-const DiffBadge = ({ added, removed }: { added?: number; removed?: number }) => {
-  if (!added && !removed) return null;
 
+const EditableToolItem = ({ 
+  toolCallId, filePath, oldString, newString, fileName, projectCwd 
+}: {
+  toolCallId: string;
+  filePath: string;
+  oldString: string;
+  newString: string;
+  fileName: string;
+  projectCwd?: string;
+}) => {
+  const { addEdit, acceptEdit, revertEdit } = useEditHistoryStore();
+  const edit = useEditHistoryStore(state => state.edits.find(e => e.id === toolCallId));
+  if (!edit && oldString && newString) {
+    addEdit({ id: toolCallId, filePath, oldContent: oldString, newContent: newString });
+  }
+  const handleAccept = () => acceptEdit(toolCallId);
+  
+  const { mutate: handleReject, isPending: isProcessing } = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('http://localhost:3456/revert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath, oldString, newString, projectCwd }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to revert');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      revertEdit(toolCallId);
+    },
+    onError: (error) => {
+      console.error('Failed to revert:', error);
+    }
+  });
   return (
-    <span className="inline-flex gap-1.5 ml-2">
-      {added && added > 0 && (
-        <span className="text-xs font-mono text-emerald-400/90 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-          +{added}
-        </span>
-      )}
-      {removed && removed > 0 && (
-        <span className="text-xs font-mono text-rose-400/90 bg-rose-500/10 px-1.5 py-0.5 rounded">
-          -{removed}
-        </span>
-      )}
-    </span>
+    <ToolItem>
+      <DiffShow
+        oldString={oldString}
+        newString={newString}
+        fileName={fileName}
+        showActions={true}
+        editStatus={edit?.status}
+        onAccept={handleAccept}
+        onReject={handleReject}
+        isProcessing={isProcessing}
+      />
+    </ToolItem>
   );
 };
+
+// Diff badge component for showing +/- lines
+// const DiffBadge = ({ added, removed }: { added?: number; removed?: number }) => {
+//   if (!added && !removed) return null;
+
+//   return (
+//     <span className="inline-flex gap-1.5 ml-2">
+//       {added && added > 0 && (
+//         <span className="text-xs font-mono text-emerald-400/90 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+//           +{added}
+//         </span>
+//       )}
+//       {removed && removed > 0 && (
+//         <span className="text-xs font-mono text-rose-400/90 bg-rose-500/10 px-1.5 py-0.5 rounded">
+//           -{removed}
+//         </span>
+//       )}
+//     </span>
+//   );
+// };
 
 // Base wrapper with enter animation
 const ToolItem = ({ children, isStreaming = false }: { children: React.ReactNode; isStreaming?: boolean }) => (
@@ -60,7 +116,7 @@ const getFileName = (path?: string) => {
   return parts[parts.length - 1] || path;
 };
 
-export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) => {
+export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][number]; projectCwd?: string }) => {
   // Edit File
   if (part.type === "tool-editFile") {
     const { toolCallId, state } = part;
@@ -91,10 +147,11 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       } | undefined;
       const oldString = output?.old_string || '';
       const newString = output?.new_string || '';
+      const actualFilePath = part.input?.target_file || fileName;
 
       return (
         <ToolItem key={toolCallId}>
-          <DiffShow oldString={oldString} newString={newString} fileName={fileName} />
+          <EditableToolItem toolCallId={toolCallId} filePath={actualFilePath} oldString={oldString} newString={newString} fileName={fileName} projectCwd={projectCwd} />
         </ToolItem>
       );
     }
@@ -275,10 +332,11 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       } | undefined;
       const oldString = output?.old_string || inputOldString;
       const newString = output?.new_string || inputNewString;
+      const actualFilePath = part.input?.file_path || fileName;
 
       return (
         <ToolItem key={toolCallId}>
-          <DiffShow oldString={oldString} newString={newString} fileName={fileName} />
+          <EditableToolItem toolCallId={toolCallId} filePath={actualFilePath} oldString={oldString} newString={newString} fileName={fileName} projectCwd={projectCwd} />
         </ToolItem>
       );
     }

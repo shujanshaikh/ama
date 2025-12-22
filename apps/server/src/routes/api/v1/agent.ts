@@ -50,7 +50,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 				execute: ({ writer: dataStream }) => {
 					const result = streamText({
 						messages: convertToModelMessages(uiMessages),
-						model: openrouter.chat("xiaomi/mimo-v2-flash:free"),
+						model: openrouter.chat("kwaipilot/kat-coder-pro:free"),
 						system: SYSTEM_PROMPT,
 						temperature: 0.7,
 						stopWhen: stepCountIs(10),

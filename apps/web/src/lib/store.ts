@@ -14,3 +14,6 @@ export const prompt = chatStore.select("prompt");
 export const urls = chatStore.select("urls");
 // export const selectedModel = chatStore.select("selectedModel");
 export const forThreadId = chatStore.select("forThreadId");
+
+
+

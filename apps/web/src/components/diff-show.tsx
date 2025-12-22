@@ -2,12 +2,20 @@ import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useMemo } from 'react';
 import { ChevronDown, Minus, Plus, FileCode2 } from 'lucide-react';
+import { Check, X, Loader2 } from 'lucide-react';
+import { Button } from './ui/button';
+
 
 interface DiffShowProps {
   oldString: string;
   newString: string;
   fileName?: string;
   showHeader?: boolean;
+  showActions?: boolean;
+  editStatus?: 'applied' | 'accepted' | 'reverted';
+  onAccept?: () => void;
+  onReject?: () => void;
+  isProcessing?: boolean;
 }
 
 const countDiffLines = (oldStr: string, newStr: string) => {
@@ -85,7 +93,12 @@ export const DiffShow = ({
   oldString,
   newString,
   fileName,
-  showHeader = true
+  showHeader = true,
+  showActions,
+  editStatus,
+  onAccept,
+  onReject,
+  isProcessing,
 }: DiffShowProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -128,7 +141,7 @@ export const DiffShow = ({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             {added > 0 && (
               <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-emerald-400/90 bg-emerald-500/15 px-2 py-0.5 rounded-md">
                 <Plus className="w-2.5 h-2.5" />
@@ -140,6 +153,48 @@ export const DiffShow = ({
                 <Minus className="w-2.5 h-2.5" />
                 {removed}
               </span>
+            )}
+            {showActions && editStatus === 'applied' && (
+              <div className="flex items-center gap-1.5 ml-2">
+                {isProcessing ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAccept?.();
+                      }}
+                      className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400"
+                      title="Accept changes"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onReject?.();
+                      }}
+                      className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-400"
+                      title="Reject changes"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+            {editStatus === 'accepted' && (
+              <span className="text-[10px] font-medium text-emerald-400 bg-emerald-500/15 
+                   px-2 py-0.5 rounded-md ml-2">Accepted</span>
+            )}
+            {editStatus === 'reverted' && (
+              <span className="text-[10px] font-medium text-rose-400 bg-rose-500/15 
+                   px-2 py-0.5 rounded-md ml-2">Reverted</span>
             )}
           </div>
         </motion.button>

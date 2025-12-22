@@ -30,7 +30,7 @@ import {
 } from '@/components/ai-elements/prompt-input';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { CopyIcon, RefreshCcwIcon, CodeIcon, SquareIcon } from 'lucide-react';
+import { CopyIcon, RefreshCcwIcon, CodeIcon, SquareIcon, XIcon, AlertCircleIcon } from 'lucide-react';
 import {
   Source,
   Sources,
@@ -55,6 +55,7 @@ import {
 import { API_URL } from '@/utils/constant';
 import { Button } from '@/components/ui/button';
 import { ToolRenderer } from '@/components/tool-render';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 import { useTRPC } from '@/utils/trpc';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -76,11 +77,18 @@ function Chat() {
   const [input, setInput] = useState('');
   const [previewCollapsed, setPreviewCollapsed] = useState(true);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [dismissedError, setDismissedError] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hasGeneratedTitleRef = useRef(false);
 
   const editorUrl = getEditorUrl(_projectId!);
+  
+  // Get project data to access cwd
+  const { data: projectData } = useQuery({
+    ...trpc.project.getProject.queryOptions({ projectId: _projectId! }),
+    enabled: !!_projectId,
+  });
 
   const currentChatIdRef = useRef<string | undefined>(_chatId);
   const hasInitializedRef = useRef(false);
@@ -105,7 +113,7 @@ function Chat() {
     },
   }), [_chatId]);
 
-  const { messages, sendMessage, status, regenerate, setMessages, stop } = useChat<ChatMessage>({
+  const { messages, sendMessage, status, regenerate, setMessages, stop  , error} = useChat<ChatMessage>({
     transport,
     id: _chatId || 'new-chat',
   });
@@ -127,8 +135,15 @@ function Chat() {
       hasInitializedRef.current = false;
       hasGeneratedTitleRef.current = false;
       setMessages([]);
+      setDismissedError(false);
     }
   }, [_chatId, setMessages]);
+
+  useEffect(() => {
+    if (error) {
+      setDismissedError(false);
+    }
+  }, [error]);
 
 
   useEffect(() => {
@@ -296,7 +311,7 @@ function Chat() {
                             </Reasoning>
                           );
                         default:
-                          return <ToolRenderer key={`${message.id}-${i}`} part={part} />;
+                          return <ToolRenderer key={`${message.id}-${i}`} part={part} projectCwd={projectData?.cwd} />;
                       }
                     })}
                   </div>
@@ -314,6 +329,38 @@ function Chat() {
           <div className=" bottom-4 pb-2 md:pb-3">
             <div className="w-full px-3 md:px-4">
               <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
+                {error && !dismissedError && (
+                  <div className="flex justify-center mb-2">
+                    <div className="w-[90%]">
+                      <Alert variant="destructive" className="rounded-lg">
+                        <AlertCircleIcon />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription className="flex items-center justify-between gap-2">
+                          <span className="flex-1">
+                            {error instanceof Error ? error.message : String(error)}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => regenerate()}
+                              className="h-7 px-2 text-xs"
+                            >
+                              Retry
+                            </Button>
+                            <button
+                              onClick={() => setDismissedError(true)}
+                              className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-destructive/20 transition-colors"
+                              aria-label="Dismiss error"
+                            >
+                              <XIcon className="size-4" />
+                            </button>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  </div>
+                )}
                 {status === 'streaming' && (
                   <div className="flex justify-center">
                     <div className="w-[90%] flex items-center rounded-t-2xl border border-b-0 border-border/40 bg-gradient-to-r from-card/90 via-card/70 to-card/90 px-4 py-1.5 backdrop-blur-md shadow-sm">
