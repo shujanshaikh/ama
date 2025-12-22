@@ -8,6 +8,7 @@
     "dev": "vite dev"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.0",
     "@ai-sdk/react": "^2.0.115",
     "@ama/db": "workspace:*",
     "@ama/server": "workspace:*",

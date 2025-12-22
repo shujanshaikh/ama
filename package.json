@@ -33,12 +33,13 @@
     "@types/ws": "^8.18.1",
     "ai": "^5.0.113",
     "diff": "^8.0.2",
+    "nitro": "^3.0.1-alpha.1",
     "tsup": "^8.5.1",
     "ws": "^8.18.3",
     "zod": "^4.1.13"
   },
   "devDependencies": {
-    "turbo": "^2.6.3"
+    "turbo": "^2.7.1"
   },
   "packageManager": "bun@1.3.1"
 }
