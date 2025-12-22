@@ -5,7 +5,7 @@ import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 import { getConfig } from './config';
 import { lazy } from './utils';
 import { getWorkOS } from './workos';
-import type { AccessToken, AuthenticationResponse } from '@workos-inc/node';
+import type { AccessToken, AuthenticationResponse } from '@/authkit/types';
 import type { AuthkitOptions, AuthkitResponse, CookieOptions, GetAuthURLOptions, Session } from './interface';
 
 const sessionHeaderName = 'x-workos-session';

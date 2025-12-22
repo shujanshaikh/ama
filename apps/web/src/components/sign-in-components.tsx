@@ -1,7 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Link } from '@tanstack/react-router';
-import type { User } from '@workos-inc/node';
 import { LogIn, LogOut } from 'lucide-react';
+
+// Inline type to avoid importing from @workos-inc/node (Node.js-only package)
+interface User {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}
 
 export default function SignInButton({ large, user, url }: { large?: boolean; user: User | null; url: string }) {
   if (user) {
