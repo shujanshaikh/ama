@@ -18,7 +18,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 	const [token] = agentStreams.keys();
 
 	if (!token) {
-		return c.json({ error: 'No CLI agent connected. Please run `ama` in your project directory.' }, 503);
+		return c.json({ error: 'run `ama` to make agent acess the local files.' }, 503);
 	}
 
 

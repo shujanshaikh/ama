@@ -10,7 +10,6 @@ import readline from "readline";
 
 const VERSION = process.env.VERSION ?? "0.0.1";
 
-// Capture the current working directory at startup before any async operations change it
 const PROJECT_DIR = process.cwd();
 
 // Prompt user for input
@@ -109,7 +108,8 @@ if (args[0] === "start") {
             });
     } else {
         startDaemon();
-        console.log(pc.green('Daemon started successfully'));
+        console.log(pc.green(pc.bold('ama started in background mode')));
+        console.log(pc.gray(`Tip: You can check status any time with ${pc.bold('ama status')}`));
         process.exit(0);
     }
 }
