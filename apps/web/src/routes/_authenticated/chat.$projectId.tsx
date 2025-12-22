@@ -83,7 +83,7 @@ function Chat() {
   const hasGeneratedTitleRef = useRef(false);
 
   const editorUrl = getEditorUrl(_projectId!);
-  
+
   // Get project data to access cwd
   const { data: projectData } = useQuery({
     ...trpc.project.getProject.queryOptions({ projectId: _projectId! }),
@@ -113,7 +113,7 @@ function Chat() {
     },
   }), [_chatId]);
 
-  const { messages, sendMessage, status, regenerate, setMessages, stop  , error} = useChat<ChatMessage>({
+  const { messages, sendMessage, status, regenerate, setMessages, stop, error } = useChat<ChatMessage>({
     transport,
     id: _chatId || 'new-chat',
   });

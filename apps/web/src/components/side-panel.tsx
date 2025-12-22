@@ -163,11 +163,11 @@ export function Sidepanel() {
 
                 {projectId && (
                     <>
-                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/50 hover:bg-muted/40 transition-colors mb-4 w-fit">
+                        <Button variant="outline" className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/50 hover:bg-muted/40 transition-colors mb-4 w-fit">
                             <div className="w-2.5 h-2.5 rounded-sm bg-rose-400" />
                             <span className="text-sm text-foreground/90">{projectData?.name}</span>
                             <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                        </button>
+                        </Button>
 
                         <div className="flex gap-2 mb-6">
                             <Input
