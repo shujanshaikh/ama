@@ -10,31 +10,5 @@ export default defineConfig({
 	server: {
 		port: 3001,
 	},
-	ssr: {
-		external: [
-			'@workos-inc/node',
-			'drizzle-orm',
-			'@neondatabase/serverless',
-			'@trpc/server',
-			'iron-session',
-			'jose',
-			'@ai-sdk/google',
-			'ai',
-		],
-		noExternal: ['uploadthing', '@uploadthing/shared'],
-	},
-	build: {
-		rollupOptions: {
-			external: [
-				'@workos-inc/node',
-				'drizzle-orm',
-				'@neondatabase/serverless',
-				'@trpc/server',
-				'iron-session',
-				'jose',
-				'@ai-sdk/google',
-			],
-		},
-	},
 	plugins: [tsconfigPaths(), tailwindcss(), tanstackStart(), viteReact(), nitro()],
 });
