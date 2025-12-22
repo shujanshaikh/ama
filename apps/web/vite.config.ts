@@ -11,11 +11,11 @@ export default defineConfig({
 		port: 3001,
 	  },
 	ssr: {
-		external: ['@workos-inc/node'],
+		external: ['@workos-inc/node', 'drizzle-orm', '@neondatabase/serverless'],
 	},
 	build: {
 		rollupOptions: {
-			external: ['@workos-inc/node'],
+			external: ['@workos-inc/node', 'drizzle-orm', '@neondatabase/serverless'],
 		},
 	},
 	plugins: [tsconfigPaths(), tailwindcss(), tanstackStart(), viteReact(), nitro()],
