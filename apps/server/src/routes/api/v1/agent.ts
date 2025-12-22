@@ -50,7 +50,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 				execute: ({ writer: dataStream }) => {
 					const result = streamText({
 						messages: convertToModelMessages(uiMessages),
-						model: openrouter.chat("kwaipilot/kat-coder-pro:free"),
+						model: openrouter.chat("xiaomi/mimo-v2-flash:free"),
 						system: SYSTEM_PROMPT,
 						temperature: 0.7,
 						stopWhen: stepCountIs(10),
@@ -63,7 +63,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 					result.consumeStream();
 					dataStream.merge(
 						result.toUIMessageStream({
-							sendReasoning: true,
+							sendReasoning: false,
 						}),
 					);
 				},

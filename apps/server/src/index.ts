@@ -7,6 +7,7 @@ import { upgradeWebSocket, websocket } from 'hono/bun'
 import type { WSContext } from "hono/ws";
 import { logger } from "hono/logger";
 import { validateAuthToken } from "./lib/validateAuthToken";
+import { userStreams } from "./routes/api/v1/user-strems";
 
 const app = new Hono();
 
@@ -25,6 +26,7 @@ app.use(
 export const agentStreams = new Map<string, WSContext>();
 
 app.route("/api/v1", agentRouter);
+app.route("/api/v1", userStreams);
 app.get("/", (c) => c.text("Hello ama"));
 
 app.get(

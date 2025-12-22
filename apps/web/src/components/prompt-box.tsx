@@ -19,7 +19,7 @@ export type DashboardPromptBoxProps = {
 
 export function PromptBox({
     onSubmit,
-    placeholder = "What would you like to build?",
+    placeholder = "ask ama what you want to build...",
     disabled = false,
     className,
     containerClassName,
@@ -46,7 +46,9 @@ export function PromptBox({
         <div className={cn("w-full max-w-2xl mx-auto", containerClassName)}>
             <PromptInput
                 onSubmit={handleSubmit}
+                inputGroupClassName="bg-transparent border-0 shadow-none rounded-3xl"
                 className={cn(
+                    "rounded-3xl",
                     disabled && "opacity-60 cursor-not-allowed",
                     className
                 )}
@@ -58,19 +60,19 @@ export function PromptBox({
                         placeholder={placeholder}
                         disabled={disabled || isSubmitting}
                         className={cn(
-                            "min-h-[48px] max-h-[140px] resize-none bg-transparent",
+                            "min-h-[40px] max-h-[140px] resize-none bg-transparent",
                             "text-base placeholder:text-muted-foreground/50",
                             "border-0 focus:ring-0 focus:outline-none",
-                            "px-4 py-3"
+                            "px-4 py-2"
                         )}
                     />
                 </PromptInputBody>
-                <PromptInputFooter className="px-3 pb-3 pt-0 border-t-0">
+                <PromptInputFooter className="px-3 pb-2 pt-0 border-t-0">
                     <div className="flex-1" />
                     <PromptInputSubmit
                         disabled={!canSubmit}
                         className={cn(
-                            "h-8 w-8 rounded-xl transition-all duration-200",
+                            "h-8 w-8 rounded-lg transition-all duration-200",
                             canSubmit
                                 ? "bg-foreground text-background hover:opacity-90 hover:scale-105"
                                 : "bg-muted/60 text-muted-foreground"

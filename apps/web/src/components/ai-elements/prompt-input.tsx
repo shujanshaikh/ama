@@ -465,9 +465,10 @@ export const PromptInput = ({
   maxFileSize,
   onError,
   onSubmit,
+  inputGroupClassName,
   children,
   ...props
-}: PromptInputProps) => {
+}: PromptInputProps & { inputGroupClassName?: string }) => {
   // Try to use a provider controller if present
   const controller = useOptionalPromptInputController();
   const usingProvider = !!controller;
@@ -789,7 +790,7 @@ export const PromptInput = ({
         ref={formRef}
         {...props}
       >
-        <InputGroup className="overflow-hidden">{children}</InputGroup>
+        <InputGroup className={cn("overflow-hidden", inputGroupClassName)}>{children}</InputGroup>
       </form>
     </>
   );

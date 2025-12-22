@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router';
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext, useLocation } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import appCss from "../index.css?url";
 import type { QueryClient } from "@tanstack/react-query";
@@ -64,8 +64,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootDocument() {
+	const location = useLocation();
+	const isLandingPage = location.pathname === "/";
+
 	return (
-		<html lang="en" className="dark">
+		<html lang="en" className="dark" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 			</head>
@@ -73,7 +76,7 @@ function RootDocument() {
 				<SidebarProvider defaultOpen={false}>
 					<Sidepanel />
 					<SidebarInset className="h-svh relative">
-						<FetchConnection />
+						{!isLandingPage && <FetchConnection />}
 						<CollapsedSidebarTrigger />
 						<Outlet />
 					</SidebarInset>

@@ -80,7 +80,7 @@ function DashboardPage() {
           </div>
           <PromptBox
             onSubmit={handleSubmit}
-            placeholder="Describe what you want to create..."
+            placeholder="ask ama what you want to build..."
             className="text-base rounded-xl border-border bg-card focus-within:border-primary/40 transition-colors"
           />
         </div>
