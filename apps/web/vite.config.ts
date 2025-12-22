@@ -11,11 +11,30 @@ export default defineConfig({
 		port: 3001,
 	  },
 	ssr: {
-		external: ['@workos-inc/node', 'drizzle-orm', '@neondatabase/serverless'],
+		external: [
+			'@workos-inc/node',
+			'drizzle-orm',
+			'@neondatabase/serverless',
+			'@trpc/server',
+			'iron-session',
+			'jose',
+			'@ai-sdk/google',
+			'uploadthing/server',
+			'ai',
+		],
 	},
 	build: {
 		rollupOptions: {
-			external: ['@workos-inc/node', 'drizzle-orm', '@neondatabase/serverless'],
+			external: [
+				'@workos-inc/node',
+				'drizzle-orm',
+				'@neondatabase/serverless',
+				'@trpc/server',
+				'iron-session',
+				'jose',
+				'@ai-sdk/google',
+				'uploadthing/server',
+			],
 		},
 	},
 	plugins: [tsconfigPaths(), tailwindcss(), tanstackStart(), viteReact(), nitro()],
