@@ -1,19 +1,12 @@
 import { createUploadthing, UploadThingError } from "uploadthing/server";
 import type { FileRouter } from "uploadthing/server";
+import { createContext } from "./context";
 
 const f = createUploadthing();
 
-const auth = (req: Request) => ({ id: req.headers.get("Authorization") }); // Fake auth function
-
-// FileRouter for your app, can contain multiple FileRoutes
 export const uploadRouter = {
-  // Define as many FileRoutes as you like, each with a unique routeSlug
   imageUploader: f({
     image: {
-      /**
-       * For full list of options and defaults, see the File Route API reference
-       * @see https://docs.uploadthing.com/file-routes#route-config
-       */
       maxFileSize: "4MB",
       maxFileCount: 3,
     },
@@ -21,13 +14,14 @@ export const uploadRouter = {
     // Set permissions and file types for this FileRoute
     .middleware(async ({ req }) => {
       // This code runs on your server before upload
-      const user = await auth(req);
+      const session = await createContext({ req });
+      const user = session.session.user?.id;
 
       // If you throw, the user will not be able to upload
       if (!user) throw new UploadThingError("Unauthorized");
 
       // Whatever is returned here is accessible in onUploadComplete as `metadata`
-      return { userId: user.id };
+      return { userId: user };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       // This code RUNS ON YOUR SERVER after upload

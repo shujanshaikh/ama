@@ -4,7 +4,7 @@ import { createRouteHandler } from "uploadthing/server";
 
 import { uploadRouter } from "../../server/uploadthing";
 
-const handlers = createRouteHandler({ router: uploadRouter });
+const handlers = createRouteHandler({ router: uploadRouter});
 
 export const Route = createFileRoute("/api/uploadthing")({
     server: {
@@ -12,6 +12,9 @@ export const Route = createFileRoute("/api/uploadthing")({
           GET: handlers,
           POST: handlers,
         },
+      },loader: async ({ context }) => {
+        const { user } = context;
+        return { user };
       },
 });
 
