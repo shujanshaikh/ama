@@ -27,13 +27,13 @@
         "@hono/trpc-server": "^0.4.0",
         "@neondatabase/serverless": "^1.0.2",
         "@openrouter/ai-sdk-provider": "^1.5.3",
-        "@trpc/server": "catalog:",
+        "@trpc/server": "^11.5.0",
         "@workos-inc/node": "^7.77.0",
-        "better-auth": "catalog:",
+        "better-auth": "^1.0.0",
         "dotenv": "^17.2.3",
         "drizzle-orm": "^0.45.1",
-        "hono": "catalog:",
-        "zod": "catalog:"
+        "hono": "^4.10.7",
+        "zod": "^4.1.13"
     },
     "devDependencies": {
         "@ama/config": "workspace:*",
@@ -42,6 +42,6 @@
         "drizzle-kit": "^0.31.8",
         "tsdown": "^0.16.5",
         "tsx": "^4.21.0",
-        "typescript": "catalog:"
+        "typescript": "^5.9.2"
     }
 }
