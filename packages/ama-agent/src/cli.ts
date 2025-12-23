@@ -59,9 +59,9 @@ const args = process.argv.slice(2);
 // Handle help
 if (args[0] === "--help" || args[0] === "-h") {
     console.log(`
-${pc.bold("ama cli")} ${pc.gray(VERSION)}
+${pc.bold("amai cli")} ${pc.gray(VERSION)}
 
-Usage: ama [command] [options]
+Usage: amai [command] [options]
 
 Commands:
   login                 Authorize device
@@ -78,10 +78,10 @@ Environment Variables:
   SERVER_URL            Server URL to connect to
 
 Example:
-  ama login
-  ama start
-  ama project add /path/to/project
-  ama                  Start the agent (will prompt for background mode)
+  amai login
+  amai start
+  amai project add /path/to/project
+  amai                  Start the agent (will prompt for background mode)
     `);
     process.exit(0);
 }
@@ -108,8 +108,8 @@ if (args[0] === "start") {
             });
     } else {
         startDaemon();
-        console.log(pc.green(pc.bold('ama started in background mode')));
-        console.log(pc.gray(`Tip: You can check status any time with ${pc.bold('ama status')}`));
+        console.log(pc.green(pc.bold('amai started in background mode')));
+        console.log(pc.gray(`Tip: You can check status any time with ${pc.bold('amai status')}`));
         process.exit(0);
     }
 }
@@ -142,7 +142,7 @@ if (args[0] === "project") {
         const projectPath = args[2];
         if (!projectPath) {
             console.error(pc.red('Please provide a project path'));
-            console.log('Usage: ama project add <path>');
+            console.log('Usage: amai project add <path>');
             process.exit(1);
         }
         const resolvedPath = path.resolve(projectPath);
@@ -172,7 +172,7 @@ if (args[0] === "project") {
         process.exit(0);
     } else {
         console.error(pc.red(`Unknown project command: ${args[1]}`));
-        console.log('Use "ama project add <path>" or "ama project list"');
+        console.log('Use "amai project add <path>" or "amai project list"');
         process.exit(1);
     }
 }
@@ -202,13 +202,13 @@ if (args[0] === "login" || args[0] === "--login") {
 
         // Check if daemon is already running
         if (isDaemonRunning()) {
-            console.log(pc.yellow('Daemon is already running. Use "ama status" to check its status.'));
+            console.log(pc.yellow('Daemon is already running. Use "amai status" to check its status.'));
             process.exit(0);
         }
 
         // Prompt user for background mode
         console.log('');
-        console.log(pc.bold('How would you like to run ama?'));
+        console.log(pc.bold('How would you like to run amai?'));
         console.log(pc.gray('Background mode is highly recommended for better performance and stability.'));
         const answer = await promptUser(
             pc.cyan('Run in background? (Y/n): ')
@@ -220,8 +220,8 @@ if (args[0] === "login" || args[0] === "--login") {
             console.log(pc.green('Starting daemon in background...'));
             startDaemon();
             console.log(pc.green('Daemon started successfully!'));
-            console.log(pc.gray('Use "ama status" to check daemon status.'));
-            console.log(pc.gray('Use "ama stop" to stop the daemon.'));
+            console.log(pc.gray('Use "amai status" to check daemon status.'));
+            console.log(pc.gray('Use "amai stop" to stop the daemon.'));
             process.exit(0);
         } else {
             console.log(pc.yellow('Starting in foreground mode...'));

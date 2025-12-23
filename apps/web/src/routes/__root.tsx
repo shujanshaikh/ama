@@ -65,7 +65,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootDocument() {
 	const location = useLocation();
-	const isLandingPage = location.pathname === "/";
+	const isPublicPage = location.pathname === "/" || location.pathname === "/install";
 
 	return (
 		<html lang="en" className="dark" suppressHydrationWarning>
@@ -76,7 +76,7 @@ function RootDocument() {
 				<SidebarProvider defaultOpen={false}>
 					<Sidepanel />
 					<SidebarInset className="h-svh relative">
-						{!isLandingPage && <FetchConnection />}
+						{!isPublicPage && <FetchConnection />}
 						<CollapsedSidebarTrigger />
 						<Outlet />
 					</SidebarInset>

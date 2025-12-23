@@ -1,14 +1,15 @@
 #!/bin/bash
 
 # ╔═══════════════════════════════════════════════════════════════════════════╗
-# ║                           AMAI CLI Installer                               ║
+# ║                           AMA CLI Installer                                ║
 # ║                                                                           ║
-# ║  Usage (host this script somewhere accessible):                           ║
-# ║    curl -fsSL https://your-domain.com/install.sh | bash                   ║
+# ║  One-line installation:                                                   ║
+# ║    curl -fsSL https://amadev.vercel.app/install.sh | bash                 ║
 # ║                                                                           ║
-# ║  Or simply install directly via npm:                                      ║
-# ║    npm install -g amai                                                    ║
+# ║  Or install directly via npm:                                             ║
+# ║    npm install -g ama                                                     ║
 # ║                                                                           ║
+# ║  More info: https://amadev.vercel.app/install                             ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
 set -e
@@ -33,7 +34,7 @@ print_banner() {
     echo -e "${PURPLE}${BOLD}"
     echo "    ╔═══════════════════════════════════════╗"
     echo "    ║                                       ║"
-    echo "    ║      🚀  AMAI CLI Installer  🚀       ║"
+    echo "    ║       🚀  AMA CLI Installer  🚀       ║"
     echo "    ║                                       ║"
     echo "    ╚═══════════════════════════════════════╝"
     echo -e "${NC}"
@@ -83,7 +84,7 @@ detect_os() {
 
 # Install using npm
 install_with_npm() {
-    step "Installing AMAI CLI using npm..."
+    step "Installing AMA CLI using npm..."
     
     if npm install -g "$NPM_PACKAGE@latest" 2>/dev/null; then
         success "Successfully installed with npm!"
@@ -103,7 +104,7 @@ install_with_npm() {
 
 # Install using yarn
 install_with_yarn() {
-    step "Installing AMAI CLI using yarn..."
+    step "Installing AMA CLI using yarn..."
     
     if yarn global add "$NPM_PACKAGE@latest" 2>/dev/null; then
         success "Successfully installed with yarn!"
@@ -115,7 +116,7 @@ install_with_yarn() {
 
 # Install using pnpm
 install_with_pnpm() {
-    step "Installing AMAI CLI using pnpm..."
+    step "Installing AMA CLI using pnpm..."
     
     if pnpm add -g "$NPM_PACKAGE@latest" 2>/dev/null; then
         success "Successfully installed with pnpm!"
@@ -127,7 +128,7 @@ install_with_pnpm() {
 
 # Install using bun
 install_with_bun() {
-    step "Installing AMAI CLI using bun..."
+    step "Installing AMA CLI using bun..."
     
     if bun add -g "$NPM_PACKAGE@latest" 2>/dev/null; then
         success "Successfully installed with bun!"
@@ -189,16 +190,16 @@ verify_installation() {
     step "Verifying installation..."
     
     if command_exists amai; then
-        success "AMAI CLI installed successfully!"
+        success "Amai CLI installed successfully!"
         echo ""
         echo -e "${GREEN}${BOLD}Installation complete!${NC}"
         echo ""
-        info "Get started with:"
+        info "Launching amai..."
         echo ""
-        echo -e "    ${CYAN}amai --help${NC}        Show available commands"
-        echo -e "    ${CYAN}amai${NC}               Start the agent"
+        echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo ""
-        return 0
+        # Launch amai automatically
+        exec amai
     else
         error "Installation verification failed."
         echo ""

@@ -2,10 +2,11 @@ import pc from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { CLIENT_ID } from '../constant'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const CREDENTIALS_DIR = path.join(os.homedir(), '.ama')
+const CREDENTIALS_DIR = path.join(os.homedir(), '.amai')
 const CREDENTIALS_PATH = path.join(CREDENTIALS_DIR, 'credentials.json')
 
 export function isAuthenticated(): boolean {
@@ -64,7 +65,7 @@ async function authorizeDevice() {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: 'client_01K4Y8A5Q3FYGXD362BJQ6AGYD',
+        client_id: CLIENT_ID,
       }),
     },
   );
@@ -171,7 +172,7 @@ export async function login() {
     );
 
     const tokens = await pollForTokens({
-      clientId: 'client_01K4Y8A5Q3FYGXD362BJQ6AGYD',
+      clientId: CLIENT_ID,
       deviceCode: device.device_code,
       expiresIn: device.expires_in,
       interval: device.interval,
@@ -188,24 +189,24 @@ export async function login() {
 
 
 interface StoredTokens {
-    access_token: string;
-    refresh_token: string;
-    expires_at: number; // Unix timestamp
+  access_token: string;
+  refresh_token: string;
+  expires_at: number; // Unix timestamp
+}
+
+
+async function refreshToken(): Promise<StoredTokens> {
+  const tokens = getTokens();
+  if (!tokens) {
+    throw new Error('No tokens found');
   }
-
-
-  async function refreshToken(): Promise<StoredTokens> { 
-    const tokens = getTokens();
-    if (!tokens) {
-      throw new Error('No tokens found');
-    }
-    const newTokens = await pollForTokens({
-      clientId: 'client_01K4Y8A5Q3FYGXD362BJQ6AGYD',
-      deviceCode: tokens.refresh_token,
-      expiresIn: 300,
-      interval: 5,
-    });
-    saveTokens(newTokens);
-    return newTokens as StoredTokens;
-   }
+  const newTokens = await pollForTokens({
+    clientId: CLIENT_ID,
+    deviceCode: tokens.refresh_token,
+    expiresIn: 300,
+    interval: 5,
+  });
+  saveTokens(newTokens);
+  return newTokens as StoredTokens;
+}
 

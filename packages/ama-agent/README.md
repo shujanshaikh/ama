@@ -1,10 +1,16 @@
-# Ama Agent CLI
+# AMAI CLI
 
-A CLI tool that connects to your Convex backend to execute tool calls locally on your machine.
+A CLI tool that connects to your backend server to execute tool calls locally on your machine.
 
 ## Installation
 
-### Option 1: Install Globally (Recommended)
+### Option 1: Install from npm (Recommended)
+
+```bash
+npm install -g amai
+```
+
+### Option 2: Install Globally from Source
 
 ```bash
 # From the ama-agent package directory
@@ -22,7 +28,7 @@ bun link
 ./install-global.sh
 ```
 
-### Option 2: Link Locally to Another Project
+### Option 3: Link Locally to Another Project
 
 ```bash
 # In your other project directory
@@ -31,31 +37,33 @@ npm link /path/to/ama/packages/ama-agent
 bun link /path/to/ama/packages/ama-agent
 ```
 
-### Option 3: Install from Local Path
+### Option 4: Install from Local Path
 
 In your project's `package.json`:
 ```json
 {
   "dependencies": {
-    "ama-agent": "file:../path/to/ama/packages/ama-agent"
+    "amai": "file:../path/to/ama/packages/ama-agent"
   }
 }
 ```
 Then run `npm install` or `bun install`.
 
-### Option 4: Publish to npm (For Sharing)
-
-```bash
-cd packages/ama-agent
-npm publish
-# Then in your other project: npm install ama-agent
-```
-
 ## Usage
 
 ```bash
-ama-agent [options]
+amai [command] [options]
 ```
+
+### Commands
+
+- `login` - Authorize device
+- `logout` - Log out and remove credentials
+- `start` - Start background daemon (recommended for better performance)
+- `stop` - Stop background daemon
+- `status` - Check daemon status
+- `project add <path>` - Register a project directory
+- `project list` - List registered projects
 
 ### Options
 
@@ -63,26 +71,37 @@ ama-agent [options]
 
 ### Environment Variables
 
-- `SERVER_URL` - WebSocket server URL to connect to (required)
+- `SERVER_URL` - WebSocket server URL to connect to (optional, has a default)
   - Example: `ws://localhost:3000` or `wss://your-server.com`
 
 ### Examples
 
 ```bash
-# Using environment variable
-SERVER_URL=ws://localhost:3000 ama-agent
+# Login first
+amai login
 
-# Or export it first
-export SERVER_URL=ws://localhost:3000
-ama-agent
+# Start in background mode (recommended)
+amai start
+
+# Check daemon status
+amai status
+
+# Stop daemon
+amai stop
+
+# Register a project
+amai project add /path/to/your/project
+
+# List registered projects
+amai project list
 
 # Show help
-ama-agent --help
+amai --help
 ```
 
 ## How It Works
 
-1. The CLI connects to a WebSocket server at the provided `SERVER_URL`
+1. The CLI connects to a WebSocket server
 2. It listens for tool call messages from the server
 3. When tool calls are received, it executes them locally on your machine
 4. Results are sent back to the server via WebSocket
@@ -102,13 +121,15 @@ The built files will be in the `dist/` directory.
 
 ## Troubleshooting
 
-### "SERVER_URL is required" error
-
-Make sure to provide the server URL via the `SERVER_URL` environment variable.
-
 ### Connection issues
 
 - Check that the server is running and accessible
 - Verify the WebSocket URL format (should start with `ws://` or `wss://`)
 - Check firewall/network settings
 - The CLI will automatically attempt to reconnect every 5 seconds if disconnected
+
+### Authentication issues
+
+- Run `amai login` to authenticate
+- Credentials are stored in `~/.amai/credentials.json`
+- Run `amai logout` to clear credentials and re-authenticate

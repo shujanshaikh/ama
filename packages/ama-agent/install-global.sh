@@ -7,7 +7,7 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
-echo "🚀 Installing Ama Agent CLI globally..."
+echo "🚀 Installing AMAI CLI globally..."
 
 # Build first
 echo "🔨 Building CLI..."
@@ -22,7 +22,7 @@ if command -v npm &> /dev/null; then
     bun link
     echo "✅ Installed via npm link!"
     echo ""
-    echo "The 'ama-agent' command should now be available globally."
+    echo "The 'amai' command should now be available globally."
     echo "If it's not found, make sure npm's global bin directory is in your PATH:"
     echo "  export PATH=\"\$PATH:\$(npm config get prefix)/bin\""
     exit 0
@@ -38,7 +38,7 @@ if [ ! -d "$BUN_INSTALL" ]; then
 fi
 
 CLI_PATH="$SCRIPT_DIR/dist/cli.js"
-SYMLINK_PATH="$BUN_INSTALL/ama-agent"
+SYMLINK_PATH="$BUN_INSTALL/amai"
 
 if [ -L "$SYMLINK_PATH" ]; then
     rm "$SYMLINK_PATH"
@@ -52,4 +52,4 @@ echo ""
 echo "Make sure $BUN_INSTALL is in your PATH:"
 echo "  export PATH=\"\$PATH:$BUN_INSTALL\""
 echo ""
-echo "Then you can use: ama-agent --help"
+echo "Then you can use: amai --help"

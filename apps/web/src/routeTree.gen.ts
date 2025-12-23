@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as InstallRouteImport } from './routes/install'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUploadthingRouteImport } from './routes/api/uploadthing'
@@ -17,6 +18,11 @@ import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as AuthenticatedChatProjectIdRouteImport } from './routes/_authenticated/chat.$projectId'
 
+const InstallRoute = InstallRouteImport.update({
+  id: '/install',
+  path: '/install',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -55,6 +61,7 @@ const AuthenticatedChatProjectIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/install': typeof InstallRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/uploadthing': typeof ApiUploadthingRoute
   '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
@@ -63,6 +70,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/install': typeof InstallRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/uploadthing': typeof ApiUploadthingRoute
   '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
@@ -73,6 +81,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/install': typeof InstallRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/uploadthing': typeof ApiUploadthingRoute
   '/_authenticated/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
@@ -83,6 +92,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/install'
     | '/dashboard'
     | '/api/uploadthing'
     | '/chat/$projectId'
@@ -91,6 +101,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/install'
     | '/dashboard'
     | '/api/uploadthing'
     | '/chat/$projectId'
@@ -100,6 +111,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/install'
     | '/_authenticated/dashboard'
     | '/api/uploadthing'
     | '/_authenticated/chat/$projectId'
@@ -110,6 +122,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  InstallRoute: typeof InstallRoute
   ApiUploadthingRoute: typeof ApiUploadthingRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
@@ -117,6 +130,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -186,6 +206,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  InstallRoute: InstallRoute,
   ApiUploadthingRoute: ApiUploadthingRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,

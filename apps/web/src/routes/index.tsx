@@ -4,6 +4,8 @@ import { motion } from "motion/react";
 import { PromptBox } from "@/components/prompt-box";
 import { getSignInUrl } from "@/authkit/serverFunction";
 import SignInButton from "@/components/sign-in-components";
+import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
 	component: LandingPage,
@@ -36,6 +38,9 @@ function LandingPage() {
 					</div>
 					<div className="flex items-center gap-4">
 						<SignInButton user={user} url={url} />
+						<Button asChild variant="outline">
+							<Link to="/install">Install Cli</Link>
+						</Button>
 					</div>
 				</div>
 			</header>

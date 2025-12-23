@@ -1,20 +1,23 @@
 {
-    "name": "ama",
+    "name": "amai",
     "type": "module",
-    "version": "0.0.1",
-    "description": "ama cli that connects to server backend to execute tool calls locally",
-    "keywords": ["ama", "cli", "agent", "local", "tools"],
+    "version": "0.0.2",
+    "description": "ama rpc daemon",
+    "keywords": [
+        "ama",
+        "cli",
+        "agent",
+        "local",
+        "tools"
+    ],
     "author": "",
     "license": "ISC",
     "repository": {
-        "type": "git",
-        "url": "",
-        "directory": ""
+        "type": "git"
     },
     "prepare": "bun run build",
     "bin": {
-        "ama": "./dist/cli.js",
-        "ama-agent": "./dist/cli.js"
+        "amai": "./dist/cli.js"
     },
     "main": "./dist/cli.js",
     "types": "./dist/cli.d.ts",
