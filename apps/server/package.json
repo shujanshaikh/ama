@@ -1,6 +1,6 @@
 {
     "name": "@ama/server",
-    "main": "src/index.ts",
+    "main": "dist/index.mjs",
     "type": "module",
     "exports": {
         ".": {
@@ -18,7 +18,7 @@
         "check-types": "tsc -b",
         "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
         "dev": "bun run --hot src/index.ts",
-        "start": "bun run dist/index.js",
+        "start": "node dist/index.mjs",
         "db:push": "drizzle-kit push"
     },
     "dependencies": {

@@ -16,7 +16,12 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
     }
 
     const app = new Hono()
-    app.use(cors())
+    app.use(cors({
+      origin: ["https://amadev.vercel.app/", "http://localhost:3000"],
+      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
+      credentials: true,
+    }))
     // app.get(
     //     '/cli-status',
     //     upgradeWebSocket((c) => {
