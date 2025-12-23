@@ -3,17 +3,17 @@ import { createUIMessageStreamResponse, createUIMessageStream, stepCountIs, stre
 import { convertToModelMessages } from "ai"
 import { SYSTEM_PROMPT } from "@/lib/prompt";
 import { tools } from "@/tools/tool";
-import { openrouter } from "@openrouter/ai-sdk-provider"
 import { getMessagesByChatId, saveMessages, getProjectByChatId } from "@ama/db";
 import { convertToUIMessages } from "@/lib/convertToUIMessage";
 import { requestContext } from "@/lib/context";
 import { agentStreams } from "@/index";
+import { models } from "@/lib/model";
 
 
 export const agentRouter = new Hono();
 
 agentRouter.post("/agent-proxy", async (c) => {
-	const { message, chatId } = await c.req.json();
+	const { message, chatId , model } = await c.req.json();
 
 	const [token] = agentStreams.keys();
 
@@ -21,7 +21,10 @@ agentRouter.post("/agent-proxy", async (c) => {
 		return c.json({ error: 'run `ama` to make agent acess the local files.' }, 503);
 	}
 
-
+	const modelInfo = models.find((m) => m.id === model);
+	if (!modelInfo) {
+		return c.json({ error: 'Model not found' }, 404);
+	}
 	await saveMessages({
 		messages: [
 			{
@@ -32,7 +35,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 				attachments: [],
 				createdAt: new Date(),
 				updatedAt: new Date(),
-				model: "kwaipilot/kat-coder-pro:free",
+				model: modelInfo.id,
 			},
 		],
 	});
@@ -50,7 +53,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 				execute: ({ writer: dataStream }) => {
 					const result = streamText({
 						messages: convertToModelMessages(uiMessages),
-						model: openrouter.chat("kwaipilot/kat-coder-pro:free"),
+						model: modelInfo.id,
 						system: SYSTEM_PROMPT,
 						temperature: 0.7,
 						stopWhen: stepCountIs(10),
@@ -63,7 +66,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 					result.consumeStream();
 					dataStream.merge(
 						result.toUIMessageStream({
-							sendReasoning: false,
+							sendReasoning: true,
 						}),
 					);
 				},
@@ -76,7 +79,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 							createdAt: new Date(),
 							attachments: [],
 							chatId: chatId,
-							model: "kwaipilot/kat-coder-pro:free",
+							model: modelInfo.id,
 							updatedAt: new Date(),
 						})),
 					});

@@ -27,6 +27,11 @@ import {
   PromptInputTextarea,
   PromptInputFooter,
   PromptInputTools,
+  PromptInputSelect,
+  PromptInputSelectItem,
+  PromptInputSelectTrigger,
+  PromptInputSelectValue,
+  PromptInputSelectContent,
 } from '@/components/ai-elements/prompt-input';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
@@ -62,6 +67,7 @@ import { useTRPC } from '@/utils/trpc';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getEditorUrl } from '@/utils/get-editor-url';
 import type { ChatMessage } from '@ama/server/lib/tool-types';
+import { models } from '@ama/server/lib/model';
 
 export const Route = createFileRoute('/_authenticated/chat/$projectId')({
   component: Chat,
@@ -76,6 +82,7 @@ function Chat() {
   const { projectId: _projectId } = Route.useParams();
   const { chat: _chatId } = Route.useSearch();
   const [input, setInput] = useState('');
+  const [model , setModel] = useState(models[0].id);
   const [previewCollapsed, setPreviewCollapsed] = useState(true);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
@@ -179,6 +186,10 @@ function Chat() {
     sendMessage({
       text: message.text || '',
       files: message.files || []
+    } , {
+      body: {
+        model: model,
+      },
     });
     const messageText = message.text.trim();
     setInput('');
@@ -402,16 +413,18 @@ function Chat() {
                           <PromptInputActionAddAttachments />
                         </PromptInputActionMenuContent>
                       </PromptInputActionMenu>
-                      {/* <PromptInputSelect defaultValue="anthropic/claude-haiku-4.5">
+                      <PromptInputSelect defaultValue={model} onValueChange={(value) => setModel(value)}>
                         <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">
                           <PromptInputSelectValue />
                         </PromptInputSelectTrigger>
                         <PromptInputSelectContent>
-                          <PromptInputSelectItem value="anthropic/claude-haiku-4.5">
-                            Claude Haiku 4.5
-                          </PromptInputSelectItem>
+                          {models.map((m) => (
+                            <PromptInputSelectItem key={m.id} value={m.id}>
+                              {m.name}
+                            </PromptInputSelectItem>
+                          ))}
                         </PromptInputSelectContent>
-                      </PromptInputSelect> */}
+                      </PromptInputSelect>
                     </PromptInputTools>
                     {(status === 'streaming' || status === 'submitted') ? (
                       <Button
