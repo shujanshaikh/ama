@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useState, useEffect, useRef } from "react"
 import { Terminal, AlertTriangle } from "lucide-react"
 import {
 	Dialog,
@@ -10,32 +9,45 @@ import {
 
 export function FetchConnection() {
 	const [open, setOpen] = useState(true)
+	const [connected, setConnected] = useState<boolean | null>(null)
+	const eventSourceRef = useRef<EventSource | null>(null)
 
-	const { data: connectionData } = useQuery({
-		queryKey: ['connection-status'],
-		queryFn: async () => {
-			const response = await fetch('http://localhost:3456/daemon/status/stream', {
-				method: 'POST',
-			});
-
-			if (!response.ok) {
-				throw new Error('Failed to fetch connection status');
-			}
-
-			return response.json();
-		},
-		refetchInterval: 2000, // Poll every 2 seconds
-		retry: false,
-	});
-
-	const connected = connectionData?.connected ?? false;
-
-	// Auto-close dialog when connected
 	useEffect(() => {
-		if (connected) {
-			setOpen(false);
+		fetch('http://localhost:3456/daemon/status', { method: 'POST' })
+			.then(res => res.json())
+			.then(data => {
+				setConnected(data.connected)
+				if (data.connected) {
+					setOpen(false)
+				}
+			})
+			.catch(() => setConnected(false))
+
+		const eventSource = new EventSource('http://localhost:3456/daemon/status/stream')
+		eventSourceRef.current = eventSource
+
+		eventSource.onmessage = (event) => {
+			try {
+				const data = JSON.parse(event.data)
+				setConnected(data.connected)
+				if (data.connected) {
+					setOpen(false)
+				}
+			} catch {
+				// Ignore parse errors
+			}
 		}
-	}, [connected]);
+
+		eventSource.onerror = () => {
+			setConnected(false)
+			// EventSource auto-reconnects by default
+		}
+
+		return () => {
+			eventSource.close()
+			eventSourceRef.current = null
+		}
+	}, [])
 
 	// Don't render anything if connected
 	if (connected) {

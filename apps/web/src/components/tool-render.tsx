@@ -4,25 +4,24 @@ import DiffShow from './diff-show';
 import { useEditHistoryStore } from '@/lib/useEditHistoryStore';
 import { useMutation } from '@tanstack/react-query';
 
-// Subtle streaming indicator - just animated dots
+// Minimal streaming indicator
 const StreamingDots = () => (
-  <span className="inline-flex items-center gap-0.5 ml-1">
+  <span className="inline-flex items-center gap-0.5 ml-1.5">
     {[0, 1, 2].map((i) => (
       <motion.span
         key={i}
-        className="w-1 h-1 rounded-full bg-zinc-400"
-        animate={{ opacity: [0.3, 1, 0.3] }}
+        className="w-0.5 h-0.5 rounded-full bg-current opacity-40"
+        animate={{ opacity: [0.2, 0.6, 0.2] }}
         transition={{
-          duration: 1.2,
+          duration: 1.4,
           repeat: Infinity,
-          delay: i * 0.2,
+          delay: i * 0.25,
           ease: "easeInOut"
         }}
       />
     ))}
   </span>
 );
-
 
 const EditableToolItem = ({ 
   toolCallId, filePath, oldString, newString, fileName, projectCwd 
@@ -77,33 +76,13 @@ const EditableToolItem = ({
   );
 };
 
-// Diff badge component for showing +/- lines
-// const DiffBadge = ({ added, removed }: { added?: number; removed?: number }) => {
-//   if (!added && !removed) return null;
-
-//   return (
-//     <span className="inline-flex gap-1.5 ml-2">
-//       {added && added > 0 && (
-//         <span className="text-xs font-mono text-emerald-400/90 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-//           +{added}
-//         </span>
-//       )}
-//       {removed && removed > 0 && (
-//         <span className="text-xs font-mono text-rose-400/90 bg-rose-500/10 px-1.5 py-0.5 rounded">
-//           -{removed}
-//         </span>
-//       )}
-//     </span>
-//   );
-// };
-
-// Base wrapper with enter animation
+// Minimal base wrapper
 const ToolItem = ({ children, isStreaming = false }: { children: React.ReactNode; isStreaming?: boolean }) => (
   <motion.div
-    initial={{ opacity: 0, y: 4 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.2, ease: "easeOut" }}
-    className={`px-3 py-1.5 ${isStreaming ? 'text-zinc-400' : 'text-zinc-300'}`}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.15 }}
+    className={`py-1 ${isStreaming ? 'text-muted-foreground/60' : 'text-foreground/70'}`}
   >
     {children}
   </motion.div>
@@ -166,7 +145,7 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       return (
         <ToolItem key={toolCallId} isStreaming>
           <span className="text-sm">
-            Deleting <span className="text-zinc-200 font-medium">{fileName}</span>
+            Deleting <span className="text-foreground/50">{fileName}</span>
             <StreamingDots />
           </span>
         </ToolItem>
@@ -177,7 +156,7 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       return (
         <ToolItem key={toolCallId}>
           <span className="text-sm">
-            Deleted <span className="font-medium">{fileName}</span>
+            Deleted <span className="text-foreground/50">{fileName}</span>
           </span>
         </ToolItem>
       );
@@ -193,7 +172,7 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       return (
         <ToolItem key={toolCallId} isStreaming>
           <span className="text-sm">
-            Reading <span className="text-zinc-200 font-medium">{fileName}</span>
+            Reading <span className="text-foreground/50">{fileName}</span>
             <StreamingDots />
           </span>
         </ToolItem>
@@ -205,9 +184,9 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       return (
         <ToolItem key={toolCallId}>
           <span className="text-sm">
-            Read <span className="font-medium">{fileName}</span>
+            Read <span className="text-foreground/50">{fileName}</span>
             {output?.totalLines && (
-              <span className="text-zinc-500 ml-1.5">({output.totalLines} lines)</span>
+              <span className="text-muted-foreground/50 ml-1.5">({output.totalLines} lines)</span>
             )}
           </span>
         </ToolItem>
@@ -223,7 +202,7 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       return (
         <ToolItem key={toolCallId} isStreaming>
           <span className="text-sm">
-            Listing <span className="text-zinc-200 font-medium">{dirName}</span>
+            Listing <span className="text-foreground/50">{dirName}</span>
             <StreamingDots />
           </span>
         </ToolItem>
@@ -238,9 +217,9 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       return (
         <ToolItem key={toolCallId}>
           <span className="text-sm">
-            Listed <span className="font-medium">{dirName}</span>
+            Listed <span className="text-foreground/50">{dirName}</span>
             {(fileCount > 0 || dirCount > 0) && (
-              <span className="text-zinc-500 ml-1.5">
+              <span className="text-muted-foreground/50 ml-1.5">
                 ({fileCount} file{fileCount !== 1 ? 's' : ''}{dirCount > 0 ? `, ${dirCount} dir${dirCount !== 1 ? 's' : ''}` : ''})
               </span>
             )}
@@ -272,7 +251,7 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       return (
         <ToolItem key={toolCallId}>
           <span className="text-sm">
-            Found <span className="font-medium">{fileCount}</span> file{fileCount !== 1 ? 's' : ''}
+            Found <span className="text-foreground/50">{fileCount}</span> file{fileCount !== 1 ? 's' : ''}
           </span>
         </ToolItem>
       );
@@ -301,7 +280,7 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       return (
         <ToolItem key={toolCallId}>
           <span className="text-sm">
-            Found <span className="font-medium">{matchCount}</span> match{matchCount !== 1 ? 'es' : ''}
+            Found <span className="text-foreground/50">{matchCount}</span> match{matchCount !== 1 ? 'es' : ''}
           </span>
         </ToolItem>
       );

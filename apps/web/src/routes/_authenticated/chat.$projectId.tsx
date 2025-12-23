@@ -30,7 +30,7 @@ import {
 } from '@/components/ai-elements/prompt-input';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { CopyIcon, RefreshCcwIcon, CodeIcon, SquareIcon, XIcon, AlertCircleIcon } from 'lucide-react';
+import { SquareIcon, XIcon, CodeIcon, GlobeIcon } from 'lucide-react';
 import {
   Source,
   Sources,
@@ -42,7 +42,6 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from '@/components/ai-elements/reasoning';
-import { Shimmer } from '@/components/ai-elements/shimmer';
 import { DefaultChatTransport } from 'ai';
 import { createFileRoute } from '@tanstack/react-router';
 import { PreviewIframe } from '@/components/web-view';
@@ -53,9 +52,11 @@ import {
   ResizableHandle,
 } from '@/components/ui/resizable';
 import { API_URL } from '@/utils/constant';
-import { Button } from '@/components/ui/button';
 import { ToolRenderer } from '@/components/tool-render';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 import { useTRPC } from '@/utils/trpc';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -200,6 +201,7 @@ function Chat() {
         webUrl="http://localhost:3003"
         onReturnToChat={() => setShowCodeEditor(false)}
         onCollapsedChange={() => setShowCodeEditor(false)}
+        projectId={_projectId}
       />
     );
   }
@@ -210,21 +212,32 @@ function Chat() {
         <div className="flex flex-col h-full min-h-0 w-full overflow-hidden relative">
           {previewCollapsed && (
             <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="rounded-lg border-border/40 bg-background/80 backdrop-blur-md px-5 py-2.5 text-sm font-medium text-foreground/80 shadow-lg shadow-black/5 transition-all duration-200 hover:bg-background hover:text-foreground hover:border-border/60 hover:shadow-xl hover:shadow-black/10 hover:scale-105 active:scale-100 flex items-center gap-2"
-                onClick={() => setShowCodeEditor(true)}
-              >
-                <CodeIcon className="size-4" />
-                Editor
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-lg border-border/40 bg-background/80 backdrop-blur-md px-5 py-2.5 text-sm font-medium text-foreground/80 shadow-lg shadow-black/5 transition-all duration-200 hover:bg-background hover:text-foreground hover:border-border/60 hover:shadow-xl hover:shadow-black/10 hover:scale-105 active:scale-100"
-                onClick={() => setPreviewCollapsed(false)}
-              >
-                Web
-              </Button>
+              <div className="flex items-center rounded-lg bg-muted/50 p-0.5 shadow-sm border border-border/50 backdrop-blur-sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCodeEditor(true)}
+                  className={cn(
+                    "h-7 rounded-md px-3 text-xs font-medium transition-all",
+                    "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  )}
+                >
+                  <CodeIcon className="mr-1.5 size-3.5" />
+                  Editor
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPreviewCollapsed(false)}
+                  className={cn(
+                    "h-7 rounded-md px-3 text-xs font-medium transition-all",
+                    "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  )}
+                >
+                  <GlobeIcon className="mr-1.5 size-3.5" />
+                  Preview
+                </Button>
+              </div>
             </div>
           )}
           <Conversation className="flex-1 min-h-0">
@@ -233,9 +246,9 @@ function Chat() {
                 {isLoadingMessages && _chatId && messages.length === 0 && (
                   <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="animate-pulse flex flex-col gap-2">
-                        <div className="h-4 bg-muted/50 rounded-lg w-3/4" />
-                        <div className="h-4 bg-muted/50 rounded-lg w-1/2" />
+                      <div key={i} className="flex flex-col gap-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
                       </div>
                     ))}
                   </div>
@@ -285,7 +298,7 @@ function Chat() {
                                     onClick={() => regenerate()}
                                     label="Retry"
                                   >
-                                    <RefreshCcwIcon className="size-3" />
+                                    <span className="text-[10px] text-muted-foreground/60 hover:text-foreground/70 transition-colors">Retry</span>
                                   </MessageAction>
                                   <MessageAction
                                     onClick={() =>
@@ -293,7 +306,7 @@ function Chat() {
                                     }
                                     label="Copy"
                                   >
-                                    <CopyIcon className="size-3" />
+                                    <span className="text-[10px] text-muted-foreground/60 hover:text-foreground/70 transition-colors">Copy</span>
                                   </MessageAction>
                                 </MessageActions>
                               )}
@@ -317,26 +330,24 @@ function Chat() {
                   </div>
                 ))}
                 {status === "submitted" && (
-                  <Shimmer className="text-xs" duration={2}>
+                  <div className="text-xs text-muted-foreground py-2">
                     Thinking...
-                  </Shimmer>
+                  </div>
                 )}
               </div>
             </ConversationContent>
             <ConversationScrollButton />
           </Conversation>
 
-          <div className=" bottom-4 pb-2 md:pb-3">
+          <div className="bottom-4 pb-2 md:pb-3">
             <div className="w-full px-3 md:px-4">
               <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
                 {error && !dismissedError && (
                   <div className="flex justify-center mb-2">
                     <div className="w-[90%]">
-                      <Alert variant="destructive" className="rounded-lg">
-                        <AlertCircleIcon />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription className="flex items-center justify-between gap-2">
-                          <span className="flex-1">
+                      <Alert variant="destructive" className="py-2">
+                        <AlertDescription className="flex items-center justify-between gap-3">
+                          <span className="flex-1 text-xs">
                             {error instanceof Error ? error.message : String(error)}
                           </span>
                           <div className="flex items-center gap-2">
@@ -344,17 +355,19 @@ function Chat() {
                               variant="ghost"
                               size="sm"
                               onClick={() => regenerate()}
-                              className="h-7 px-2 text-xs"
+                              className="h-6 px-2 text-xs"
                             >
                               Retry
                             </Button>
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => setDismissedError(true)}
-                              className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-destructive/20 transition-colors"
+                              className="h-6 w-6"
                               aria-label="Dismiss error"
                             >
-                              <XIcon className="size-4" />
-                            </button>
+                              <XIcon className="size-3" />
+                            </Button>
                           </div>
                         </AlertDescription>
                       </Alert>
@@ -362,15 +375,13 @@ function Chat() {
                   </div>
                 )}
                 {status === 'streaming' && (
-                  <div className="flex justify-center">
-                    <div className="w-[90%] flex items-center rounded-t-2xl border border-b-0 border-border/40 bg-gradient-to-r from-card/90 via-card/70 to-card/90 px-4 py-1.5 backdrop-blur-md shadow-sm">
-                      <Shimmer className="text-xs" duration={2}>
-                        Generating...
-                      </Shimmer>
+                  <div className="flex justify-center mb-1">
+                    <div className="text-xs text-muted-foreground">
+                      Generating...
                     </div>
                   </div>
                 )}
-                <PromptInput onSubmit={handleSubmit} >
+                <PromptInput onSubmit={handleSubmit} inputGroupClassName="rounded-xl">
                   <PromptInputHeader>
                     <PromptInputAttachments >
                       {(attachment) => <PromptInputAttachment data={attachment} />}
@@ -403,19 +414,21 @@ function Chat() {
                       </PromptInputSelect> */}
                     </PromptInputTools>
                     {(status === 'streaming' || status === 'submitted') ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => stop()}
-                        className="h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-200 bg-red-500/90 text-white hover:bg-red-500 hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20 animate-pulse"
+                        className="h-7 w-7"
                         aria-label="Stop generating"
                       >
-                        <SquareIcon className="size-3.5 fill-current" />
-                      </button>
+                        <SquareIcon className="size-3" />
+                      </Button>
                     ) : (
                       <PromptInputSubmit
                         disabled={!input}
                         status={status}
-                        className="h-8 w-8 rounded-xl transition-all duration-200 bg-foreground text-background hover:opacity-90 hover:scale-105 disabled:bg-muted/60 disabled:text-muted-foreground disabled:hover:scale-100"
+                        className="h-7 w-7 rounded-md transition-colors bg-foreground text-background hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
                       />
                     )}
                   </PromptInputFooter>
@@ -430,7 +443,7 @@ function Chat() {
         <>
           <ResizableHandle />
           <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-h-0">
-            <PreviewIframe onCollapsedChange={setPreviewCollapsed} />
+            <PreviewIframe onCollapsedChange={setPreviewCollapsed} projectId={_projectId} />
           </ResizablePanel>
         </>
       )}

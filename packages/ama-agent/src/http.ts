@@ -1,6 +1,6 @@
 import { Hono } from "hono"
 import { serve } from "@hono/node-server"
-import { connectToServer, getConnectionStatus } from "./server"
+import { connectToServer, getConnectionStatus, statusEmitter } from "./server"
 import { cors } from "hono/cors" 
 import { getContext } from "./lib/get-files";
 import { scanIdeProjects } from "./lib/ide-projects";
@@ -17,30 +17,58 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
 
     const app = new Hono()
     app.use(cors())
-    // app.get(
-    //     '/cli-status',
-    //     upgradeWebSocket((c) => {
-    //       return {
-
-    //         onMessage(_evt) {
-    //           const message = JSON.parse(_evt.data.toString())
-    //           if(message.type === 'cli-status') {
-    //             return c.json({ status: "connected" })
-    //           }
-
-    //           return c.json({ status: "disconnected" })
-    //         },
-    //         onClose: () => {
-
-    //         },
-    //       }
-    //     })
-    //   )
-
-
-    app.post("/daemon/status/stream", (c) => {
+    // POST endpoint for initial status check
+    app.post("/daemon/status", (c) => {
       const status = wsConnection ? getConnectionStatus(wsConnection) : 'closed';
       return c.json({ connected: status === 'open' });
+    });
+
+    // SSE endpoint for persistent status updates
+    app.get("/daemon/status/stream", (c) => {
+      const encoder = new TextEncoder();
+      
+      const stream = new ReadableStream({
+        start(controller) {
+          // Send initial status immediately
+          const initialStatus = wsConnection ? getConnectionStatus(wsConnection) : 'closed';
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ connected: initialStatus === 'open' })}\n\n`));
+          
+          // Listen for status changes from the event emitter
+          const statusHandler = (data: { connected: boolean }) => {
+            try {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+            } catch {
+              // Stream closed, ignore
+            }
+          };
+          
+          statusEmitter.on('status', statusHandler);
+          
+          // Send heartbeat every 15 seconds to keep connection alive
+          const heartbeatInterval = setInterval(() => {
+            try {
+              const currentStatus = wsConnection ? getConnectionStatus(wsConnection) : 'closed';
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ connected: currentStatus === 'open' })}\n\n`));
+            } catch {
+              // Stream closed, ignore
+            }
+          }, 15000);
+          
+          // Cleanup on client disconnect
+          c.req.raw.signal.addEventListener('abort', () => {
+            statusEmitter.off('status', statusHandler);
+            clearInterval(heartbeatInterval);
+          });
+        }
+      });
+      
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        }
+      });
     });
 
     app.get("context",async (c) => {

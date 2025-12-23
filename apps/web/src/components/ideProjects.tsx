@@ -4,6 +4,8 @@ import { LayoutGrid, List, Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   PaginationNext,
   PaginationPrevious,
@@ -26,14 +28,11 @@ function projectInitial(name: string) {
 }
 
 function projectAccentClass(key: string) {
-  // Deterministic-ish, stable per project.
+  // Deterministic-ish, stable per project - simplified for minimalistic look
   const palettes = [
-    "bg-blue-600/20 text-blue-200 ring-blue-500/20",
-    "bg-pink-600/20 text-pink-200 ring-pink-500/20",
-    "bg-amber-600/20 text-amber-200 ring-amber-500/20",
-    "bg-emerald-600/20 text-emerald-200 ring-emerald-500/20",
-    "bg-violet-600/20 text-violet-200 ring-violet-500/20",
-    "bg-cyan-600/20 text-cyan-200 ring-cyan-500/20",
+    "bg-muted text-muted-foreground",
+    "bg-muted text-muted-foreground",
+    "bg-muted text-muted-foreground",
   ];
 
   let hash = 0;
@@ -120,30 +119,20 @@ export function IdeProjects() {
     return (
       <section className="mb-8">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <h2 className="text-sm font-medium text-foreground/90">Open existing project</h2>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="h-9 w-9" disabled>
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="h-9 w-9" disabled>
-              <List className="h-4 w-4" />
-            </Button>
+          <Skeleton className="h-4 w-32" />
+          <div className="flex items-center gap-1">
+            <Skeleton className="h-8 w-8 rounded-md" />
+            <Skeleton className="h-8 w-8 rounded-md" />
           </div>
         </div>
 
         <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
-          <Input
-            value=""
-            placeholder="Search projects"
-            className="h-10 rounded-md pl-9 bg-card/40"
-            disabled
-          />
+          <Skeleton className="h-10 rounded-lg" />
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-muted-foreground/60 text-sm py-6 rounded-md border border-border bg-card/30">
-          <div className="w-4 h-4 border-2 border-muted-foreground/30 border-t-muted-foreground/70 rounded-full animate-spin" />
-          Scanning...
+        <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm py-6">
+          <Skeleton className="h-4 w-4 rounded-full" />
+          <span>Scanning...</span>
         </div>
       </section>
     );
@@ -156,39 +145,41 @@ export function IdeProjects() {
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-sm font-medium text-foreground/90">Suggested projects</h2>
+        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Suggested projects
+        </h2>
 
-        <div className="flex items-center gap-1 rounded-md border border-border bg-card/30 p-1">
+        <div className="flex items-center gap-1 rounded-md border border-border bg-card p-1">
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            className={cn("rounded-lg", view === "grid" && "bg-muted/60")}
+            className={cn("rounded-md", view === "grid" && "bg-muted")}
             onClick={() => setView("grid")}
             aria-pressed={view === "grid"}
           >
-            <LayoutGrid className="h-4 w-4" />
+            <LayoutGrid className="h-3.5 w-3.5" />
           </Button>
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            className={cn("rounded-lg", view === "list" && "bg-muted/60")}
+            className={cn("rounded-md", view === "list" && "bg-muted")}
             onClick={() => setView("list")}
             aria-pressed={view === "list"}
           >
-            <List className="h-4 w-4" />
+            <List className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
 
       <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search projects"
-          className="h-10 rounded-xl pl-9 bg-card/40"
+          className="h-10 rounded-lg pl-9"
         />
       </div>
 
@@ -200,14 +191,14 @@ export function IdeProjects() {
         )}
       >
         {suggestedProjects.map((project) => (
-          <div
+          <Card
             key={project.path}
-            className="group rounded-md border border-border bg-card/30 hover:bg-muted/40 transition-colors p-3"
+            className="group cursor-pointer hover:border-border transition-colors p-3"
           >
             <div className="flex items-start gap-2">
               <div
                 className={cn(
-                  "size-7 rounded-md flex items-center justify-center text-xs font-semibold ring-1",
+                  "size-7 rounded-md flex items-center justify-center text-xs font-medium",
                   projectAccentClass(project.path)
                 )}
               >
@@ -215,7 +206,7 @@ export function IdeProjects() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-foreground/90 truncate">
+                  <div className="text-sm font-medium text-foreground truncate">
                     {project.name}
                   </div>
                   <Button
@@ -230,7 +221,7 @@ export function IdeProjects() {
                     disabled={creatingProjectId === project.path}
                   >
                     {creatingProjectId === project.path ? (
-                      <div className="w-3 h-3 border-2 border-muted-foreground/30 border-t-muted-foreground/70 rounded-full animate-spin" />
+                      <div className="w-3 h-3 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
                     ) : (
                       <Plus className="h-3.5 w-3.5" />
                     )}
@@ -241,13 +232,10 @@ export function IdeProjects() {
 
             <Separator className="my-2" />
 
-            <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground/70">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="size-3 rounded-full border border-muted-foreground/30" />
-                <span className="truncate">{subtitleForProject(project)}</span>
-              </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="truncate">{subtitleForProject(project)}</span>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
@@ -261,7 +249,7 @@ export function IdeProjects() {
             }}
             className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
           />
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             Page {currentPage} of {totalPages}
           </span>
           <PaginationNext

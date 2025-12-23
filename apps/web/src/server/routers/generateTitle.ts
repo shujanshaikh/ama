@@ -33,7 +33,7 @@ Respond only with the title.
 async function generateTitle(message: string) {
     try {
         const { text } = await generateText({
-            model: google("gemini-3-flash-preview") as unknown as LanguageModel,
+            model: "google/gemini-2.0-flash",
             system: titlePrompt,
             prompt: message,
         });
