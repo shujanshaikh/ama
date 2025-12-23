@@ -60,7 +60,7 @@ export function FetchConnection() {
 						—
 					</span>
 					<span className="text-amber-200/50 hidden sm:inline">
-						run <code className="font-mono text-amber-200/70 group-hover:text-amber-100 transition-colors">ama</code> to connect
+						run <code className="font-mono text-amber-200/70 group-hover:text-amber-100 transition-colors">amai</code> to connect
 					</span>
 				</button>
 			</div>
@@ -88,7 +88,7 @@ export function FetchConnection() {
 							<div className="absolute inset-0 rounded-md from-muted/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 							<div className="relative flex items-center gap-3 rounded-md border border-border/50 bg-muted/30 px-3 py-2.5">
 								<Terminal className="h-3.5 w-3.5 text-muted-foreground" />
-								<code className="text-xs font-mono text-foreground tracking-wide">ama</code>
+								<code className="text-xs font-mono text-foreground tracking-wide">amai</code>
 							</div>
 						</div>
 

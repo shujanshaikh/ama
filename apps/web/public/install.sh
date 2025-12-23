@@ -7,7 +7,7 @@
 # ║    curl -fsSL https://amadev.vercel.app/install.sh | bash                 ║
 # ║                                                                           ║
 # ║  Or install directly via npm:                                             ║
-# ║    npm install -g ama                                                     ║
+# ║    npm install -g amai                                                    ║
 # ║                                                                           ║
 # ║  More info: https://amadev.vercel.app/install                             ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝

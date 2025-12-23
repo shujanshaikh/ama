@@ -73,7 +73,7 @@ function RootDocument() {
 				<HeadContent />
 			</head>
 			<body>
-				<SidebarProvider defaultOpen={false}>
+				<SidebarProvider defaultOpen={true}>
 					<Sidepanel />
 					<SidebarInset className="h-svh relative">
 						{!isPublicPage && <FetchConnection />}
