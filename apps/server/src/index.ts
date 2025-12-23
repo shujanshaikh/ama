@@ -83,15 +83,8 @@ app.get(
   })
 )
 
-
 export default {
   fetch: app.fetch,
   websocket,
   idleTimeout: 120, // 120 seconds (2 minutes) to handle long-running streaming requests
 }
-
-
-
-
-
-
