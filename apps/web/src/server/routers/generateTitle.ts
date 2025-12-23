@@ -1,9 +1,8 @@
 import { router, protectedProcedure } from "../index";
 import { z } from "zod";
-import { generateText } from "ai";
+import { generateText, type LanguageModel } from "ai";
 import { google } from "@ai-sdk/google";
-import { db, chat } from "@ama/db";
-import { eq } from "drizzle-orm";
+import { db, chat, eq } from "@ama/db";
 
 export const generateTitleRouter = router({
     generateTitle: protectedProcedure.input(z.object({
@@ -34,7 +33,7 @@ Respond only with the title.
 async function generateTitle(message: string) {
     try {
         const { text } = await generateText({
-            model: google("gemini-3-flash-preview"),
+            model: google("gemini-3-flash-preview") as unknown as LanguageModel,
             system: titlePrompt,
             prompt: message,
         });

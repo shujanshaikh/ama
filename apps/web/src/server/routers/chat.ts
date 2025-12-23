@@ -1,8 +1,7 @@
-import { db, chat, getMessagesByChatId } from "@ama/db";
+import { db, chat, getMessagesByChatId, eq } from "@ama/db";
 import { protectedProcedure, router } from "../index";
 import { convertToUIMessages } from "../lib/convertToUIMessage";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
 
 
 export const chatRouter = router({

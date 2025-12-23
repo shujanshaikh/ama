@@ -1,7 +1,6 @@
-import { db, project } from "@ama/db";
+import { db, project, eq } from "@ama/db";
 import { protectedProcedure, router } from "../index";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
 
 export const projectRouter = router({
     createProject: protectedProcedure.input(z.object({

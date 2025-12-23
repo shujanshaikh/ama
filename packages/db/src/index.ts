@@ -11,4 +11,5 @@ export const db = drizzle(sql, { schema });
 
 export * from "./schema";
 export * from "./queries";
+export { eq, and, or, not, sql, desc, asc } from "drizzle-orm";
 
