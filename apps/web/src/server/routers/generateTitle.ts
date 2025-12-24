@@ -1,7 +1,6 @@
 import { router, protectedProcedure } from "../index";
 import { z } from "zod";
-import { generateText, type LanguageModel } from "ai";
-import { google } from "@ai-sdk/google";
+import { generateText } from "ai";
 import { db, chat, eq } from "@ama/db";
 
 export const generateTitleRouter = router({

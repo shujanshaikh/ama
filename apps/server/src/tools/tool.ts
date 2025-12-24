@@ -5,6 +5,7 @@ import { deleteFile } from "./deleteFile";
 import { grepTool } from "./grep";
 import { globTool } from "./glob";
 import { listDirectory } from "./listDirectory";
+import { runTerminalCommand } from "./runTerminalCommand";
 
 export const tools = {
     readFile: readFile,
@@ -14,4 +15,5 @@ export const tools = {
     grep: grepTool,
     glob: globTool,
     listDirectory: listDirectory,
+    runTerminalCommand: runTerminalCommand,
 }

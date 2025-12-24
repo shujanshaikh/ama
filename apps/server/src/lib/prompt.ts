@@ -54,6 +54,7 @@ IMPORTANT: You must NEVER generate or guess URLs for the user unless you are con
 | \`stringReplace\` | Small, targeted edits (default) |
 | \`editFile\` | New files or large refactors only |
 | \`deleteFile\` | Confirm contents first |
+| \`runTerminalCommand\` | Run a terminal command |
 
 ## WORKFLOW
 1. Parse element (tag, text, classes, component stack)

@@ -5,6 +5,7 @@ import path from "node:path";
 import { validatePath } from "../lib/sandbox";
 
 
+
 export const GREP_LIMITS = {
   DEFAULT_MAX_MATCHES: 200,
   MAX_TOTAL_OUTPUT_SIZE: 1 * 1024 * 1024,
@@ -26,11 +27,12 @@ export const execAsync = promisify(exec);
 
 export const grepTool = async function(input: z.infer<typeof grepSchema>, projectCwd?: string) {
     const { query, options } = input;
+
     try {
       const { includePattern, excludePattern, caseSensitive } = options || {};
-      
+
       const searchDir = projectCwd || process.cwd();
-      
+
       // Validate that we can search in this directory
       if (projectCwd && !path.isAbsolute(projectCwd)) {
         return {
@@ -103,4 +105,3 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
       };
     }
   }
-

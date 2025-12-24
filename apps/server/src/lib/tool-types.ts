@@ -5,6 +5,7 @@ import type { grepTool } from "@/tools/grep"
 import type { editFile } from "@/tools/editFile"
 import type { deleteFile } from "@/tools/deleteFile"
 import type { stringReplace } from "@/tools/stringReplace"
+import type { runTerminalCommand } from "@/tools/runTerminalCommand"
 import type { InferUITool, UIMessage } from "ai"
 import z from "zod"
 
@@ -40,6 +41,20 @@ export interface CodeMapping {
   fileList: Set<string>
 }
 
+export interface RunTerminalCommandInput {
+  command: string;
+  is_background: boolean;
+}
+
+export interface RunTerminalCommandOutput {
+  success: boolean;
+  message: string;
+  error?: string;
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number;
+}
+
 export type DataPart = { type: 'append-message'; message: string };
 
 export const messageMetadataSchema = z.object({
@@ -54,6 +69,8 @@ type globToolType = InferUITool<typeof globTool>;
 type grepToolType = InferUITool<typeof grepTool>;
 type editFileType = InferUITool<typeof editFile>;
 type deleteFileType = InferUITool<typeof deleteFile>;
+type runTerminalCommand = InferUITool<typeof runTerminalCommand>;
+
 
 export type ChatTools = {
   stringReplace: stringReplace;
@@ -63,6 +80,7 @@ export type ChatTools = {
   grep: grepToolType;
   editFile: editFileType;
   deleteFile: deleteFileType;
+  runTerminalCommand: runTerminalCommand;
 };
 
 export type CustomUIDataTypes = {
@@ -147,7 +165,7 @@ export interface SuccessOutput {
   codes?: unknown;
 }
 
-export type ToolOutput = ReadFileOutput | ListOutput | GlobOutput | GrepOutput | SuccessOutput | EditFilesOutput | DeleteFileOutput;
+export type ToolOutput = ReadFileOutput | ListOutput | GlobOutput | GrepOutput | SuccessOutput | EditFilesOutput | DeleteFileOutput | RunTerminalCommandOutput;
 
 export type ToolPart = {
   type: `tool-${keyof ChatTools}` | string;

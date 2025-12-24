@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import DiffShow from './diff-show';
 import { useEditHistoryStore } from '@/lib/useEditHistoryStore';
 import { useMutation } from '@tanstack/react-query';
+import { Badge } from './ui/badge';
+import { CheckCircle2, XCircle, Terminal } from 'lucide-react';
 
 // Minimal streaming indicator
 const StreamingDots = () => (
@@ -316,6 +318,86 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       return (
         <ToolItem key={toolCallId}>
           <EditableToolItem toolCallId={toolCallId} filePath={actualFilePath} oldString={oldString} newString={newString} fileName={fileName} projectCwd={projectCwd} />
+        </ToolItem>
+      );
+    }
+  }
+
+  // Run Terminal Command
+  if (part.type === "tool-runTerminalCommand") {
+    const { toolCallId, state } = part;
+    const command = part.input?.command;
+
+    if (state === "input-streaming") {
+      return (
+        <ToolItem key={toolCallId} isStreaming>
+          <div className="flex items-center gap-2">
+            <Terminal className="size-4 text-muted-foreground/60" />
+            <span className="text-sm">
+              Running <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">{command}</span>
+            </span>
+            <StreamingDots />
+          </div>
+        </ToolItem>
+      );
+    }
+
+    if (state === "output-available") {
+      const output = part.output as { success?: boolean; message?: string; error?: string; stdout?: string; stderr?: string; exitCode?: number } | undefined;
+      const isSuccess = output?.success !== false && (!output?.exitCode || output.exitCode === 0);
+      
+      return (
+        <ToolItem key={toolCallId}>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Terminal className="size-4 text-muted-foreground/70" />
+              <span className="text-sm">
+                Ran <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">{command}</span>
+              </span>
+              <Badge 
+                variant={isSuccess ? "default" : "destructive"} 
+                className="gap-1 text-xs"
+              >
+                {isSuccess ? (
+                  <>
+                    <CheckCircle2 className="size-3" />
+                    Success
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="size-3" />
+                    Failed
+                  </>
+                )}
+              </Badge>
+              {output?.exitCode !== undefined && output.exitCode !== 0 && (
+                <span className="text-xs text-muted-foreground/60">
+                  Exit code: {output.exitCode}
+                </span>
+              )}
+            </div>
+            {(output?.stdout || output?.stderr || output?.message) && (
+              <div className="ml-6 space-y-1">
+                {output?.message && (
+                  <div className="text-xs text-muted-foreground/70">
+                    {output.message}
+                  </div>
+                )}
+                {output?.stdout && (
+                  <div className="text-xs font-mono bg-muted/30 px-2 py-1 rounded border border-border/50">
+                    <div className="text-muted-foreground/60 text-[10px] mb-0.5">STDOUT:</div>
+                    <div className="text-foreground/80 whitespace-pre-wrap break-words">{output.stdout}</div>
+                  </div>
+                )}
+                {output?.stderr && (
+                  <div className="text-xs font-mono bg-destructive/10 px-2 py-1 rounded border border-destructive/20">
+                    <div className="text-destructive/70 text-[10px] mb-0.5">STDERR:</div>
+                    <div className="text-destructive/90 whitespace-pre-wrap break-words">{output.stderr}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </ToolItem>
       );
     }

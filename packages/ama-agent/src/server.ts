@@ -11,6 +11,7 @@ import { list } from './tools/ls-dir'
 import pc from 'picocolors'
 import { startHttpServer } from './http'
 import { getTokens } from './lib/auth-login'
+import { runTerminalCommand } from './tools/runTerminalCommand'
 
 
 export const statusEmitter = new EventEmitter()
@@ -34,6 +35,7 @@ const toolExecutors: Record<string, (args: any, projectCwd?: string) => Promise<
   listDirectory: list,
   readFile: read_file,
   stringReplace: apply_patch,
+  runTerminalCommand: runTerminalCommand,
 
 }
 
