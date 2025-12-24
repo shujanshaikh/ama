@@ -1,10 +1,11 @@
 import type { ChatMessage } from '@ama/server/lib/tool-types';
 import { motion } from 'motion/react';
-import DiffShow from './diff-show';
 import { useEditHistoryStore } from '@/lib/useEditHistoryStore';
 import { useMutation } from '@tanstack/react-query';
 import { Badge } from './ui/badge';
 import { CheckCircle2, XCircle, Terminal } from 'lucide-react';
+import { PierreDiff } from './pierre-diff';
+import type { FileContents } from '@pierre/diffs/react';
 
 // Minimal streaming indicator
 const StreamingDots = () => (
@@ -26,19 +27,19 @@ const StreamingDots = () => (
 );
 
 const EditableToolItem = ({ 
-  toolCallId, filePath, oldString, newString, fileName, projectCwd 
+  toolCallId, filePath, oldFile, newFile, fileName, projectCwd 
 }: {
   toolCallId: string;
   filePath: string;
-  oldString: string;
-  newString: string;
+  oldFile: FileContents;
+  newFile: FileContents;
   fileName: string;
   projectCwd?: string;
 }) => {
   const { addEdit, acceptEdit, revertEdit } = useEditHistoryStore();
   const edit = useEditHistoryStore(state => state.edits.find(e => e.id === toolCallId));
-  if (!edit && oldString && newString) {
-    addEdit({ id: toolCallId, filePath, oldContent: oldString, newContent: newString });
+  if (!edit && oldFile.contents && newFile.contents) {
+    addEdit({ id: toolCallId, filePath, oldContent: oldFile.contents, newContent: newFile.contents });
   }
   const handleAccept = () => acceptEdit(toolCallId);
   
@@ -47,7 +48,12 @@ const EditableToolItem = ({
       const response = await fetch('http://localhost:3456/revert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath, oldString, newString, projectCwd }),
+        body: JSON.stringify({ 
+          filePath, 
+          oldString: oldFile.contents, 
+          newString: newFile.contents, 
+          projectCwd 
+        }),
       });
       if (!response.ok) {
         const error = await response.json();
@@ -64,9 +70,9 @@ const EditableToolItem = ({
   });
   return (
     <ToolItem>
-      <DiffShow
-        oldString={oldString}
-        newString={newString}
+      <PierreDiff
+        oldFile={oldFile}
+        newFile={newFile}
         fileName={fileName}
         showActions={true}
         editStatus={edit?.status}
@@ -126,13 +132,13 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
         old_string?: string;
         new_string?: string;
       } | undefined;
-      const oldString = output?.old_string || '';
-      const newString = output?.new_string || '';
+      const oldString : FileContents = { contents: output?.old_string || '', name: fileName };
+      const newString : FileContents = { contents: output?.new_string || '', name: fileName };
       const actualFilePath = part.input?.target_file || fileName;
 
       return (
         <ToolItem key={toolCallId}>
-          <EditableToolItem toolCallId={toolCallId} filePath={actualFilePath} oldString={oldString} newString={newString} fileName={fileName} projectCwd={projectCwd} />
+          <EditableToolItem toolCallId={toolCallId} filePath={actualFilePath} oldFile={oldString} newFile={newString} fileName={fileName} projectCwd={projectCwd} />
         </ToolItem>
       );
     }
@@ -299,7 +305,7 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
     if (state === "input-streaming") {
       return (
         <ToolItem key={toolCallId} isStreaming>
-          <DiffShow oldString={inputOldString} newString={inputNewString} fileName={fileName} />
+          <PierreDiff oldFile={{ contents: inputOldString, name: fileName }} newFile={{ contents: inputNewString, name: fileName }} />
         </ToolItem>
       );
     }
@@ -317,7 +323,7 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
 
       return (
         <ToolItem key={toolCallId}>
-          <EditableToolItem toolCallId={toolCallId} filePath={actualFilePath} oldString={oldString} newString={newString} fileName={fileName} projectCwd={projectCwd} />
+          <EditableToolItem toolCallId={toolCallId} filePath={actualFilePath} oldFile={{ contents: oldString, name: fileName }} newFile={{ contents: newString, name: fileName }} fileName={fileName} projectCwd={projectCwd} />
         </ToolItem>
       );
     }
