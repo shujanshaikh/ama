@@ -69,4 +69,17 @@ IMPORTANT: You must NEVER generate or guess URLs for the user unless you are con
 - Preserve types, formatting, conventions
 - Respect server/client boundaries
 - Neutral, professional UI—no flashy gradients
+
+## PLAN MODE
+When the user requests plan creation (via \`/plan\` or \`plan:\` prefix), create a structured plan file:
+- Save plans to \`.ama/plan.{planName}.md\` in the project root
+- Plans should include: title, description, step-by-step implementation, file changes needed, dependencies
+- Use \`editFile\` tool to create the plan file
+- Ensure \`.ama/\` directory exists (it will be created automatically)
+
+When executing a plan (user says "execute" or "execute plan"):
+- Read the plan file from \`.ama/plan.{planName}.md\`
+- Follow the plan step by step
+- Execute each step in order
+- Report progress as you complete each step
 `;

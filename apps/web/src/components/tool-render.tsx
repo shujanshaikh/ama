@@ -3,9 +3,20 @@ import { motion } from 'motion/react';
 import { useEditHistoryStore } from '@/lib/useEditHistoryStore';
 import { useMutation } from '@tanstack/react-query';
 import { Badge } from './ui/badge';
-import { CheckCircle2, XCircle, Terminal } from 'lucide-react';
+import { Button } from './ui/button';
+import { CheckCircle2, XCircle, Terminal, AlertTriangle } from 'lucide-react';
 import { PierreDiff } from './pierre-diff';
 import type { FileContents } from '@pierre/diffs/react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 // Minimal streaming indicator
 const StreamingDots = () => (
@@ -26,61 +37,251 @@ const StreamingDots = () => (
   </span>
 );
 
-const EditableToolItem = ({ 
-  toolCallId, filePath, oldFile, newFile, fileName, projectCwd 
-}: {
+// Conflict resolution dialog
+interface ConflictDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onForceRevert: () => void;
+  onKeepCurrent: () => void;
+  conflictMessage?: string;
+  fileName?: string;
+  isLoading?: boolean;
+}
+
+const ConflictDialog = ({ 
+  isOpen, 
+  onClose, 
+  onForceRevert, 
+  onKeepCurrent, 
+  conflictMessage,
+  fileName,
+  isLoading 
+}: ConflictDialogProps) => (
+  <Dialog open={isOpen} onOpenChange={onClose}>
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2 text-orange-400">
+          <AlertTriangle className="w-5 h-5" />
+          Conflict Detected
+        </DialogTitle>
+        <DialogDescription className="text-sm text-muted-foreground">
+          {fileName && <span className="font-medium text-foreground">{fileName}</span>}
+          {fileName && <br />}
+          {conflictMessage || "The file has been modified since this edit was applied. Choose how to proceed."}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="py-4 space-y-3">
+        <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs text-orange-200">
+          <strong className="text-orange-300">Warning:</strong> Force reverting will overwrite any changes made after this edit.
+        </div>
+      </div>
+      <DialogFooter className="flex gap-2 sm:gap-0">
+        <Button 
+          variant="outline" 
+          onClick={onKeepCurrent}
+          disabled={isLoading}
+          className="flex-1 sm:flex-none"
+        >
+          Keep Current
+        </Button>
+        <Button 
+          variant="destructive" 
+          onClick={onForceRevert}
+          disabled={isLoading}
+          className="flex-1 sm:flex-none"
+        >
+          {isLoading ? "Reverting..." : "Force Revert"}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
+interface EditableToolItemProps {
   toolCallId: string;
   filePath: string;
   oldFile: FileContents;
   newFile: FileContents;
   fileName: string;
   projectCwd?: string;
-}) => {
-  const { addEdit, acceptEdit, revertEdit } = useEditHistoryStore();
+  checkpointId?: string;
+  afterHash?: string;
+}
+
+const EditableToolItem = ({ 
+  toolCallId, 
+  filePath, 
+  oldFile, 
+  newFile, 
+  fileName, 
+  projectCwd,
+  checkpointId,
+  afterHash,
+}: EditableToolItemProps) => {
+  const { addEdit, acceptEdit, revertEdit, setConflict, clearConflict } = useEditHistoryStore();
   const edit = useEditHistoryStore(state => state.edits.find(e => e.id === toolCallId));
-  if (!edit && oldFile.contents && newFile.contents) {
-    addEdit({ id: toolCallId, filePath, oldContent: oldFile.contents, newContent: newFile.contents });
-  }
-  const handleAccept = () => acceptEdit(toolCallId);
+  const hasAddedEditRef = useRef(false);
+  const [isOperationInProgress, setIsOperationInProgress] = useState(false);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState<string | undefined>();
   
-  const { mutate: handleReject, isPending: isProcessing } = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('http://localhost:3456/revert', {
+  // Use useEffect to add edit only once when component mounts
+  useEffect(() => {
+    if (!hasAddedEditRef.current && !edit && oldFile.contents !== undefined && newFile.contents !== undefined) {
+      addEdit({ 
+        id: toolCallId, 
+        filePath, 
+        oldContent: oldFile.contents, 
+        newContent: newFile.contents,
+        checkpointId,
+        afterHash,
+      });
+      hasAddedEditRef.current = true;
+    }
+  }, [toolCallId, filePath, oldFile.contents, newFile.contents, edit, addEdit, checkpointId, afterHash]);
+
+  // Accept handler - simple state update with loading state
+  const [isAccepting, setIsAccepting] = useState(false);
+  
+  const handleAccept = useCallback(() => {
+    if (isOperationInProgress || edit?.status === 'accepted' || edit?.status === 'reverted') {
+      return;
+    }
+    
+    setIsAccepting(true);
+    setIsOperationInProgress(true);
+    
+    try {
+      acceptEdit(toolCallId);
+      toast.success('Changes accepted successfully');
+    } catch (error) {
+      toast.error('Failed to accept changes', {
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+    } finally {
+      // Reset loading state after a short delay to show feedback
+      setTimeout(() => {
+        setIsAccepting(false);
+        setIsOperationInProgress(false);
+      }, 300);
+    }
+  }, [isOperationInProgress, edit?.status, acceptEdit, toolCallId]);
+  
+  // Reject mutation with conflict detection
+  const { mutate: handleReject, isPending: isRejecting } = useMutation({
+    mutationFn: async ({ force = false }: { force?: boolean } = {}) => {
+      if (isOperationInProgress || edit?.status === 'accepted' || edit?.status === 'reverted') {
+        return;
+      }
+      
+      setIsOperationInProgress(true);
+      
+      const endpoint = force ? 'http://localhost:3456/revert/force' : 'http://localhost:3456/revert';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           filePath, 
           oldString: oldFile.contents, 
           newString: newFile.contents, 
-          projectCwd 
+          projectCwd,
+          checkpointId: checkpointId || toolCallId,
+          expectedAfterHash: afterHash,
+          force,
         }),
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to revert');
+      
+      const data = await response.json();
+      
+      // Handle conflict response
+      if (response.status === 409 && data.conflict) {
+        throw { 
+          isConflict: true, 
+          message: data.error || 'File was modified after this edit',
+          currentHash: data.currentHash,
+          expectedHash: data.expectedHash,
+        };
       }
-      return response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to revert');
+      }
+      
+      return data;
     },
     onSuccess: () => {
+      setIsOperationInProgress(false);
+      setShowConflictDialog(false);
       revertEdit(toolCallId);
+      toast.success('Changes reverted successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      setIsOperationInProgress(false);
+      
+      // Handle conflict specially
+      if (error?.isConflict) {
+        setConflictMessage(error.message);
+        setConflict(toolCallId, {
+          message: error.message,
+          currentHash: error.currentHash,
+          expectedHash: error.expectedHash,
+        });
+        setShowConflictDialog(true);
+        return;
+      }
+      
       console.error('Failed to revert:', error);
+      toast.error('Failed to revert changes', {
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
     }
   });
+
+  // Force revert handler
+  const handleForceRevert = useCallback(() => {
+    handleReject({ force: true });
+  }, [handleReject]);
+
+  // Keep current (dismiss conflict)
+  const handleKeepCurrent = useCallback(() => {
+    setShowConflictDialog(false);
+    clearConflict(toolCallId);
+    // Optionally accept the current state
+    acceptEdit(toolCallId);
+    toast.info('Kept current file state');
+  }, [clearConflict, acceptEdit, toolCallId]);
+
+  const isProcessing = isAccepting || isRejecting || isOperationInProgress;
+  const isConflict = edit?.status === 'conflict';
+  
   return (
-    <ToolItem>
-      <PierreDiff
-        oldFile={oldFile}
-        newFile={newFile}
+    <>
+      <ToolItem>
+        <PierreDiff
+          oldFile={oldFile}
+          newFile={newFile}
+          fileName={fileName}
+          showActions={true}
+          editStatus={edit?.status}
+          onAccept={handleAccept}
+          onReject={() => handleReject({})}
+          isProcessing={isProcessing}
+          conflictMessage={isConflict ? edit?.conflictMessage : undefined}
+          onForceRevert={isConflict ? handleForceRevert : undefined}
+        />
+      </ToolItem>
+      
+      <ConflictDialog
+        isOpen={showConflictDialog}
+        onClose={() => setShowConflictDialog(false)}
+        onForceRevert={handleForceRevert}
+        onKeepCurrent={handleKeepCurrent}
+        conflictMessage={conflictMessage}
         fileName={fileName}
-        showActions={true}
-        editStatus={edit?.status}
-        onAccept={handleAccept}
-        onReject={handleReject}
-        isProcessing={isProcessing}
+        isLoading={isRejecting}
       />
-    </ToolItem>
+    </>
   );
 };
 
@@ -108,20 +309,6 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
   if (part.type === "tool-editFile") {
     const { toolCallId, state } = part;
     const fileName = getFileName(part.input?.target_file);
-    // const targetFile = part.input?.target_file;
-    // const content = part.input?.content;
-
-    // if (state === "input-streaming") {
-    //   return (
-    //     <ToolItem key={toolCallId} isStreaming>
-    //       <span className="text-sm">
-    //         Editing <span className="text-zinc-200 font-medium">{targetFile}</span>
-    //         <span className="text-zinc-200 font-medium">{content}</span>
-    //         <StreamingDots />
-    //       </span>
-    //     </ToolItem>
-    //   );
-    // }
 
     if (state === "output-available") {
       const output = part.output as {
@@ -131,6 +318,8 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
         isNewFile?: boolean;
         old_string?: string;
         new_string?: string;
+        checkpointId?: string;
+        afterHash?: string;
       } | undefined;
       const oldString : FileContents = { contents: output?.old_string || '', name: fileName };
       const newString : FileContents = { contents: output?.new_string || '', name: fileName };
@@ -138,7 +327,16 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
 
       return (
         <ToolItem key={toolCallId}>
-          <EditableToolItem toolCallId={toolCallId} filePath={actualFilePath} oldFile={oldString} newFile={newString} fileName={fileName} projectCwd={projectCwd} />
+          <EditableToolItem 
+            toolCallId={toolCallId} 
+            filePath={actualFilePath} 
+            oldFile={oldString} 
+            newFile={newString} 
+            fileName={fileName} 
+            projectCwd={projectCwd}
+            checkpointId={output?.checkpointId}
+            afterHash={output?.afterHash}
+          />
         </ToolItem>
       );
     }
@@ -302,20 +500,14 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
     const inputOldString = part.input?.old_string || '';
     const inputNewString = part.input?.new_string || '';
 
-    if (state === "input-streaming") {
-      return (
-        <ToolItem key={toolCallId} isStreaming>
-          <PierreDiff oldFile={{ contents: inputOldString, name: fileName }} newFile={{ contents: inputNewString, name: fileName }} />
-        </ToolItem>
-      );
-    }
-
     if (state === "output-available") {
       const output = part.output as {
         linesAdded?: number;
         linesRemoved?: number;
         old_string?: string;
         new_string?: string;
+        checkpointId?: string;
+        afterHash?: string;
       } | undefined;
       const oldString = output?.old_string || inputOldString;
       const newString = output?.new_string || inputNewString;
@@ -323,7 +515,16 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
 
       return (
         <ToolItem key={toolCallId}>
-          <EditableToolItem toolCallId={toolCallId} filePath={actualFilePath} oldFile={{ contents: oldString, name: fileName }} newFile={{ contents: newString, name: fileName }} fileName={fileName} projectCwd={projectCwd} />
+          <EditableToolItem 
+            toolCallId={toolCallId} 
+            filePath={actualFilePath} 
+            oldFile={{ contents: oldString, name: fileName }} 
+            newFile={{ contents: newString, name: fileName }} 
+            fileName={fileName} 
+            projectCwd={projectCwd}
+            checkpointId={output?.checkpointId}
+            afterHash={output?.afterHash}
+          />
         </ToolItem>
       );
     }
@@ -392,13 +593,13 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
                 {output?.stdout && (
                   <div className="text-xs font-mono bg-muted/30 px-2 py-1 rounded border border-border/50">
                     <div className="text-muted-foreground/60 text-[10px] mb-0.5">STDOUT:</div>
-                    <div className="text-foreground/80 whitespace-pre-wrap break-words">{output.stdout}</div>
+                    <div className="text-foreground/80 whitespace-pre-wrap wrap-break-word">{output.stdout}</div>
                   </div>
                 )}
                 {output?.stderr && (
                   <div className="text-xs font-mono bg-destructive/10 px-2 py-1 rounded border border-destructive/20">
                     <div className="text-destructive/70 text-[10px] mb-0.5">STDERR:</div>
-                    <div className="text-destructive/90 whitespace-pre-wrap break-words">{output.stderr}</div>
+                    <div className="text-destructive/90 whitespace-pre-wrap wrap-break-word">{output.stderr}</div>
                   </div>
                 )}
               </div>

@@ -17,5 +17,8 @@ export const models = [
     }, {
         id: "openai/gpt-5.2",
         name: "GPT 5.2",
+    } , {
+        id : "minimax/minimax-m2.1",
+        name: "Minimax M2.1",
     }
 ]

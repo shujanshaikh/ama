@@ -4,16 +4,20 @@ import fs from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { calculateDiffStats } from "../lib/diff";
 import { validatePath, resolveProjectPath } from "../lib/sandbox";
+import { checkpointStore } from "../lib/checkpoint";
+import { randomUUID } from "crypto";
+
 const editFilesSchema = z.object({
   target_file: z
     .string()
     .describe("The relative path to the file to modify. The tool will create any directories in the path that don't exist"),
   content : z.string().describe("The content to write to the file"),
   providedNewFile : z.boolean().describe("The new file content to write to the file").optional(),
+  toolCallId: z.string().optional().describe("Optional tool call ID for checkpoint tracking"),
 })
 
 export const editFiles = async function(input: z.infer<typeof editFilesSchema>, projectCwd?: string) {
-    const { target_file, content, providedNewFile } = input;
+    const { target_file, content, providedNewFile, toolCallId } = input;
     try {
       // Validate path if projectCwd is provided
       if (projectCwd) {
@@ -51,9 +55,28 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>, 
         }
       }
 
+      // Generate checkpoint ID if not provided
+      const checkpointId = toolCallId || randomUUID();
+
+      // Create checkpoint before writing (for reliable revert)
+      const checkpoint = checkpointStore.createCheckpoint(
+        checkpointId,
+        filePath,
+        existingContent,
+        content
+      );
+
       // Write the new content
-      await fs.promises.writeFile(filePath, content);
+      try {
+        await fs.promises.writeFile(filePath, content);
+      } catch (writeError: any) {
+        // Remove checkpoint if write failed
+        checkpointStore.removeCheckpoint(checkpointId);
+        throw writeError;
+      }
+
       const diffStats = calculateDiffStats(existingContent, content);
+      
       if (isNewFile) {
         return {
           success: true,
@@ -63,9 +86,12 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>, 
           message: `Created new file: ${target_file}`,
           linesAdded: diffStats.linesAdded,
           linesRemoved: diffStats.linesRemoved,
+          // Include checkpoint info for frontend
+          checkpointId: checkpoint.id,
+          beforeHash: checkpoint.beforeHash,
+          afterHash: checkpoint.afterHash,
         };
       } else {
-
         return {
           success: true,
           isNewFile: false,
@@ -74,6 +100,10 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>, 
           message: `Modified file: ${target_file}`,
           linesAdded: diffStats.linesAdded,
           linesRemoved: diffStats.linesRemoved,
+          // Include checkpoint info for frontend
+          checkpointId: checkpoint.id,
+          beforeHash: checkpoint.beforeHash,
+          afterHash: checkpoint.afterHash,
         };
       }
       

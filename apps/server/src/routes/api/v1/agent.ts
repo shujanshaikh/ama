@@ -1,24 +1,24 @@
 import { Hono } from "hono";
 import { createUIMessageStreamResponse, createUIMessageStream, stepCountIs, streamText, smoothStream } from "ai"
 import { convertToModelMessages } from "ai"
-import { SYSTEM_PROMPT } from "@/lib/prompt";
 import { tools } from "@/tools/tool";
 import { getMessagesByChatId, saveMessages, getProjectByChatId } from "@ama/db";
 import { convertToUIMessages } from "@/lib/convertToUIMessage";
 import { requestContext } from "@/lib/context";
 import { agentStreams } from "@/index";
 import { models } from "@/lib/model";
+import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
 
 
 export const agentRouter = new Hono();
 
 agentRouter.post("/agent-proxy", async (c) => {
-	const { message, chatId , model } = await c.req.json();
+	const { message, chatId , model, planMode, executePlan, planName } = await c.req.json();
 
 	const [token] = agentStreams.keys();
 
 	if (!token) {
-		return c.json({ error: 'run `ama` to make agent acess the local files.' }, 503);
+		return c.json({ error: 'run `amai` to make agent acess the local files.' }, 503);
 	}
 
 	const modelInfo = models.find((m) => m.id === model);
@@ -44,17 +44,24 @@ agentRouter.post("/agent-proxy", async (c) => {
 	const messagesFromDb = await getMessagesByChatId({ chatId });
 	const uiMessages = [...convertToUIMessages(messagesFromDb), message];
 
-	// Get project info for this chat
 	const projectInfo = await getProjectByChatId({ chatId });
 
 	return requestContext.run({ token, projectId: projectInfo?.projectId, projectCwd: projectInfo?.projectCwd }, () => {
 		return createUIMessageStreamResponse({
 			stream: createUIMessageStream({
-				execute: ({ writer: dataStream }) => {
+				execute: async ({ writer: dataStream }) => {
+					const systemPrompt = await buildPlanSystemPrompt(
+						planMode || false,
+						executePlan || false,
+						planName,
+						message,
+						projectInfo?.projectCwd
+					);
+
 					const result = streamText({
 						messages: convertToModelMessages(uiMessages),
 						model: modelInfo.id,
-						system: SYSTEM_PROMPT,
+						system: systemPrompt,
 						temperature: 0.7,
 						stopWhen: stepCountIs(10),
 						experimental_transform: smoothStream({

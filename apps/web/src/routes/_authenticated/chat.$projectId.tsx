@@ -35,7 +35,7 @@ import {
 } from '@/components/ai-elements/prompt-input';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { SquareIcon, XIcon, CodeIcon, GlobeIcon } from 'lucide-react';
+import { SquareIcon, XIcon, CodeIcon, GlobeIcon, ClipboardListIcon } from 'lucide-react';
 import {
   Source,
   Sources,
@@ -86,6 +86,8 @@ function Chat() {
   const [previewCollapsed, setPreviewCollapsed] = useState(true);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
+  const [planName, setPlanName] = useState<string | null>(null);
+  const [mode, setMode] = useState<'agent' | 'plan'>('agent');
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hasGeneratedTitleRef = useRef(false);
@@ -111,15 +113,25 @@ function Chat() {
   const transport = useMemo(() => new DefaultChatTransport({
     api: `${API_URL}/agent-proxy`,
     prepareSendMessagesRequest({ messages, body }) {
+      const lastMessage = messages.at(-1);
+      const textPart = lastMessage?.parts?.find((part) => part.type === 'text');
+      const messageText = (textPart && 'text' in textPart) ? textPart.text : '';
+      
+      // Detect execute plan mode
+      const isExecutePlan = messageText.toLowerCase().trim() === 'execute' || messageText.toLowerCase().trim() === 'execute plan';
+      
       return {
         body: {
           chatId: _chatId,
-          message: messages.at(-1),
+          message: lastMessage,
+          planMode: mode === 'plan',
+          executePlan: isExecutePlan,
+          planName: planName,
           ...body,
         },
       };
     },
-  }), [_chatId]);
+  }), [_chatId, planName, mode]);
 
   const { messages, sendMessage, status, regenerate, setMessages, stop, error } = useChat<ChatMessage>({
     transport,
@@ -144,6 +156,8 @@ function Chat() {
       hasGeneratedTitleRef.current = false;
       setMessages([]);
       setDismissedError(false);
+      setPlanName(null);
+      setMode('agent');
     }
   }, [_chatId, setMessages]);
 
@@ -178,6 +192,10 @@ function Chat() {
       return;
     }
 
+    const messageText = message.text.trim();
+    
+    // Detect execute plan mode
+    const isExecutePlan = messageText.toLowerCase().trim() === 'execute' || messageText.toLowerCase().trim() === 'execute plan';
 
     const isFirstMessage = messages.length === 0 &&
       !isLoadingMessages &&
@@ -189,9 +207,11 @@ function Chat() {
     } , {
       body: {
         model: model,
+        planMode: mode === 'plan',
+        executePlan: isExecutePlan,
+        planName: planName,
       },
     });
-    const messageText = message.text.trim();
     setInput('');
 
     if (isFirstMessage && _chatId && !hasGeneratedTitleRef.current && hasText) {
@@ -201,7 +221,7 @@ function Chat() {
         chatId: _chatId,
       });
     }
-  }, [sendMessage, messages.length, initialMessages, isLoadingMessages, _chatId, generateTitle]);
+  }, [sendMessage, messages.length, initialMessages, isLoadingMessages, _chatId, generateTitle, planName, mode]);
 
 
 
@@ -221,21 +241,21 @@ function Chat() {
     <ResizablePanelGroup direction="horizontal" className="h-full w-full">
       <ResizablePanel defaultSize={previewCollapsed ? 100 : 40} minSize={30} className="flex flex-col min-h-0">
         <div className="flex flex-col h-full min-h-0 w-full overflow-hidden relative">
-          {previewCollapsed && (
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-              <div className="flex items-center rounded-lg bg-muted/50 p-0.5 shadow-sm border border-border/50 backdrop-blur-sm">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowCodeEditor(true)}
-                  className={cn(
-                    "h-7 rounded-md px-3 text-xs font-medium transition-all",
-                    "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                  )}
-                >
-                  <CodeIcon className="mr-1.5 size-3.5" />
-                  Editor
-                </Button>
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <div className="flex items-center rounded-lg bg-muted/50 p-0.5 shadow-sm border border-border/50 backdrop-blur-sm">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCodeEditor(true)}
+                className={cn(
+                  "h-7 rounded-md px-3 text-xs font-medium transition-all",
+                  "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                )}
+              >
+                <CodeIcon className="mr-1.5 size-3.5" />
+                Editor
+              </Button>
+              {previewCollapsed && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -248,11 +268,11 @@ function Chat() {
                   <GlobeIcon className="mr-1.5 size-3.5" />
                   Preview
                 </Button>
-              </div>
+              )}
             </div>
-          )}
+          </div>
           <Conversation className="flex-1 min-h-0">
-            <ConversationContent className={`pb-6 ${previewCollapsed ? 'pt-16' : 'pt-4'}`}>
+            <ConversationContent className="pb-6 pt-16">
               <div className="w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto space-y-3">
                 {isLoadingMessages && _chatId && messages.length === 0 && (
                   <div className="space-y-4">
@@ -289,6 +309,16 @@ function Chat() {
                     {message.parts.map((part, i) => {
                       switch (part.type) {
                         case 'text':
+                          // Check if this message contains plan creation (look for plan file path in text)
+                          const planFileMatch = part.text.match(/\.ama\/plan\.([^.]+)\.md/i);
+                          const detectedPlanName = planFileMatch ? planFileMatch[1] : null;
+                          const isPlanCreationMessage = !!detectedPlanName && message.role === 'assistant';
+                          
+                          // Update plan name if detected
+                          if (isPlanCreationMessage && detectedPlanName && planName !== detectedPlanName) {
+                            setPlanName(detectedPlanName);
+                          }
+                          
                           return (
                             <Message key={`${message.id}-${i}`} from={message.role}>
                               <MessageContent>
@@ -303,7 +333,7 @@ function Chat() {
                                   {part.text}
                                 </MessageResponse>
                               </MessageContent>
-                              {message.role === 'assistant' && i === messages.length - 1 && (
+                              {message.role === 'assistant' && i === message.parts.length - 1 && (
                                 <MessageActions>
                                   <MessageAction
                                     onClick={() => regenerate()}
@@ -413,6 +443,37 @@ function Chat() {
                           <PromptInputActionAddAttachments />
                         </PromptInputActionMenuContent>
                       </PromptInputActionMenu>
+                      <div className="flex items-center rounded-lg bg-muted/50 p-0.5 border border-border/50">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setMode('agent')}
+                          className={cn(
+                            "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
+                            mode === 'agent'
+                              ? "bg-background text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+                          )}
+                        >
+                          <span>Agent</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setMode('plan')}
+                          className={cn(
+                            "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
+                            mode === 'plan'
+                              ? "bg-background text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+                          )}
+                        >
+                          <ClipboardListIcon className="size-3" />
+                          <span>Plan</span>
+                        </Button>
+                      </div>
                       <PromptInputSelect defaultValue={model} onValueChange={(value) => setModel(value)}>
                         <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">
                           <PromptInputSelectValue />

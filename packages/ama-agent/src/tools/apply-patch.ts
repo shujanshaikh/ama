@@ -2,15 +2,18 @@ import { z } from "zod";
 import { readFile, writeFile } from "node:fs/promises";
 import { calculateDiffStats } from "../lib/diff";
 import { validatePath, resolveProjectPath } from "../lib/sandbox";
+import { checkpointStore } from "../lib/checkpoint";
+import { randomUUID } from "crypto";
 
 const apply_patchSchema = z.object({
     file_path: z.string().describe("The path to the file you want to search and replace in. You can use either a relative path in the workspace or an absolute path. If an absolute path is provided, it will be preserved as is"),
     new_string: z.string().describe("The edited text to replace the old_string (must be different from the old_string)"),
     old_string: z.string().describe("The text to replace (must be unique within the file, and must match the file contents exactly, including all whitespace and indentation)"),
+    toolCallId: z.string().optional().describe("Optional tool call ID for checkpoint tracking"),
 })
 
 export const apply_patch = async function(input: z.infer<typeof apply_patchSchema>, projectCwd?: string) {
-    const { file_path, new_string, old_string } = input;    
+    const { file_path, new_string, old_string, toolCallId } = input;    
     try {
             if (!file_path) {
                 return {
@@ -96,6 +99,17 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
 
             const newContent = fileContent.replace(old_string, new_string);
 
+            // Generate checkpoint ID if not provided
+            const checkpointId = toolCallId || randomUUID();
+
+            // Create checkpoint before writing (for reliable revert)
+            const checkpoint = checkpointStore.createCheckpoint(
+                checkpointId,
+                absolute_file_path,
+                fileContent,
+                newContent
+            );
+
             try {
                 await writeFile(absolute_file_path, newContent, 'utf-8');
                 const diffStats = calculateDiffStats(fileContent, newContent);
@@ -106,8 +120,14 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
                     linesAdded: diffStats.linesAdded,
                     linesRemoved: diffStats.linesRemoved,
                     message: `Successfully replaced string in file: ${file_path}`,
+                    // Include checkpoint info for frontend
+                    checkpointId: checkpoint.id,
+                    beforeHash: checkpoint.beforeHash,
+                    afterHash: checkpoint.afterHash,
                 };
             } catch (error: any) {
+                // Remove checkpoint if write failed
+                checkpointStore.removeCheckpoint(checkpointId);
                 return {
                     success: false,
                     message: `Failed to write to file: ${file_path}`,
