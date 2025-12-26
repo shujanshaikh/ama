@@ -12,6 +12,7 @@ import { FetchConnection } from "@/components/fetchConnection";
 import { Sidepanel } from "@/components/side-panel";
 import type { AppRouter } from "@/server/routers";
 import { getAuth, getSignInUrl } from "@/authkit/serverFunction";
+import { UserStreamProvider } from "@/components/user-stream-provider";
 
 export interface RouterAppContext {
 	trpc: TRPCOptionsProxy<AppRouter>;
@@ -65,6 +66,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootDocument() {
 	const location = useLocation();
+	const { user } = Route.useLoaderData();
 	const isPublicPage = location.pathname === "/" || location.pathname === "/install";
 
 	return (
@@ -73,14 +75,16 @@ function RootDocument() {
 				<HeadContent />
 			</head>
 			<body>
-				<SidebarProvider defaultOpen={true}>
-					<Sidepanel />
-					<SidebarInset className="h-svh relative">
-						{!isPublicPage && <FetchConnection />}
-						<CollapsedSidebarTrigger />
-						<Outlet />
-					</SidebarInset>
-				</SidebarProvider>
+				<UserStreamProvider userId={user?.id}>
+					<SidebarProvider defaultOpen={true}>
+						<Sidepanel />
+						<SidebarInset className="h-svh relative">
+							{!isPublicPage && <FetchConnection />}
+							<CollapsedSidebarTrigger />
+							<Outlet />
+						</SidebarInset>
+					</SidebarProvider>
+				</UserStreamProvider>
 				<Toaster richColors />
 				<TanStackRouterDevtools position="bottom-left" initialIsOpen={false} />
 				<Scripts />

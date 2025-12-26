@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { Terminal, AlertTriangle } from "lucide-react"
 import {
 	Dialog,
@@ -6,55 +6,26 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog"
+import { useUserStreamContextOptional } from "@/components/user-stream-provider"
 
 export function FetchConnection() {
 	const [open, setOpen] = useState(true)
-	const [connected, setConnected] = useState<boolean | null>(null)
-	const eventSourceRef = useRef<EventSource | null>(null)
+	const userStream = useUserStreamContextOptional()
+
+	const cliConnected = userStream?.cliConnected ?? false
+	const wsStatus = userStream?.status ?? 'disconnected'
 
 	useEffect(() => {
-		fetch('http://localhost:3456/daemon/status', { method: 'POST' })
-			.then(res => res.json())
-			.then(data => {
-				setConnected(data.connected)
-				if (data.connected) {
-					setOpen(false)
-				}
-			})
-			.catch(() => setConnected(false))
-
-		const eventSource = new EventSource('http://localhost:3456/daemon/status/stream')
-		eventSourceRef.current = eventSource
-
-		eventSource.onmessage = (event) => {
-			try {
-				const data = JSON.parse(event.data)
-				setConnected(data.connected)
-				if (data.connected) {
-					setOpen(false)
-				}
-			} catch {
-				// Ignore parse errors
-			}
+		if (cliConnected) {
+			setOpen(false)
 		}
+	}, [cliConnected])
 
-		eventSource.onerror = () => {
-			setConnected(false)
-			// EventSource auto-reconnects by default
-		}
-
-		return () => {
-			eventSource.close()
-			eventSourceRef.current = null
-		}
-	}, [])
-
-	// Don't render anything if connected
-	if (connected) {
+	if (cliConnected) {
 		return null
 	}
 
-
+	const isConnecting = wsStatus === 'connecting'
 
 	return (
 		<>
@@ -66,7 +37,7 @@ export function FetchConnection() {
 				>
 					<AlertTriangle className="h-3 w-3 text-amber-400/70 group-hover:text-amber-400 transition-colors" />
 					<span className="font-medium tracking-wide">
-						CLI disconnected
+						{isConnecting ? 'Connecting...' : 'CLI disconnected'}
 					</span>
 					<span className="text-amber-200/50 hidden sm:inline">
 						—

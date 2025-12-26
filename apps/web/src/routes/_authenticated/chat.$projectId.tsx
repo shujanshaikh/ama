@@ -62,7 +62,6 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
 import { useTRPC } from '@/utils/trpc';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getEditorUrl } from '@/utils/get-editor-url';
@@ -82,7 +81,7 @@ function Chat() {
   const { projectId: _projectId } = Route.useParams();
   const { chat: _chatId } = Route.useSearch();
   const [input, setInput] = useState('');
-  const [model , setModel] = useState(models[0].id);
+  const [model, setModel] = useState(models[0].id);
   const [previewCollapsed, setPreviewCollapsed] = useState(true);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [dismissedError, setDismissedError] = useState(false);
@@ -100,6 +99,8 @@ function Chat() {
     enabled: !!_projectId,
   });
 
+
+
   const currentChatIdRef = useRef<string | undefined>(_chatId);
   const hasInitializedRef = useRef(false);
 
@@ -116,10 +117,10 @@ function Chat() {
       const lastMessage = messages.at(-1);
       const textPart = lastMessage?.parts?.find((part) => part.type === 'text');
       const messageText = (textPart && 'text' in textPart) ? textPart.text : '';
-      
+
       // Detect execute plan mode
       const isExecutePlan = messageText.toLowerCase().trim() === 'execute' || messageText.toLowerCase().trim() === 'execute plan';
-      
+
       return {
         body: {
           chatId: _chatId,
@@ -193,7 +194,7 @@ function Chat() {
     }
 
     const messageText = message.text.trim();
-    
+
     // Detect execute plan mode
     const isExecutePlan = messageText.toLowerCase().trim() === 'execute' || messageText.toLowerCase().trim() === 'execute plan';
 
@@ -204,7 +205,7 @@ function Chat() {
     sendMessage({
       text: message.text || '',
       files: message.files || []
-    } , {
+    }, {
       body: {
         model: model,
         planMode: mode === 'plan',
@@ -313,12 +314,12 @@ function Chat() {
                           const planFileMatch = part.text.match(/\.ama\/plan\.([^.]+)\.md/i);
                           const detectedPlanName = planFileMatch ? planFileMatch[1] : null;
                           const isPlanCreationMessage = !!detectedPlanName && message.role === 'assistant';
-                          
+
                           // Update plan name if detected
                           if (isPlanCreationMessage && detectedPlanName && planName !== detectedPlanName) {
                             setPlanName(detectedPlanName);
                           }
-                          
+
                           return (
                             <Message key={`${message.id}-${i}`} from={message.role}>
                               <MessageContent>
@@ -524,4 +525,3 @@ function Chat() {
     </ResizablePanelGroup>
   );
 }
-

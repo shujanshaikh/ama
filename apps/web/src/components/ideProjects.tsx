@@ -1,6 +1,6 @@
-import { queryOptions, useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import * as React from "react";
-import { LayoutGrid, List, Search, Plus } from "lucide-react";
+import { LayoutGrid, List, Search, Plus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/utils/trpc";
 import { useNavigate } from "@tanstack/react-router";
+import { useUserStreamContextOptional } from "@/components/user-stream-provider";
 
 type IdeProject = {
   name: string;
@@ -28,7 +29,6 @@ function projectInitial(name: string) {
 }
 
 function projectAccentClass(key: string) {
-  // Deterministic-ish, stable per project - simplified for minimalistic look
   const palettes = [
     "bg-muted text-muted-foreground",
     "bg-muted text-muted-foreground",
@@ -51,15 +51,20 @@ function subtitleForProject(p: IdeProject) {
 export function IdeProjects() {
   const trpc = useTRPC();
   const navigate = useNavigate();
-  const { data: ideProjects, isLoading } = useQuery(
-    queryOptions({
-      queryKey: ["ide-projects"],
-      queryFn: async () => {
-        const response = await fetch(`http://localhost:3456/ide-projects`);
-        return response.json();
-      },
-    })
-  );
+  const userStream = useUserStreamContextOptional();
+
+  const { data: ideProjects, isLoading, error } = useQuery({
+    queryKey: ["ide-projects", userStream?.cliConnected],
+    queryFn: async () => {
+      if (!userStream?.rpc) {
+        throw new Error('RPC not available');
+      }
+      return await userStream.rpc.getIdeProjects();
+    },
+    enabled: userStream?.cliConnected ?? false,
+    retry: false,
+    staleTime: 30000,
+  });
 
   const { mutateAsync: createProject } = useMutation({
     ...trpc.project.createProject.mutationOptions(),
@@ -81,7 +86,6 @@ export function IdeProjects() {
     });
   }, [projects, search]);
 
-  // Reset to page 1 when search changes
   React.useEffect(() => {
     setCurrentPage(1);
   }, [search]);
@@ -98,10 +102,18 @@ export function IdeProjects() {
       const newProject = await createProject({
         name: project.name,
         cwd: project.path,
-        gitRepo: "", // Empty for now, can be updated later
+        gitRepo: "",
       });
 
       if (newProject?.id) {
+        if (userStream?.cliConnected && userStream?.rpc) {
+          try {
+            await userStream.rpc.registerProject(newProject.id, project.path, project.name);
+          } catch (rpcError) {
+            console.warn('Failed to register project with CLI:', rpcError);
+          }
+        }
+
         navigate({
           to: '/chat/$projectId',
           params: { projectId: newProject.id },
@@ -114,6 +126,10 @@ export function IdeProjects() {
       setCreatingProjectId(null);
     }
   };
+
+  if (!userStream?.cliConnected) {
+    return null;
+  }
 
   if (isLoading) {
     return (
@@ -133,6 +149,17 @@ export function IdeProjects() {
         <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm py-6">
           <Skeleton className="h-4 w-4 rounded-full" />
           <span>Scanning...</span>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="mb-8">
+        <div className="flex items-center gap-2 text-muted-foreground text-sm py-6">
+          <AlertCircle className="h-4 w-4" />
+          <span>Failed to load projects</span>
         </div>
       </section>
     );

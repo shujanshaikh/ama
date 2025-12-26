@@ -26,7 +26,7 @@ function LandingPage() {
 	return (
 		<div className="min-h-screen flex flex-col font-sans bg-background selection:bg-primary/10">
 			<div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-				<div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
+				<div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)]" />
 				<div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
 				<div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[400px] bg-accent/5 rounded-full blur-[100px]" />
 			</div>
@@ -54,7 +54,7 @@ function LandingPage() {
 						className="flex flex-col items-center gap-4"
 					>
 						<h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
-							Introducing <span className="text-transparent bg-clip-text bg-gradient-to-br from-primary via-accent to-primary/80">ama</span>
+							Introducing <span className="text-transparent bg-clip-text from-primary via-accent to-primary/80">ama</span>
 						</h1>
 						<p className="text-xl sm:text-2xl md:text-3xl text-muted-foreground font-medium tracking-tight">
 							Lovable, but for <span className="text-foreground border-b border-primary/20">localhost</span>.

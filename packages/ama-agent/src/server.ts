@@ -1,5 +1,4 @@
 import WebSocket from 'ws'
-import { EventEmitter } from 'events'
 import { read_file } from './tools/read-file'
 import { apply_patch } from './tools/apply-patch'
 import { DEFAULT_SERVER_URL } from './constant'
@@ -12,9 +11,8 @@ import pc from 'picocolors'
 import { startHttpServer } from './http'
 import { getTokens } from './lib/auth-login'
 import { runTerminalCommand } from './tools/runTerminalCommand'
+import { connectToUserStreams } from './lib/userStreams'
 
-
-export const statusEmitter = new EventEmitter()
 
 
 interface ToolCall {
@@ -59,7 +57,6 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
 
   ws.on('open', () => {
     console.log(pc.green('Connected to server agent streams'))
-    statusEmitter.emit('status', { connected: true })
   })
 
   ws.on('message', async (data) => {
@@ -98,13 +95,11 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
 
   ws.on('close', () => {
     console.log(pc.red('Disconnected from server. Reconnecting in 5s...'))
-    statusEmitter.emit('status', { connected: false })
     setTimeout(() => connectToServer(serverUrl), 5000)
   })
 
   ws.on('error', (error) => {
     console.error(pc.red(`WebSocket error: ${error.message}`))
-    statusEmitter.emit('status', { connected: false })
   })
 
   return ws
@@ -116,5 +111,6 @@ export async function main() {
   console.log(pc.green('Starting local amai...'))
   console.log(pc.gray(`Connecting to server at ${serverUrl}`))
   const connection = connectToServer(serverUrl)
+  await connectToUserStreams(serverUrl)
   startHttpServer(connection)
 }

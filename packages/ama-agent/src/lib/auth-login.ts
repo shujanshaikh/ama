@@ -210,3 +210,17 @@ async function refreshToken(): Promise<StoredTokens> {
   return newTokens as StoredTokens;
 }
 
+export const getUserId = () => {
+  try {
+    if (!fs.existsSync(CREDENTIALS_PATH)) {
+      return
+    }
+    const raw = fs.readFileSync(CREDENTIALS_PATH, 'utf8')
+    const data = JSON.parse(raw)
+    return {
+      userId : data.user.id
+    }
+  } catch {
+    throw new Error("Error while getting userId")
+  }
+}
