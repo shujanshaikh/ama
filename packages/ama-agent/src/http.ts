@@ -1,82 +1,17 @@
 import { Hono } from "hono"
 import { serve } from "@hono/node-server"
-import { connectToServer, getConnectionStatus } from "./server"
+
 import { cors } from "hono/cors" 
-import { getContext } from "./lib/get-files";
-import { scanIdeProjects } from "./lib/ide-projects";
 import { projectRegistry } from "./lib/project-registry";
 import { checkpointStore } from "./lib/checkpoint";
 import path from "path";
 import { writeFile, readFile } from "fs/promises";
 
-let wsConnection: ReturnType<typeof connectToServer> | null = null
-
-export const startHttpServer = (connection?: ReturnType<typeof connectToServer>) => {
-    if (connection) {
-        wsConnection = connection
-    }
-
+export const startHttpServer = () => {
     const app = new Hono()
     app.use(cors())
-    // POST endpoint for initial status check
-    app.post("/daemon/status", (c) => {
-      const status = wsConnection ? getConnectionStatus(wsConnection) : 'closed';
-      return c.json({ connected: status === 'open' });
-    });
 
-    app.get("/daemon/status/stream", (c) => {
-      const encoder = new TextEncoder();
-      
-      const stream = new ReadableStream({
-        start(controller) {
-          // Send initial status immediately
-          const initialStatus = wsConnection ? getConnectionStatus(wsConnection) : 'closed';
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ connected: initialStatus === 'open' })}\n\n`));
-          
-          
-          const heartbeatInterval = setInterval(() => {
-            try {
-              const currentStatus = wsConnection ? getConnectionStatus(wsConnection) : 'closed';
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ connected: currentStatus === 'open' })}\n\n`));
-            } catch {
-              // Stream closed, ignore
-            }
-          }, 15000);
-          
-          // Cleanup on client disconnect
-          c.req.raw.signal.addEventListener('abort', () => {
-            clearInterval(heartbeatInterval);
-          });
-        }
-      });
-      
-      return new Response(stream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        }
-      });
-    });
-
-    app.get("context",async (c) => {
-      const context = getContext(process.cwd());
-      return c.body(JSON.stringify(context));
-    });
-    
-    app.get("/ide-projects", async (c) => {
-      try {
-        const projects = await scanIdeProjects();
-        if (!projects) {
-          return c.json({ error: "No projects found" }, 500);
-        }
-        return c.json({ projects });
-      } catch (error) {
-        return c.json({ error: "Failed to scan IDE projects" }, 500);
-      }
-    });
-
-    // Project registration endpoints
+  
     app.post("/projects/register", async (c) => {
       try {
         const { projectId, cwd, name } = await c.req.json();
@@ -90,7 +25,7 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
       }
     });
 
-    // Enhanced revert endpoint with hash-based conflict detection
+
     app.post("/revert", async (c) => {
       try {
         const { 
@@ -134,12 +69,11 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
           return c.json({ error: `Failed to read file: ${error.message}` }, 500);
         }
 
-        // Hash-based conflict detection using checkpoint
+
         if (checkpointId) {
           const verification = checkpointStore.verifyFileState(checkpointId, currentContent);
           
           if (!verification.safe && !force) {
-            // Return conflict info for frontend to handle
             return c.json({ 
               success: false,
               conflict: true,
@@ -147,14 +81,12 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
               currentHash: verification.currentHash,
               expectedHash: verification.checkpoint?.afterHash,
               checkpointId,
-            }, 409); // 409 Conflict
+            }, 409);
           }
 
-          // If checkpoint exists and is safe (or force=true), use checkpoint data for revert
           if (verification.checkpoint) {
             try {
               await writeFile(resolved, verification.checkpoint.beforeContent, 'utf-8');
-              // Clean up checkpoint after successful revert
               checkpointStore.removeCheckpoint(checkpointId);
               return c.json({ success: true, usedCheckpoint: true });
             } catch (writeError: any) {
@@ -163,7 +95,6 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
           }
         }
 
-        // Hash-based conflict detection using expectedAfterHash (fallback without checkpoint)
         if (expectedAfterHash && !force) {
           const currentHash = checkpointStore.computeHash(currentContent);
           
@@ -178,7 +109,6 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
           }
         }
         
-        // Legacy fallback: string-based revert
         let finalContent: string;
         
         if (newString && newString !== oldString) {
@@ -206,7 +136,6 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
         
         await writeFile(resolved, finalContent, 'utf-8');
         
-        // Clean up checkpoint if it exists
         if (checkpointId) {
           checkpointStore.removeCheckpoint(checkpointId);
         }
@@ -217,7 +146,6 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
       }
     });
 
-    // Force revert endpoint - bypasses conflict detection
     app.post("/revert/force", async (c) => {
       try {
         const { filePath, checkpointId, projectCwd } = await c.req.json();
@@ -258,7 +186,6 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
       }
     });
 
-    // Get checkpoint info endpoint
     app.get("/checkpoints/:checkpointId", (c) => {
       const checkpointId = c.req.param("checkpointId");
       const checkpoint = checkpointStore.getCheckpoint(checkpointId);
@@ -277,7 +204,6 @@ export const startHttpServer = (connection?: ReturnType<typeof connectToServer>)
       });
     });
 
-    // List all checkpoints (for debugging/admin)
     app.get("/checkpoints", (c) => {
       const stats = checkpointStore.getStats();
       const checkpoints = checkpointStore.getAllCheckpoints().map(cp => ({

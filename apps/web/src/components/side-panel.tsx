@@ -161,9 +161,8 @@ export function Sidepanel() {
 
     return (
         <Sidebar
-            variant="sidebar"
+            variant="inset"
             side="left"
-            className="border-r-0"
         >
             <SidebarRail />
             <div className="flex flex-col h-full p-4">

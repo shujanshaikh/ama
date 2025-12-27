@@ -49,6 +49,9 @@ import {
 } from '@/components/ai-elements/reasoning';
 import { DefaultChatTransport } from 'ai';
 import { createFileRoute } from '@tanstack/react-router';
+import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
+import { Sidepanel } from '@/components/side-panel';
+import { PanelLeftIcon } from 'lucide-react';
 import { PreviewIframe } from '@/components/web-view';
 import { CodeEditor } from '@/components/code-editor';
 import {
@@ -228,300 +231,336 @@ function Chat() {
 
   if (showCodeEditor) {
     return (
-      <CodeEditor
-        editorUrl={editorUrl}
-        webUrl="http://localhost:3003"
-        onReturnToChat={() => setShowCodeEditor(false)}
-        onCollapsedChange={() => setShowCodeEditor(false)}
-        projectId={_projectId}
-      />
+      <SidebarProvider defaultOpen={true} className="h-svh">
+        <Sidepanel />
+        <SidebarInset className="relative w-full flex flex-col min-h-0">
+          <CollapsedSidebarTrigger />
+          <CodeEditor
+            editorUrl={editorUrl}
+            webUrl="http://localhost:3003"
+            onReturnToChat={() => setShowCodeEditor(false)}
+            onCollapsedChange={() => setShowCodeEditor(false)}
+            projectId={_projectId}
+          />
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full w-full">
-      <ResizablePanel defaultSize={previewCollapsed ? 100 : 40} minSize={30} className="flex flex-col min-h-0">
-        <div className="flex flex-col h-full min-h-0 w-full overflow-hidden relative">
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-            <div className="flex items-center rounded-lg bg-muted/50 p-0.5 shadow-sm border border-border/50 backdrop-blur-sm">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowCodeEditor(true)}
-                className={cn(
-                  "h-7 rounded-md px-3 text-xs font-medium transition-all",
-                  "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                )}
-              >
-                <CodeIcon className="mr-1.5 size-3.5" />
-                Editor
-              </Button>
-              {previewCollapsed && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPreviewCollapsed(false)}
-                  className={cn(
-                    "h-7 rounded-md px-3 text-xs font-medium transition-all",
-                    "text-muted-foreground hover:text-foreground hover:bg-background/50"
+    <SidebarProvider defaultOpen={true} className="h-svh">
+      <Sidepanel />
+      <SidebarInset className="relative w-full flex flex-col min-h-0">
+        <CollapsedSidebarTrigger />
+        <ResizablePanelGroup direction="horizontal" className="h-full w-full">
+          <ResizablePanel defaultSize={previewCollapsed ? 100 : 40} minSize={30} className="flex flex-col min-h-0">
+            <div className="flex flex-col h-full min-h-0 w-full overflow-hidden relative">
+              <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                <div className="flex items-center rounded-lg bg-muted/50 p-0.5 shadow-sm border border-border/50 backdrop-blur-sm">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCodeEditor(true)}
+                    className={cn(
+                      "h-7 rounded-md px-3 text-xs font-medium transition-all",
+                      "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                    )}
+                  >
+                    <CodeIcon className="mr-1.5 size-3.5" />
+                    Editor
+                  </Button>
+                  {previewCollapsed && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPreviewCollapsed(false)}
+                      className={cn(
+                        "h-7 rounded-md px-3 text-xs font-medium transition-all",
+                        "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                      )}
+                    >
+                      <GlobeIcon className="mr-1.5 size-3.5" />
+                      Preview
+                    </Button>
                   )}
-                >
-                  <GlobeIcon className="mr-1.5 size-3.5" />
-                  Preview
-                </Button>
-              )}
-            </div>
-          </div>
-          <Conversation className="flex-1 min-h-0">
-            <ConversationContent className="pb-6 pt-16">
-              <div className="w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto space-y-3">
-                {isLoadingMessages && _chatId && messages.length === 0 && (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex flex-col gap-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
+                </div>
+              </div>
+              <Conversation className="flex-1 min-h-0">
+                <ConversationContent className="pb-6 pt-16">
+                  <div className="w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto space-y-3">
+                    {isLoadingMessages && _chatId && messages.length === 0 && (
+                      <div className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="flex flex-col gap-2">
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {messages.map((message) => (
+                      <div key={message.id}>
+                        {message.role === 'assistant' && message.parts.filter((part) => part.type === 'source-url').length > 0 && (
+                          <Sources>
+                            <SourcesTrigger
+                              count={
+                                message.parts.filter(
+                                  (part) => part.type === 'source-url',
+                                ).length
+                              }
+                            />
+                            {message.parts.filter((part) => part.type === 'source-url').map((part, i) => (
+                              <SourcesContent key={`${message.id}-${i}`}>
+                                <Source
+                                  key={`${message.id}-${i}`}
+                                  href={part.url}
+                                  title={part.url}
+                                />
+                              </SourcesContent>
+                            ))}
+                          </Sources>
+                        )}
+                        {message.parts.map((part, i) => {
+                          switch (part.type) {
+                            case 'text':
+                              // Check if this message contains plan creation (look for plan file path in text)
+                              const planFileMatch = part.text.match(/\.ama\/plan\.([^.]+)\.md/i);
+                              const detectedPlanName = planFileMatch ? planFileMatch[1] : null;
+                              const isPlanCreationMessage = !!detectedPlanName && message.role === 'assistant';
+
+                              // Update plan name if detected
+                              if (isPlanCreationMessage && detectedPlanName && planName !== detectedPlanName) {
+                                setPlanName(detectedPlanName);
+                              }
+
+                              return (
+                                <Message key={`${message.id}-${i}`} from={message.role}>
+                                  <MessageContent>
+                                    <MessageAttachments>
+                                      {message.parts
+                                        ?.filter((part) => part.type === "file")
+                                        .map((part, index) => (
+                                          <MessageAttachment key={`${message.id}-${index}`} data={part} />
+                                        ))}
+                                    </MessageAttachments>
+                                    <MessageResponse>
+                                      {part.text}
+                                    </MessageResponse>
+                                  </MessageContent>
+                                  {message.role === 'assistant' && i === message.parts.length - 1 && (
+                                    <MessageActions>
+                                      <MessageAction
+                                        onClick={() => regenerate()}
+                                        label="Retry"
+                                      >
+                                        <span className="text-[10px] text-muted-foreground/60 hover:text-foreground/70 transition-colors">Retry</span>
+                                      </MessageAction>
+                                      <MessageAction
+                                        onClick={() =>
+                                          navigator.clipboard.writeText(part.text)
+                                        }
+                                        label="Copy"
+                                      >
+                                        <span className="text-[10px] text-muted-foreground/60 hover:text-foreground/70 transition-colors">Copy</span>
+                                      </MessageAction>
+                                    </MessageActions>
+                                  )}
+                                </Message>
+                              );
+                            case 'reasoning':
+                              return (
+                                <Reasoning
+                                  key={`${message.id}-${i}`}
+                                  className="w-full"
+                                  isStreaming={status === 'streaming' && i === message.parts.length - 1 && message.id === messages.at(-1)?.id}
+                                >
+                                  <ReasoningTrigger />
+                                  <ReasoningContent>{part.text}</ReasoningContent>
+                                </Reasoning>
+                              );
+                            default:
+                              return <ToolRenderer key={`${message.id}-${i}`} part={part} projectCwd={projectData?.cwd} />;
+                          }
+                        })}
                       </div>
                     ))}
-                  </div>
-                )}
-                {messages.map((message) => (
-                  <div key={message.id}>
-                    {message.role === 'assistant' && message.parts.filter((part) => part.type === 'source-url').length > 0 && (
-                      <Sources>
-                        <SourcesTrigger
-                          count={
-                            message.parts.filter(
-                              (part) => part.type === 'source-url',
-                            ).length
-                          }
-                        />
-                        {message.parts.filter((part) => part.type === 'source-url').map((part, i) => (
-                          <SourcesContent key={`${message.id}-${i}`}>
-                            <Source
-                              key={`${message.id}-${i}`}
-                              href={part.url}
-                              title={part.url}
-                            />
-                          </SourcesContent>
-                        ))}
-                      </Sources>
+                    {status === "submitted" && (
+                      <div className="text-xs text-muted-foreground py-2">
+                        Thinking...
+                      </div>
                     )}
-                    {message.parts.map((part, i) => {
-                      switch (part.type) {
-                        case 'text':
-                          // Check if this message contains plan creation (look for plan file path in text)
-                          const planFileMatch = part.text.match(/\.ama\/plan\.([^.]+)\.md/i);
-                          const detectedPlanName = planFileMatch ? planFileMatch[1] : null;
-                          const isPlanCreationMessage = !!detectedPlanName && message.role === 'assistant';
-
-                          // Update plan name if detected
-                          if (isPlanCreationMessage && detectedPlanName && planName !== detectedPlanName) {
-                            setPlanName(detectedPlanName);
-                          }
-
-                          return (
-                            <Message key={`${message.id}-${i}`} from={message.role}>
-                              <MessageContent>
-                                <MessageAttachments>
-                                  {message.parts
-                                    ?.filter((part) => part.type === "file")
-                                    .map((part, index) => (
-                                      <MessageAttachment key={`${message.id}-${index}`} data={part} />
-                                    ))}
-                                </MessageAttachments>
-                                <MessageResponse>
-                                  {part.text}
-                                </MessageResponse>
-                              </MessageContent>
-                              {message.role === 'assistant' && i === message.parts.length - 1 && (
-                                <MessageActions>
-                                  <MessageAction
-                                    onClick={() => regenerate()}
-                                    label="Retry"
-                                  >
-                                    <span className="text-[10px] text-muted-foreground/60 hover:text-foreground/70 transition-colors">Retry</span>
-                                  </MessageAction>
-                                  <MessageAction
-                                    onClick={() =>
-                                      navigator.clipboard.writeText(part.text)
-                                    }
-                                    label="Copy"
-                                  >
-                                    <span className="text-[10px] text-muted-foreground/60 hover:text-foreground/70 transition-colors">Copy</span>
-                                  </MessageAction>
-                                </MessageActions>
-                              )}
-                            </Message>
-                          );
-                        case 'reasoning':
-                          return (
-                            <Reasoning
-                              key={`${message.id}-${i}`}
-                              className="w-full"
-                              isStreaming={status === 'streaming' && i === message.parts.length - 1 && message.id === messages.at(-1)?.id}
-                            >
-                              <ReasoningTrigger />
-                              <ReasoningContent>{part.text}</ReasoningContent>
-                            </Reasoning>
-                          );
-                        default:
-                          return <ToolRenderer key={`${message.id}-${i}`} part={part} projectCwd={projectData?.cwd} />;
-                      }
-                    })}
                   </div>
-                ))}
-                {status === "submitted" && (
-                  <div className="text-xs text-muted-foreground py-2">
-                    Thinking...
-                  </div>
-                )}
-              </div>
-            </ConversationContent>
-            <ConversationScrollButton />
-          </Conversation>
+                </ConversationContent>
+                <ConversationScrollButton />
+              </Conversation>
 
-          <div className="bottom-4 pb-2 md:pb-3">
-            <div className="w-full px-3 md:px-4">
-              <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
-                {error && !dismissedError && (
-                  <div className="flex justify-center mb-2">
-                    <div className="w-[90%]">
-                      <Alert variant="destructive" className="py-2">
-                        <AlertDescription className="flex items-center justify-between gap-3">
-                          <span className="flex-1 text-xs">
-                            {error instanceof Error ? error.message : String(error)}
-                          </span>
-                          <div className="flex items-center gap-2">
+              <div className="bottom-4 pb-2 md:pb-3">
+                <div className="w-full px-3 md:px-4">
+                  <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
+                    {error && !dismissedError && (
+                      <div className="flex justify-center mb-2">
+                        <div className="w-[90%]">
+                          <Alert variant="destructive" className="py-2">
+                            <AlertDescription className="flex items-center justify-between gap-3">
+                              <span className="flex-1 text-xs">
+                                {error instanceof Error ? error.message : String(error)}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => regenerate()}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  Retry
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => setDismissedError(true)}
+                                  className="h-6 w-6"
+                                  aria-label="Dismiss error"
+                                >
+                                  <XIcon className="size-3" />
+                                </Button>
+                              </div>
+                            </AlertDescription>
+                          </Alert>
+                        </div>
+                      </div>
+                    )}
+                    {status === 'streaming' && (
+                      <div className="flex justify-center mb-1">
+                        <div className="text-xs text-muted-foreground">
+                          Generating...
+                        </div>
+                      </div>
+                    )}
+                    <PromptInput onSubmit={handleSubmit} inputGroupClassName="rounded-xl">
+                      <PromptInputHeader>
+                        <PromptInputAttachments >
+                          {(attachment) => <PromptInputAttachment data={attachment} />}
+                        </PromptInputAttachments>
+                      </PromptInputHeader>
+                      <PromptInputBody>
+                        <PromptInputTextarea
+                          onChange={(e) => setInput(e.target.value)}
+                          value={input}
+                          className="min-h-[36px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-2"
+                        />
+                      </PromptInputBody>
+                      <PromptInputFooter className="px-3 pb-1.5 pt-0">
+                        <PromptInputTools>
+                          <PromptInputActionMenu>
+                            <PromptInputActionMenuTrigger className="rounded-xl hover:bg-muted/60" />
+                            <PromptInputActionMenuContent>
+                              <PromptInputActionAddAttachments />
+                            </PromptInputActionMenuContent>
+                          </PromptInputActionMenu>
+                          <div className="flex items-center rounded-lg bg-muted/50 p-0.5 border border-border/50">
                             <Button
+                              type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() => regenerate()}
-                              className="h-6 px-2 text-xs"
+                              onClick={() => setMode('agent')}
+                              className={cn(
+                                "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
+                                mode === 'agent'
+                                  ? "bg-background text-foreground shadow-sm"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+                              )}
                             >
-                              Retry
+                              <span>Agent</span>
                             </Button>
                             <Button
+                              type="button"
                               variant="ghost"
-                              size="icon-sm"
-                              onClick={() => setDismissedError(true)}
-                              className="h-6 w-6"
-                              aria-label="Dismiss error"
+                              size="sm"
+                              onClick={() => setMode('plan')}
+                              className={cn(
+                                "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
+                                mode === 'plan'
+                                  ? "bg-background text-foreground shadow-sm"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+                              )}
                             >
-                              <XIcon className="size-3" />
+                              <ClipboardListIcon className="size-3" />
+                              <span>Plan</span>
                             </Button>
                           </div>
-                        </AlertDescription>
-                      </Alert>
-                    </div>
+                          <PromptInputSelect defaultValue={model} onValueChange={(value) => setModel(value)}>
+                            <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">
+                              <PromptInputSelectValue />
+                            </PromptInputSelectTrigger>
+                            <PromptInputSelectContent>
+                              {models.map((m) => (
+                                <PromptInputSelectItem key={m.id} value={m.id}>
+                                  {m.name}
+                                </PromptInputSelectItem>
+                              ))}
+                            </PromptInputSelectContent>
+                          </PromptInputSelect>
+                        </PromptInputTools>
+                        {(status === 'streaming' || status === 'submitted') ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => stop()}
+                            className="h-7 w-7"
+                            aria-label="Stop generating"
+                          >
+                            <SquareIcon className="size-3" />
+                          </Button>
+                        ) : (
+                          <PromptInputSubmit
+                            disabled={!input}
+                            status={status}
+                            className="h-7 w-7 rounded-md transition-colors bg-foreground text-background hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                          />
+                        )}
+                      </PromptInputFooter>
+                    </PromptInput>
                   </div>
-                )}
-                {status === 'streaming' && (
-                  <div className="flex justify-center mb-1">
-                    <div className="text-xs text-muted-foreground">
-                      Generating...
-                    </div>
-                  </div>
-                )}
-                <PromptInput onSubmit={handleSubmit} inputGroupClassName="rounded-xl">
-                  <PromptInputHeader>
-                    <PromptInputAttachments >
-                      {(attachment) => <PromptInputAttachment data={attachment} />}
-                    </PromptInputAttachments>
-                  </PromptInputHeader>
-                  <PromptInputBody>
-                    <PromptInputTextarea
-                      onChange={(e) => setInput(e.target.value)}
-                      value={input}
-                      className="min-h-[36px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-2"
-                    />
-                  </PromptInputBody>
-                  <PromptInputFooter className="px-3 pb-1.5 pt-0">
-                    <PromptInputTools>
-                      <PromptInputActionMenu>
-                        <PromptInputActionMenuTrigger className="rounded-xl hover:bg-muted/60" />
-                        <PromptInputActionMenuContent>
-                          <PromptInputActionAddAttachments />
-                        </PromptInputActionMenuContent>
-                      </PromptInputActionMenu>
-                      <div className="flex items-center rounded-lg bg-muted/50 p-0.5 border border-border/50">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setMode('agent')}
-                          className={cn(
-                            "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
-                            mode === 'agent'
-                              ? "bg-background text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-                          )}
-                        >
-                          <span>Agent</span>
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setMode('plan')}
-                          className={cn(
-                            "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
-                            mode === 'plan'
-                              ? "bg-background text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-                          )}
-                        >
-                          <ClipboardListIcon className="size-3" />
-                          <span>Plan</span>
-                        </Button>
-                      </div>
-                      <PromptInputSelect defaultValue={model} onValueChange={(value) => setModel(value)}>
-                        <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">
-                          <PromptInputSelectValue />
-                        </PromptInputSelectTrigger>
-                        <PromptInputSelectContent>
-                          {models.map((m) => (
-                            <PromptInputSelectItem key={m.id} value={m.id}>
-                              {m.name}
-                            </PromptInputSelectItem>
-                          ))}
-                        </PromptInputSelectContent>
-                      </PromptInputSelect>
-                    </PromptInputTools>
-                    {(status === 'streaming' || status === 'submitted') ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => stop()}
-                        className="h-7 w-7"
-                        aria-label="Stop generating"
-                      >
-                        <SquareIcon className="size-3" />
-                      </Button>
-                    ) : (
-                      <PromptInputSubmit
-                        disabled={!input}
-                        status={status}
-                        className="h-7 w-7 rounded-md transition-colors bg-foreground text-background hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-                      />
-                    )}
-                  </PromptInputFooter>
-                </PromptInput>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </ResizablePanel>
-
-      {!previewCollapsed && (
-        <>
-          <ResizableHandle />
-          <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-h-0">
-            <PreviewIframe onCollapsedChange={setPreviewCollapsed} projectId={_projectId} />
           </ResizablePanel>
-        </>
-      )}
-    </ResizablePanelGroup>
+
+          {!previewCollapsed && (
+            <>
+              <ResizableHandle />
+              <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-h-0">
+                <PreviewIframe onCollapsedChange={setPreviewCollapsed} projectId={_projectId} />
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+
+function CollapsedSidebarTrigger() {
+  const { state, toggleSidebar } = useSidebar();
+
+  if (state === "expanded") {
+    return null;
+  }
+
+  return (
+    <div className="absolute top-4 left-4 z-10">
+      <Button
+        data-sidebar="trigger"
+        data-slot="sidebar-trigger"
+        variant="ghost"
+        size="icon-sm"
+        className="rounded-md hover:bg-muted transition-colors flex-shrink-0"
+        onClick={toggleSidebar}
+      >
+        <PanelLeftIcon />
+        <span className="sr-only">Toggle Sidebar</span>
+      </Button>
+    </div>
   );
 }

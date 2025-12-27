@@ -71,7 +71,6 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
           throw new Error(`Unknown tool: ${message.tool}`)
         }
 
-        // Pass projectCwd to executor if provided
         const result = await executor(message.args, message.projectCwd)
 
         ws.send(JSON.stringify({
@@ -110,7 +109,7 @@ export async function main() {
   const serverUrl = DEFAULT_SERVER_URL
   console.log(pc.green('Starting local amai...'))
   console.log(pc.gray(`Connecting to server at ${serverUrl}`))
-  const connection = connectToServer(serverUrl)
+  connectToServer(serverUrl)
   await connectToUserStreams(serverUrl)
-  startHttpServer(connection)
+  startHttpServer()
 }

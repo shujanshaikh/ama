@@ -1,16 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import * as React from "react";
-import { LayoutGrid, List, Search, Plus, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Card } from "@/components/ui/card";
+import { Plus, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { cn } from "@/lib/utils";
 import { useTRPC } from "@/utils/trpc";
 import { useNavigate } from "@tanstack/react-router";
 import { useUserStreamContextOptional } from "@/components/user-stream-provider";
@@ -22,31 +13,7 @@ type IdeProject = {
   type?: string;
 };
 
-function projectInitial(name: string) {
-  const trimmed = name.trim();
-  if (!trimmed) return "?";
-  return trimmed[0]?.toUpperCase() ?? "?";
-}
-
-function projectAccentClass(key: string) {
-  const palettes = [
-    "bg-muted text-muted-foreground",
-    "bg-muted text-muted-foreground",
-    "bg-muted text-muted-foreground",
-  ];
-
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  return palettes[hash % palettes.length]!;
-}
-
-function subtitleForProject(p: IdeProject) {
-  const t = (p.type ?? p.ide ?? "").toLowerCase();
-  if (t.includes("cursor")) return "New Chat";
-  if (t.includes("vscode")) return "Open in VS Code";
-  if (t.includes("claude")) return "Open in Claude";
-  return "Open";
-}
+const ITEMS_PER_PAGE = 8;
 
 export function IdeProjects() {
   const trpc = useTRPC();
@@ -71,30 +38,12 @@ export function IdeProjects() {
   });
 
   const projects: IdeProject[] = ideProjects?.projects ?? [];
-  const [search, setSearch] = React.useState("");
-  const [view, setView] = React.useState<"grid" | "list">("grid");
   const [creatingProjectId, setCreatingProjectId] = React.useState<string | null>(null);
   const [currentPage, setCurrentPage] = React.useState(1);
 
-  const filtered = React.useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return projects;
-    return projects.filter((p) => {
-      const n = (p.name ?? "").toLowerCase();
-      const path = (p.path ?? "").toLowerCase();
-      return n.includes(q) || path.includes(q);
-    });
-  }, [projects, search]);
-
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [search]);
-
-  const itemsPerPage = view === "grid" ? 6 : 10;
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const suggestedProjects = filtered.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(projects.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProjects = projects.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handleCreateProject = async (project: IdeProject) => {
     setCreatingProjectId(project.path);
@@ -134,21 +83,16 @@ export function IdeProjects() {
   if (isLoading) {
     return (
       <section className="mb-8">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <Skeleton className="h-4 w-32" />
-          <div className="flex items-center gap-1">
-            <Skeleton className="h-8 w-8 rounded-md" />
-            <Skeleton className="h-8 w-8 rounded-md" />
-          </div>
+        <div className="mb-2">
+          <Skeleton className="h-4 w-20 mb-1" />
+          <Skeleton className="h-3 w-64" />
         </div>
-
-        <div className="relative mb-3">
-          <Skeleton className="h-10 rounded-lg" />
-        </div>
-
-        <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm py-6">
-          <Skeleton className="h-4 w-4 rounded-full" />
-          <span>Scanning...</span>
+        <div className="grid grid-cols-2 gap-px">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="border border-neutral-800 px-4 py-3">
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ))}
         </div>
       </section>
     );
@@ -157,7 +101,7 @@ export function IdeProjects() {
   if (error) {
     return (
       <section className="mb-8">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm py-6">
+        <div className="flex items-center gap-2 text-neutral-500 text-sm py-6">
           <AlertCircle className="h-4 w-4" />
           <span>Failed to load projects</span>
         </div>
@@ -171,122 +115,66 @@ export function IdeProjects() {
 
   return (
     <section className="mb-8">
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Suggested projects
+      <div className="mb-3">
+        <h2 className="text-sm font-medium text-neutral-200 mb-0.5">
+          Suggested
         </h2>
-
-        <div className="flex items-center gap-1 rounded-md border border-border bg-card p-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className={cn("rounded-md", view === "grid" && "bg-muted")}
-            onClick={() => setView("grid")}
-            aria-pressed={view === "grid"}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className={cn("rounded-md", view === "list" && "bg-muted")}
-            onClick={() => setView("list")}
-            aria-pressed={view === "list"}
-          >
-            <List className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        <p className="text-xs text-neutral-500">
+          Based on folders you recently opened in Claude Code or VSCode
+        </p>
       </div>
 
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search projects"
-          className="h-10 rounded-lg pl-9"
-        />
-      </div>
-
-      <div
-        className={cn(
-          view === "grid"
-            ? "grid grid-cols-2 gap-3"
-            : "flex flex-col gap-2"
-        )}
-      >
-        {suggestedProjects.map((project) => (
-          <Card
+      <div className="grid grid-cols-2">
+        {paginatedProjects.map((project) => (
+          <div
             key={project.path}
-            className="group cursor-pointer hover:border-border transition-colors p-3"
+            className="flex items-center justify-between border border-neutral-800 px-4 py-2.5 -mt-px -ml-px first:mt-0 first:ml-0"
           >
-            <div className="flex items-start gap-2">
-              <div
-                className={cn(
-                  "size-7 rounded-md flex items-center justify-center text-xs font-medium",
-                  projectAccentClass(project.path)
-                )}
-              >
-                {projectInitial(project.name)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-foreground truncate">
-                    {project.name}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="h-7 w-7 rounded-md shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCreateProject(project);
-                    }}
-                    disabled={creatingProjectId === project.path}
-                  >
-                    {creatingProjectId === project.path ? (
-                      <div className="w-3 h-3 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
-                    ) : (
-                      <Plus className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <Separator className="my-2" />
-
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="truncate">{subtitleForProject(project)}</span>
-            </div>
-          </Card>
+            <span className="text-sm text-neutral-300 truncate pr-3">
+              {project.name}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleCreateProject(project)}
+              disabled={creatingProjectId === project.path}
+              className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
+            >
+              {creatingProjectId === project.path ? (
+                <div className="w-3 h-3 border border-neutral-500 border-t-neutral-300 rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Import</span>
+                </>
+              )}
+            </button>
+          </div>
         ))}
       </div>
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-4">
-          <PaginationPrevious
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              setCurrentPage((prev) => Math.max(1, prev - 1));
-            }}
-            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-          />
-          <span className="text-xs text-muted-foreground">
-            Page {currentPage} of {totalPages}
+        <div className="mt-3 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            <span>Previous</span>
+          </button>
+          <span className="text-xs text-neutral-600">
+            {currentPage} / {totalPages}
           </span>
-          <PaginationNext
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              setCurrentPage((prev) => Math.min(totalPages, prev + 1));
-            }}
-            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-          />
+          <button
+            type="button"
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <span>Next</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
     </section>

@@ -3,13 +3,9 @@ import { HeadContent, Outlet, Scripts, createRootRouteWithContext, useLocation }
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import appCss from "../index.css?url";
 import type { QueryClient } from "@tanstack/react-query";
-import { SidebarProvider, SidebarInset, useSidebar } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { PanelLeftIcon } from "lucide-react";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
 import { FetchConnection } from "@/components/fetchConnection";
-import { Sidepanel } from "@/components/side-panel";
 import type { AppRouter } from "@/server/routers";
 import { getAuth, getSignInUrl } from "@/authkit/serverFunction";
 import { UserStreamProvider } from "@/components/user-stream-provider";
@@ -70,49 +66,23 @@ function RootDocument() {
 	const isPublicPage = location.pathname === "/" || location.pathname === "/install";
 
 	return (
-		<html lang="en" className="dark" suppressHydrationWarning>
+		<html lang="en" className="dark h-full" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 			</head>
-			<body>
+			<body className="h-full overflow-hidden">
 				<UserStreamProvider userId={user?.id}>
-					<SidebarProvider defaultOpen={true}>
-						<Sidepanel />
-						<SidebarInset className="h-svh relative">
-							{!isPublicPage && <FetchConnection />}
-							<CollapsedSidebarTrigger />
+					<div className="relative w-full h-full flex flex-col min-h-0">
+						{!isPublicPage && <FetchConnection />}
+						<div className="flex-1 overflow-y-auto min-h-0">
 							<Outlet />
-						</SidebarInset>
-					</SidebarProvider>
+						</div>
+					</div>
 				</UserStreamProvider>
 				<Toaster richColors />
 				<TanStackRouterDevtools position="bottom-left" initialIsOpen={false} />
 				<Scripts />
 			</body>
 		</html>
-	);
-}
-
-function CollapsedSidebarTrigger() {
-	const { state, toggleSidebar } = useSidebar();
-
-	if (state === "expanded") {
-		return null;
-	}
-
-	return (
-		<div className="absolute top-4 left-4 z-10">
-			<Button
-				data-sidebar="trigger"
-				data-slot="sidebar-trigger"
-				variant="ghost"
-				size="icon-sm"
-				className="rounded-md hover:bg-muted transition-colors flex-shrink-0"
-				onClick={toggleSidebar}
-			>
-				<PanelLeftIcon />
-				<span className="sr-only">Toggle Sidebar</span>
-			</Button>
-		</div>
 	);
 }
