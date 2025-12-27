@@ -4,19 +4,17 @@ import {
   parseDiffFromFile,
 } from '@pierre/diffs';
 import type { FileContents, FileDiffProps } from '@pierre/diffs/react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { 
-  CheckCircle2, 
-  XCircle, 
-  Loader2, 
+
+import {
+  CheckCircle2,
+  XCircle,
+  Loader2,
   ChevronRight,
   AlertTriangle,
 } from 'lucide-react';
 import { getFileIcon } from './file-icons';
 
-const LazyFileDiff = lazy(() => 
+const LazyFileDiff = lazy(() =>
   import('@pierre/diffs/react').then(module => ({ default: module.FileDiff }))
 );
 
@@ -38,34 +36,34 @@ interface PierreDiffProps {
 const countDiffLines = (oldStr: string, newStr: string) => {
   const oldLines = oldStr?.split('\n') || [];
   const newLines = newStr?.split('\n') || [];
-  
+
   const oldSet = new Set(oldLines);
   const newSet = new Set(newLines);
-  
+
   const added = newLines.filter(line => !oldSet.has(line)).length;
   const removed = oldLines.filter(line => !newSet.has(line)).length;
-  
+
   return { added, removed };
 };
 
-export function PierreDiff({ 
-  oldFile, 
-  newFile, 
-  fileName, 
-  showActions, 
-  editStatus, 
-  onAccept, 
-  onReject, 
+export function PierreDiff({
+  oldFile,
+  newFile,
+  fileName,
+  showActions,
+  editStatus,
+  onAccept,
+  onReject,
   isProcessing,
   conflictMessage,
   onForceRevert,
 }: PierreDiffProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  
+
   const oldContent = oldFile.contents || '';
   const newContent = newFile.contents || '';
   const displayFileName = fileName || oldFile.name || newFile.name || 'file';
-  
+
   // Parse the diff from oldFile and newFile
   const fileDiff = useMemo<FileDiffMetadata>(() => {
     return parseDiffFromFile(oldFile, newFile);
@@ -75,151 +73,116 @@ export function PierreDiff({
     () => countDiffLines(oldContent, newContent),
     [oldContent, newContent]
   );
-  
+
   // Don't render if no changes
   if (oldContent === newContent) {
     return null;
   }
-  
+
   const isConflict = editStatus === 'conflict';
 
   // FileDiff options for split view
   const diffOptions: FileDiffProps<undefined>['options'] = {
-    theme: { dark: "vitesse-dark", light: "vitesse-light" },
-    diffStyle: "unified", 
+    theme: { dark: "material-theme-darker", light: "material-theme-darker" },
+    diffStyle: "unified",
     diffIndicators: "bars",
     expandUnchanged: true,
     lineDiffType: "word",
   };
-  
+
   return (
     <div className="mt-2">
-      <Card className="overflow-hidden p-0 border border-border/50 shadow-lg bg-background/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border/30">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-2 hover:bg-muted/40 rounded-md px-2 py-1 -ml-2 transition-colors"
-          >
-            <ChevronRight 
-              className={`w-3.5 h-3.5 text-muted-foreground/60 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-            />
-            
-            {getFileIcon(displayFileName)}
-            
-            <span className="text-xs font-medium text-foreground/80">
-              {displayFileName}
-            </span>
-            
-            <div className="flex items-center gap-2 ml-3">
-              {added > 0 && (
-                <Badge 
-                  variant="secondary" 
-                  className="text-xs font-medium px-2 py-0.5 h-5 rounded-md shadow-sm"
-                >
-                  <span className="font-semibold">+</span>
-                  {added}
-                </Badge>
+      <div className="overflow-hidden border border-border/30 rounded-lg">
+        {/* Minimal header - only shows when there are actions or status */}
+        {(showActions || editStatus || isConflict) && (
+          <div className="flex items-center justify-between px-3 py-1.5 bg-muted/10 border-b border-border/20">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <ChevronRight
+                className={`w-3 h-3 text-muted-foreground/60 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`}
+              />
+              {getFileIcon(displayFileName)}
+              <span className="text-xs text-foreground/80">
+                {displayFileName}
+              </span>
+              <span className="text-[10px] text-emerald-500/80 ml-1">+{added}</span>
+              {removed > 0 && <span className="text-[10px] text-red-400/80">-{removed}</span>}
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              {isConflict && (
+                <>
+                  <span className="text-[10px] text-amber-500/80 flex items-center gap-1">
+                    <AlertTriangle className="w-2.5 h-2.5" />
+                    Conflict
+                  </span>
+                  {onForceRevert && (
+                    <button
+                      onClick={onForceRevert}
+                      className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5"
+                    >
+                      Force Revert
+                    </button>
+                  )}
+                </>
               )}
-              {removed > 0 && (
-                <Badge 
-                  variant="secondary" 
-                  className="text-xs font-medium px-2 py-0.5 h-5 rounded-md shadow-sm"
-                >
-                  <span className="font-semibold">-</span>
-                  {removed}
-                </Badge>
+
+              {showActions && editStatus === 'applied' && !isConflict && (
+                <>
+                  {isProcessing ? (
+                    <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        onClick={onReject}
+                        className="text-[10px] text-muted-foreground hover:text-red-400 px-1.5 py-0.5 transition-colors"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={onAccept}
+                        className="text-[10px] text-muted-foreground hover:text-emerald-500 px-1.5 py-0.5 transition-colors"
+                      >
+                        Accept
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+
+              {editStatus === 'accepted' && (
+                <span className="text-[10px] text-emerald-500/80 flex items-center gap-1">
+                  <CheckCircle2 className="w-2.5 h-2.5" />
+                  Accepted
+                </span>
+              )}
+
+              {editStatus === 'reverted' && (
+                <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                  <XCircle className="w-2.5 h-2.5" />
+                  Reverted
+                </span>
               )}
             </div>
-            
-          </button>
-          
-          <div className="flex items-center gap-2">
-            {isConflict && (
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs px-2 py-0.5 h-5 gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  Conflict
-                </Badge>
-                {onForceRevert && (
-                  <Button
-                    onClick={onForceRevert}
-                    variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                  >
-                    Force Revert
-                  </Button>
-                )}
-              </div>
-            )}
-            
-            {showActions && editStatus === 'applied' && !isConflict && (
-              <div className="flex items-center gap-2">
-                {isProcessing ? (
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span className="text-xs">Processing...</span>
-                  </div>
-                ) : (
-                  <>
-                    <Button
-                      onClick={onReject}
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-3 text-xs"
-                    >
-                      <XCircle className="w-3.5 h-3.5" />
-                      Reject
-                    </Button>
-                    <Button
-                      onClick={onAccept}
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-3 text-xs"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Accept
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
-            
-            {editStatus === 'accepted' && (
-              <Badge 
-                variant="secondary" 
-                className="text-xs font-medium px-2.5 py-0.5 h-6 gap-1.5 rounded-md shadow-sm"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Accepted
-              </Badge>
-            )}
-            
-            {editStatus === 'reverted' && (
-              <Badge 
-                variant="secondary" 
-                className="text-xs font-medium px-2.5 py-0.5 h-6 gap-1.5 rounded-md shadow-sm"
-              >
-                <XCircle className="w-3.5 h-3.5" />
-                Reverted
-              </Badge>
-            )}
           </div>
-        </div>
-        
+        )}
+
         {isConflict && conflictMessage && (
-          <div className="px-3 py-2 bg-muted/50 border-b border-border/30 text-xs text-muted-foreground">
-            <AlertTriangle className="w-3 h-3 inline mr-1.5" />
+          <div className="px-3 py-1.5 bg-amber-500/5 border-b border-border/20 text-[10px] text-amber-500/70">
             {conflictMessage}
           </div>
         )}
-        
+
         {isExpanded && (
           <div className="overflow-hidden">
-            <div className="max-h-[400px] overflow-auto diff-scrollbar">
+            <div className="max-h-[380px] overflow-auto diff-scrollbar">
               <Suspense fallback={
-                <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                <div className="p-4 text-[13px] text-muted-foreground/70 flex items-center gap-2">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   Loading diff...
                 </div>
               }>
@@ -231,31 +194,31 @@ export function PierreDiff({
             </div>
           </div>
         )}
-        
+
         <style>{`
           .diff-scrollbar {
             scrollbar-width: thin;
-            scrollbar-color: rgba(82, 82, 91, 0.4) transparent;
+            scrollbar-color: rgba(113, 113, 122, 0.25) transparent;
           }
           .diff-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
           }
           .diff-scrollbar::-webkit-scrollbar-track {
             background: transparent;
           }
           .diff-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(82, 82, 91, 0.4);
+            background: rgba(113, 113, 122, 0.25);
             border-radius: 10px;
           }
           .diff-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(82, 82, 91, 0.6);
+            background: rgba(113, 113, 122, 0.4);
           }
           .diff-scrollbar::-webkit-scrollbar-corner {
             background: transparent;
           }
         `}</style>
-      </Card>
+      </div>
     </div>
   );
 }

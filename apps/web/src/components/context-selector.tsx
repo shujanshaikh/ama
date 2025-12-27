@@ -184,7 +184,7 @@ export function ContextSelector({
               {getFileIcon(file)}
               <span className="truncate flex-1 font-mono text-[11px]">{fileName}</span>
               {isInContext && (
-                <CheckIcon className="size-3 text-primary/70 flex-shrink-0" />
+                <CheckIcon className="size-3 text-primary/70" />
               )}
             </div>
           );

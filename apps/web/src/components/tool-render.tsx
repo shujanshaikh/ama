@@ -7,7 +7,7 @@ import { Button } from './ui/button';
 import { CheckCircle2, XCircle, Terminal, AlertTriangle } from 'lucide-react';
 import { PierreDiff } from './pierre-diff';
 import type { FileContents } from '@pierre/diffs/react';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -18,9 +18,13 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { getFileIcon } from './file-icons';
+import { StreamingCodeBlock } from './code-block';
+
+// Helper to detect language from file extension
+
 
 // Minimal streaming indicator
-const StreamingDots = () => (
+export const StreamingDots = () => (
   <span className="inline-flex items-center gap-0.5 ml-1.5">
     {[0, 1, 2].map((i) => (
       <motion.span
@@ -49,14 +53,14 @@ interface ConflictDialogProps {
   isLoading?: boolean;
 }
 
-const ConflictDialog = ({ 
-  isOpen, 
-  onClose, 
-  onForceRevert, 
-  onKeepCurrent, 
+const ConflictDialog = ({
+  isOpen,
+  onClose,
+  onForceRevert,
+  onKeepCurrent,
   conflictMessage,
   fileName,
-  isLoading 
+  isLoading
 }: ConflictDialogProps) => (
   <Dialog open={isOpen} onOpenChange={onClose}>
     <DialogContent className="sm:max-w-md">
@@ -77,16 +81,16 @@ const ConflictDialog = ({
         </div>
       </div>
       <DialogFooter className="flex gap-2 sm:gap-0">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={onKeepCurrent}
           disabled={isLoading}
           className="flex-1 sm:flex-none"
         >
           Keep Current
         </Button>
-        <Button 
-          variant="destructive" 
+        <Button
+          variant="destructive"
           onClick={onForceRevert}
           disabled={isLoading}
           className="flex-1 sm:flex-none"
@@ -109,12 +113,12 @@ interface EditableToolItemProps {
   afterHash?: string;
 }
 
-const EditableToolItem = ({ 
-  toolCallId, 
-  filePath, 
-  oldFile, 
-  newFile, 
-  fileName, 
+const EditableToolItem = ({
+  toolCallId,
+  filePath,
+  oldFile,
+  newFile,
+  fileName,
   projectCwd,
   checkpointId,
   afterHash,
@@ -125,14 +129,14 @@ const EditableToolItem = ({
   const [isOperationInProgress, setIsOperationInProgress] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [conflictMessage, setConflictMessage] = useState<string | undefined>();
-  
+
   // Use useEffect to add edit only once when component mounts
   useEffect(() => {
     if (!hasAddedEditRef.current && !edit && oldFile.contents !== undefined && newFile.contents !== undefined) {
-      addEdit({ 
-        id: toolCallId, 
-        filePath, 
-        oldContent: oldFile.contents, 
+      addEdit({
+        id: toolCallId,
+        filePath,
+        oldContent: oldFile.contents,
         newContent: newFile.contents,
         checkpointId,
         afterHash,
@@ -143,15 +147,15 @@ const EditableToolItem = ({
 
   // Accept handler - simple state update with loading state
   const [isAccepting, setIsAccepting] = useState(false);
-  
+
   const handleAccept = useCallback(() => {
     if (isOperationInProgress || edit?.status === 'accepted' || edit?.status === 'reverted') {
       return;
     }
-    
+
     setIsAccepting(true);
     setIsOperationInProgress(true);
-    
+
     try {
       acceptEdit(toolCallId);
       toast.success('Changes accepted successfully');
@@ -167,48 +171,48 @@ const EditableToolItem = ({
       }, 300);
     }
   }, [isOperationInProgress, edit?.status, acceptEdit, toolCallId]);
-  
+
   // Reject mutation with conflict detection
   const { mutate: handleReject, isPending: isRejecting } = useMutation({
     mutationFn: async ({ force = false }: { force?: boolean } = {}) => {
       if (isOperationInProgress || edit?.status === 'accepted' || edit?.status === 'reverted') {
         return;
       }
-      
+
       setIsOperationInProgress(true);
-      
+
       const endpoint = force ? 'http://localhost:3456/revert/force' : 'http://localhost:3456/revert';
-      
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          filePath, 
-          oldString: oldFile.contents, 
-          newString: newFile.contents, 
+        body: JSON.stringify({
+          filePath,
+          oldString: oldFile.contents,
+          newString: newFile.contents,
           projectCwd,
           checkpointId: checkpointId || toolCallId,
           expectedAfterHash: afterHash,
           force,
         }),
       });
-      
+
       const data = await response.json();
-      
+
       // Handle conflict response
       if (response.status === 409 && data.conflict) {
-        throw { 
-          isConflict: true, 
+        throw {
+          isConflict: true,
           message: data.error || 'File was modified after this edit',
           currentHash: data.currentHash,
           expectedHash: data.expectedHash,
         };
       }
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to revert');
       }
-      
+
       return data;
     },
     onSuccess: () => {
@@ -219,7 +223,7 @@ const EditableToolItem = ({
     },
     onError: (error: any) => {
       setIsOperationInProgress(false);
-      
+
       // Handle conflict specially
       if (error?.isConflict) {
         setConflictMessage(error.message);
@@ -231,7 +235,7 @@ const EditableToolItem = ({
         setShowConflictDialog(true);
         return;
       }
-      
+
       console.error('Failed to revert:', error);
       toast.error('Failed to revert changes', {
         description: error instanceof Error ? error.message : 'An unexpected error occurred',
@@ -255,7 +259,7 @@ const EditableToolItem = ({
 
   const isProcessing = isAccepting || isRejecting || isOperationInProgress;
   const isConflict = edit?.status === 'conflict';
-  
+
   return (
     <>
       <ToolItem>
@@ -272,7 +276,7 @@ const EditableToolItem = ({
           onForceRevert={isConflict ? handleForceRevert : undefined}
         />
       </ToolItem>
-      
+
       <ConflictDialog
         isOpen={showConflictDialog}
         onClose={() => setShowConflictDialog(false)}
@@ -310,6 +314,23 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
   if (part.type === "tool-editFile") {
     const { toolCallId, state } = part;
     const fileName = getFileName(part.input?.target_file);
+    const input = part.input
+
+    if (state === "input-streaming") {
+      const streamingCode = input?.content || '';
+
+      return (
+        <ToolItem key={toolCallId} isStreaming>
+          {streamingCode && (
+            <StreamingCodeBlock
+              code={streamingCode}
+              filePath={input?.target_file}
+              fileName={fileName}
+            />
+          )}
+        </ToolItem>
+      );
+    }
 
     if (state === "output-available") {
       const output = part.output as {
@@ -322,18 +343,18 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
         checkpointId?: string;
         afterHash?: string;
       } | undefined;
-      const oldString : FileContents = { contents: output?.old_string || '', name: fileName };
-      const newString : FileContents = { contents: output?.new_string || '', name: fileName };
+      const oldString: FileContents = { contents: output?.old_string || '', name: fileName };
+      const newString: FileContents = { contents: output?.new_string || '', name: fileName };
       const actualFilePath = part.input?.target_file || fileName;
 
       return (
         <ToolItem key={toolCallId}>
-          <EditableToolItem 
-            toolCallId={toolCallId} 
-            filePath={actualFilePath} 
-            oldFile={oldString} 
-            newFile={newString} 
-            fileName={fileName} 
+          <EditableToolItem
+            toolCallId={toolCallId}
+            filePath={actualFilePath}
+            oldFile={oldString}
+            newFile={newString}
+            fileName={fileName}
             projectCwd={projectCwd}
             checkpointId={output?.checkpointId}
             afterHash={output?.afterHash}
@@ -516,12 +537,12 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
 
       return (
         <ToolItem key={toolCallId}>
-          <EditableToolItem 
-            toolCallId={toolCallId} 
-            filePath={actualFilePath} 
-            oldFile={{ contents: oldString, name: fileName }} 
-            newFile={{ contents: newString, name: fileName }} 
-            fileName={fileName} 
+          <EditableToolItem
+            toolCallId={toolCallId}
+            filePath={actualFilePath}
+            oldFile={{ contents: oldString, name: fileName }}
+            newFile={{ contents: newString, name: fileName }}
+            fileName={fileName}
             projectCwd={projectCwd}
             checkpointId={output?.checkpointId}
             afterHash={output?.afterHash}
@@ -553,7 +574,7 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
     if (state === "output-available") {
       const output = part.output as { success?: boolean; message?: string; error?: string; stdout?: string; stderr?: string; exitCode?: number } | undefined;
       const isSuccess = output?.success !== false && (!output?.exitCode || output.exitCode === 0);
-      
+
       return (
         <ToolItem key={toolCallId}>
           <div className="flex flex-col gap-2">
@@ -562,8 +583,8 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
               <span className="text-sm">
                 Ran <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">{command}</span>
               </span>
-              <Badge 
-                variant={isSuccess ? "default" : "destructive"} 
+              <Badge
+                variant={isSuccess ? "default" : "destructive"}
                 className="gap-1 text-xs"
               >
                 {isSuccess ? (
