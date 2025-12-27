@@ -70,6 +70,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getEditorUrl } from '@/utils/get-editor-url';
 import type { ChatMessage } from '@ama/server/lib/tool-types';
 import { models } from '@ama/server/lib/model';
+import { ContextSelector } from '@/components/context-selector';
+import { getFileIcon } from '@/components/file-icons';
 
 export const Route = createFileRoute('/_authenticated/chat/$projectId')({
   component: Chat,
@@ -90,6 +92,9 @@ function Chat() {
   const [dismissedError, setDismissedError] = useState(false);
   const [planName, setPlanName] = useState<string | null>(null);
   const [mode, setMode] = useState<'agent' | 'plan'>('agent');
+  const [showContextSelector, setShowContextSelector] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [selectedContextFiles, setSelectedContextFiles] = useState<string[]>([]);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hasGeneratedTitleRef = useRef(false);
@@ -217,6 +222,7 @@ function Chat() {
       },
     });
     setInput('');
+    setSelectedContextFiles([]);
 
     if (isFirstMessage && _chatId && !hasGeneratedTitleRef.current && hasText) {
       hasGeneratedTitleRef.current = true;
@@ -226,6 +232,76 @@ function Chat() {
       });
     }
   }, [sendMessage, messages.length, initialMessages, isLoadingMessages, _chatId, generateTitle, planName, mode]);
+
+  // Handle input change and detect @ mentions
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart || 0;
+    setInput(value);
+    setCursorPosition(cursorPos);
+
+    // Check if we should show context selector
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtIndex !== -1) {
+      // Check if there's a space after the @ (means file was selected)
+      const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
+      const hasSpace = textAfterAt.includes(' ');
+
+      if (!hasSpace) {
+        setShowContextSelector(true);
+      } else {
+        setShowContextSelector(false);
+      }
+    } else {
+      setShowContextSelector(false);
+    }
+  }, []);
+
+  // Handle file selection from context selector
+  const handleFileSelect = useCallback((file: string) => {
+    const textBeforeCursor = input.slice(0, cursorPosition);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    const textAfterCursor = input.slice(cursorPosition);
+
+    if (lastAtIndex !== -1) {
+      const newInput = input.slice(0, lastAtIndex) + '@' + file + ' ' + textAfterCursor;
+      setInput(newInput);
+
+      // Add to selected files if not already there
+      if (!selectedContextFiles.includes(file)) {
+        setSelectedContextFiles(prev => [...prev, file]);
+      }
+    }
+
+    setShowContextSelector(false);
+
+    // Focus back on textarea using DOM query
+    setTimeout(() => {
+      const textarea = document.querySelector('[data-slot="input-group-control"]') as HTMLTextAreaElement;
+      textarea?.focus();
+    }, 0);
+  }, [input, cursorPosition, selectedContextFiles]);
+
+  // Toggle file in context
+  const handleToggleContextFile = useCallback((file: string) => {
+    const isRemoving = selectedContextFiles.includes(file);
+    
+    setSelectedContextFiles(prev =>
+      prev.includes(file)
+        ? prev.filter(f => f !== file)
+        : [...prev, file]
+    );
+
+    // If removing, also remove the @filename reference from input text
+    if (isRemoving) {
+      const fileName = file.split('/').pop() || file;
+      // Remove all occurrences of @filename (with optional space after)
+      const regex = new RegExp(`@${fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'g');
+      setInput(prev => prev.replace(regex, ''));
+    }
+  }, [selectedContextFiles]);
 
 
 
@@ -436,91 +512,143 @@ function Chat() {
                         </div>
                       </div>
                     )}
-                    <PromptInput onSubmit={handleSubmit} inputGroupClassName="rounded-xl">
-                      <PromptInputHeader>
-                        <PromptInputAttachments >
-                          {(attachment) => <PromptInputAttachment data={attachment} />}
-                        </PromptInputAttachments>
-                      </PromptInputHeader>
-                      <PromptInputBody>
-                        <PromptInputTextarea
-                          onChange={(e) => setInput(e.target.value)}
-                          value={input}
-                          className="min-h-[36px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-2"
-                        />
-                      </PromptInputBody>
-                      <PromptInputFooter className="px-3 pb-1.5 pt-0">
-                        <PromptInputTools>
-                          <PromptInputActionMenu>
-                            <PromptInputActionMenuTrigger className="rounded-xl hover:bg-muted/60" />
-                            <PromptInputActionMenuContent>
-                              <PromptInputActionAddAttachments />
-                            </PromptInputActionMenuContent>
-                          </PromptInputActionMenu>
-                          <div className="flex items-center rounded-lg bg-muted/50 p-0.5 border border-border/50">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setMode('agent')}
-                              className={cn(
-                                "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
-                                mode === 'agent'
-                                  ? "bg-background text-foreground shadow-sm"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-                              )}
-                            >
-                              <span>Agent</span>
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setMode('plan')}
-                              className={cn(
-                                "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
-                                mode === 'plan'
-                                  ? "bg-background text-foreground shadow-sm"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-                              )}
-                            >
-                              <ClipboardListIcon className="size-3" />
-                              <span>Plan</span>
-                            </Button>
-                          </div>
-                          <PromptInputSelect defaultValue={model} onValueChange={(value) => setModel(value)}>
-                            <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">
-                              <PromptInputSelectValue />
-                            </PromptInputSelectTrigger>
-                            <PromptInputSelectContent>
-                              {models.map((m) => (
-                                <PromptInputSelectItem key={m.id} value={m.id}>
-                                  {m.name}
-                                </PromptInputSelectItem>
-                              ))}
-                            </PromptInputSelectContent>
-                          </PromptInputSelect>
-                        </PromptInputTools>
-                        {(status === 'streaming' || status === 'submitted') ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => stop()}
-                            className="h-7 w-7"
-                            aria-label="Stop generating"
-                          >
-                            <SquareIcon className="size-3" />
-                          </Button>
-                        ) : (
-                          <PromptInputSubmit
-                            disabled={!input}
-                            status={status}
-                            className="h-7 w-7 rounded-md transition-colors bg-foreground text-background hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+
+                    {/* Context Selector Popup */}
+                    <div className="relative">
+                      {showContextSelector && projectData?.cwd && (
+                        <div className="absolute bottom-full left-0 mb-2 z-50">
+                          <ContextSelector
+                            text={input}
+                            cursorPosition={cursorPosition}
+                            onFileSelect={handleFileSelect}
+                            onClose={() => setShowContextSelector(false)}
+                            cwd={projectData.cwd}
+                            selectedFiles={selectedContextFiles}
+                            onToggleFile={handleToggleContextFile}
                           />
-                        )}
-                      </PromptInputFooter>
-                    </PromptInput>
+                        </div>
+                      )}
+
+                      <PromptInput onSubmit={handleSubmit} inputGroupClassName="rounded-xl">
+                        <PromptInputHeader>
+                          <PromptInputAttachments >
+                            {(attachment) => <PromptInputAttachment data={attachment} />}
+                          </PromptInputAttachments>
+                          {selectedContextFiles.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5 px-2 py-1.5">
+                              {selectedContextFiles.map((file) => {
+                                const fileName = file.split('/').pop() || file;
+                                return (
+                                  <div
+                                    key={file}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleContextFile(file);
+                                    }}
+                                    className={cn(
+                                      "flex items-center gap-1.5 px-2 py-1 rounded-md",
+                                      "bg-primary/10 border border-primary/20",
+                                      "hover:bg-primary/15 cursor-pointer transition-colors",
+                                      "group"
+                                    )}
+                                  >
+                                    <div className="shrink-0">
+                                      {getFileIcon(file)}
+                                    </div>
+                                    <span className="text-xs text-foreground/80 font-mono max-w-[120px] truncate">
+                                      {fileName}
+                                    </span>
+                                    <XIcon 
+                                      className="size-3 text-muted-foreground/60 group-hover:text-foreground/80 transition-colors shrink-0" 
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </PromptInputHeader>
+                        <PromptInputBody>
+                          <PromptInputTextarea
+                            onChange={handleInputChange}
+                            value={input}
+                            placeholder="Ask anything... (type @ to add file context)"
+                            className="min-h-[36px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-2"
+                          />
+                        </PromptInputBody>
+                        <PromptInputFooter className="px-3 pb-1.5 pt-0">
+                          <PromptInputTools>
+                            <PromptInputActionMenu>
+                              <PromptInputActionMenuTrigger className="rounded-xl hover:bg-muted/60" />
+                              <PromptInputActionMenuContent>
+                                <PromptInputActionAddAttachments />
+                              </PromptInputActionMenuContent>
+                            </PromptInputActionMenu>
+                            <div className="flex items-center rounded-lg bg-muted/50 p-0.5 border border-border/50">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setMode('agent')}
+                                className={cn(
+                                  "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
+                                  mode === 'agent'
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+                                )}
+                              >
+                                <span>Agent</span>
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setMode('plan')}
+                                className={cn(
+                                  "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
+                                  mode === 'plan'
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+                                )}
+                              >
+                                <ClipboardListIcon className="size-3" />
+                                <span>Plan</span>
+                              </Button>
+                              
+                            </div>
+                            <PromptInputSelect defaultValue={model} onValueChange={(value) => setModel(value)}>
+                              <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">
+                                <PromptInputSelectValue />
+                              </PromptInputSelectTrigger>
+                              <PromptInputSelectContent>
+                                {models.map((m) => (
+                                  <PromptInputSelectItem key={m.id} value={m.id}>
+                                    {m.name}
+                                  </PromptInputSelectItem>
+                                ))}
+                              </PromptInputSelectContent>
+                            </PromptInputSelect>
+                          </PromptInputTools>
+                          {(status === 'streaming' || status === 'submitted') ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => stop()}
+                              className="h-7 w-7"
+                              aria-label="Stop generating"
+                            >
+                              <SquareIcon className="size-3" />
+                            </Button>
+                          ) : (
+                            <PromptInputSubmit
+                              disabled={!input}
+                              status={status}
+                              className="h-7 w-7 rounded-md transition-colors bg-foreground text-background hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                            />
+                          )}
+                        </PromptInputFooter>
+                      </PromptInput>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -555,7 +683,7 @@ function CollapsedSidebarTrigger() {
         data-slot="sidebar-trigger"
         variant="ghost"
         size="icon-sm"
-        className="rounded-md hover:bg-muted transition-colors flex-shrink-0"
+        className="rounded-md hover:bg-muted transition-colors shrink-0"
         onClick={toggleSidebar}
       >
         <PanelLeftIcon />

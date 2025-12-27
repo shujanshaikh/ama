@@ -24,64 +24,61 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
 	const { user, url } = Route.useLoaderData();
 	return (
-		<div className="min-h-screen flex flex-col font-sans bg-background selection:bg-primary/10">
-			<div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-				<div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)]" />
-				<div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
-				<div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[400px] bg-accent/5 rounded-full blur-[100px]" />
-			</div>
+		<div className="min-h-screen flex flex-col font-sans bg-background text-foreground relative selection:bg-black/5 dark:selection:bg-white/10">
+			<div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0" />
 
-			<header className="sticky top-0 z-50 w-full border-b border-border/5">
-				<div className="container flex h-16 max-w-7xl mx-auto items-center justify-between px-6">
-					<div className="flex items-center gap-3">
-						<AmaLogo size={36} />
+			<header className="fixed top-0 z-50 w-full transition-all duration-300">
+				<div className="container h-16 max-w-5xl mx-auto flex items-center justify-between px-6">
+					<div className="flex items-center gap-2">
+						<AmaLogo size={32} />
+						<span className="font-bold tracking-tight text-xl">ama</span>
 					</div>
-					<div className="flex items-center gap-4">
+					<div className="flex items-center gap-3">
 						<SignInButton user={user} url={url} />
-						<Button asChild variant="outline">
-							<Link to="/install">Install Cli</Link>
+						<Button asChild className="rounded-full px-5 font-medium">
+							<Link to="/install">Install CLI</Link>
 						</Button>
 					</div>
 				</div>
 			</header>
 
-			<main className="flex-1 flex flex-col items-center justify-center relative px-4 z-10 pb-20">
-				<div className="container max-w-4xl mx-auto flex flex-col items-center justify-center gap-6 text-center -mt-10">
+			<main className="flex-1 flex flex-col items-center justify-center relative z-10 px-4">
+				<div className="container max-w-3xl mx-auto flex flex-col items-center text-center gap-6">
 					<motion.div
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.6, ease: "easeOut" }}
+						transition={{ duration: 0.5 }}
 						className="flex flex-col items-center gap-4"
 					>
 						<h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
-							Introducing <span className="text-transparent bg-clip-text from-primary via-accent to-primary/80">ama</span>
+							Lovable, but for <span className="text-muted-foreground">localhost</span>.
 						</h1>
-						<p className="text-xl sm:text-2xl md:text-3xl text-muted-foreground font-medium tracking-tight">
-							Lovable, but for <span className="text-foreground border-b border-primary/20">localhost</span>.
+						<p className="text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
+							The AI coding assistant that lives in your terminal and works with your local files.
 						</p>
 					</motion.div>
+
+					<div className="w-full h-10" />
+
+					<motion.div
+						initial={{ opacity: 0, scale: 0.98 }}
+						animate={{ opacity: 1, scale: 1 }}
+						transition={{ duration: 0.4, delay: 0.15 }}
+						className="w-full max-w-2xl"
+					>
+						{/* <div className="bg-card rounded-2xl p-1">
+							<PromptBox
+								containerClassName="max-w-full"
+								className="border-0 shadow-none bg-transparent"
+							/>
+						</div> */}
+					</motion.div>
 				</div>
-
-				<div className="h-12 md:h-16" />
-
-				<motion.div
-					initial={{ opacity: 0, scale: 0.95, y: 10 }}
-					animate={{ opacity: 1, scale: 1, y: 0 }}
-					transition={{ duration: 0.5, delay: 0.2 }}
-					className="w-full max-w-2xl mx-auto relative group px-2"
-				>
-					<div className="relative">
-						<PromptBox
-							containerClassName="max-w-full"
-							className="shadow-2xl shadow-primary/5 border-border/40 bg-background/80 backdrop-blur-sm"
-						/>
-					</div>
-				</motion.div>
 			</main>
 
-			<footer className="w-full py-8 text-center text-xs text-muted-foreground/30 relative z-10">
+			<footer className="w-full py-6 text-center text-xs text-muted-foreground/50">
 				<div className="container mx-auto px-6">
-					© {new Date().getFullYear()} Ama, Inc.
+					© {new Date().getFullYear()} Ama
 				</div>
 			</footer>
 		</div>

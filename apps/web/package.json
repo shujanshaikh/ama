@@ -12,6 +12,7 @@
     "@ai-sdk/react": "^2.0.115",
     "@ama/db": "workspace:*",
     "@ama/server": "workspace:*",
+    "@icons-pack/react-simple-icons": "^13.8.0",
     "@pierre/diffs": "^1.0.2",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-collapsible": "^1.1.12",

@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import { getFileIcon } from './file-icons';
 
 // Minimal streaming indicator
 const StreamingDots = () => (
@@ -377,8 +378,8 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
     if (state === "input-streaming") {
       return (
         <ToolItem key={toolCallId} isStreaming>
-          <span className="text-sm">
-            Reading <span className="text-foreground/50">{fileName}</span>
+          <span className="text-sm flex items-center gap-2">
+            Reading <span className="text-foreground/50">{fileName}</span> {getFileIcon(fileName)} <span className="text-muted-foreground/50 ml-1.5">{fileName}</span>
             <StreamingDots />
           </span>
         </ToolItem>
@@ -389,8 +390,8 @@ export const ToolRenderer = ({ part, projectCwd }: { part: ChatMessage['parts'][
       const output = part.output as { totalLines?: number } | undefined;
       return (
         <ToolItem key={toolCallId}>
-          <span className="text-sm">
-            Read <span className="text-foreground/50">{fileName}</span>
+          <span className="text-sm flex items-center gap-2">
+            Read <span className="text-foreground/50">{fileName}</span> {getFileIcon(fileName)}
             {output?.totalLines && (
               <span className="text-muted-foreground/50 ml-1.5">({output.totalLines} lines)</span>
             )}

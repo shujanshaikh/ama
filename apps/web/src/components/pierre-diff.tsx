@@ -13,8 +13,8 @@ import {
   Loader2, 
   ChevronRight,
   AlertTriangle,
-  FileCode
 } from 'lucide-react';
+import { getFileIcon } from './file-icons';
 
 const LazyFileDiff = lazy(() => 
   import('@pierre/diffs/react').then(module => ({ default: module.FileDiff }))
@@ -104,7 +104,7 @@ export function PierreDiff({
               className={`w-3.5 h-3.5 text-muted-foreground/60 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
             />
             
-            <FileCode className="w-3.5 h-3.5 text-muted-foreground/60" />
+            {getFileIcon(displayFileName)}
             
             <span className="text-xs font-medium text-foreground/80">
               {displayFileName}
