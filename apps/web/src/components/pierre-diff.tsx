@@ -93,7 +93,6 @@ export function PierreDiff({
   return (
     <div className="mt-2">
       <div className="overflow-hidden border border-border/30 rounded-lg">
-        {/* Minimal header - only shows when there are actions or status */}
         {(showActions || editStatus || isConflict) && (
           <div className="flex items-center justify-between px-3 py-1.5 bg-muted/10 border-b border-border/20">
             <button

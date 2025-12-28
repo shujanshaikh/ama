@@ -30,9 +30,12 @@
         "@trpc/server": "^11.5.0",
         "@workos-inc/node": "^7.77.0",
         "better-auth": "^1.0.0",
+        "date-fns": "^4.1.0",
         "dotenv": "^17.2.3",
         "drizzle-orm": "^0.45.1",
         "hono": "^4.10.7",
+        "redis": "^5.10.0",
+        "resumable-stream": "^2.2.10",
         "zod": "^4.1.13"
     },
     "devDependencies": {

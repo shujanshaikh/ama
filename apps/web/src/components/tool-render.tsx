@@ -7,7 +7,7 @@ import { Button } from './ui/button';
 import { CheckCircle2, XCircle, Terminal, AlertTriangle } from 'lucide-react';
 import { PierreDiff } from './pierre-diff';
 import type { FileContents } from '@pierre/diffs/react';
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -19,9 +19,6 @@ import {
 } from './ui/dialog';
 import { getFileIcon } from './file-icons';
 import { StreamingCodeBlock } from './code-block';
-
-// Helper to detect language from file extension
-
 
 // Minimal streaming indicator
 export const StreamingDots = () => (

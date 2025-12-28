@@ -1,4 +1,4 @@
-import { message, type DBMessage, chat, project } from "./schema";
+import { message, type DBMessage, chat, project, stream } from "./schema";
 import { db } from "./index";
 import { eq } from "drizzle-orm";
 import { asc } from "drizzle-orm";
@@ -47,3 +47,48 @@ export async function saveMessages({
     }
   }
 
+
+  export async function getChatById({ id }: { id: string }) {
+    try {
+      const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
+      if (!selectedChat) {
+        return null;
+      }
+  
+      return selectedChat;
+    } catch (_error) {
+      throw new Error("Failed to get chat by id: " + _error);
+    }
+  }
+
+
+  export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
+    try {
+      const streamIds = await db
+        .select({ id: stream.id })
+        .from(stream)
+        .where(eq(stream.chatId, chatId))
+        .orderBy(asc(stream.createdAt))
+        .execute();
+  
+      return streamIds.map(({ id }) => id);
+    } catch (_error) {
+      throw new Error("Failed to get stream ids by chat id: " + _error);
+    }
+  }
+
+  export async function createStreamId({
+    streamId,
+    chatId,
+  }: {
+    streamId: string;
+    chatId: string;
+  }) {
+    try {
+      await db
+        .insert(stream)
+        .values({ id: streamId, chatId, createdAt: new Date() });
+    } catch (_error) {
+      throw new Error("Failed to create stream id: " + _error);
+    }
+  }

@@ -72,15 +72,25 @@ import type { ChatMessage } from '@ama/server/lib/tool-types';
 import { models } from '@ama/server/lib/model';
 import { ContextSelector } from '@/components/context-selector';
 import { getFileIcon } from '@/components/file-icons';
+import { useAutoResume } from '@/hooks/use-auto-resume';
+import { DataStreamProvider } from '@/components/data-stream-provider';
 
 export const Route = createFileRoute('/_authenticated/chat/$projectId')({
-  component: Chat,
+  component: ChatWrapper,
   validateSearch: (search: Record<string, unknown>) => {
     return {
       chat: (search.chat as string) || undefined,
     };
   },
 });
+
+function ChatWrapper() {
+  return (
+    <DataStreamProvider>
+      <Chat />
+    </DataStreamProvider>
+  );
+}
 
 function Chat() {
   const { projectId: _projectId } = Route.useParams();
@@ -142,7 +152,7 @@ function Chat() {
     },
   }), [_chatId, planName, mode]);
 
-  const { messages, sendMessage, status, regenerate, setMessages, stop, error } = useChat<ChatMessage>({
+  const { messages, sendMessage, status, regenerate, setMessages, stop, error, resumeStream } = useChat<ChatMessage>({
     transport,
     id: _chatId || 'new-chat',
   });
@@ -259,6 +269,13 @@ function Chat() {
     }
   }, []);
 
+  useAutoResume({
+    autoResume: true,
+    initialMessages: initialMessages as ChatMessage[],
+    resumeStream,
+    setMessages,
+  });
+
   // Handle file selection from context selector
   const handleFileSelect = useCallback((file: string) => {
     const textBeforeCursor = input.slice(0, cursorPosition);
@@ -287,7 +304,7 @@ function Chat() {
   // Toggle file in context
   const handleToggleContextFile = useCallback((file: string) => {
     const isRemoving = selectedContextFiles.includes(file);
-    
+
     setSelectedContextFiles(prev =>
       prev.includes(file)
         ? prev.filter(f => f !== file)
@@ -558,8 +575,8 @@ function Chat() {
                                     <span className="text-xs text-foreground/80 font-mono max-w-[120px] truncate">
                                       {fileName}
                                     </span>
-                                    <XIcon 
-                                      className="size-3 text-muted-foreground/60 group-hover:text-foreground/80 transition-colors shrink-0" 
+                                    <XIcon
+                                      className="size-3 text-muted-foreground/60 group-hover:text-foreground/80 transition-colors shrink-0"
                                     />
                                   </div>
                                 );
@@ -613,7 +630,7 @@ function Chat() {
                                 <ClipboardListIcon className="size-3" />
                                 <span>Plan</span>
                               </Button>
-                              
+
                             </div>
                             <PromptInputSelect defaultValue={model} onValueChange={(value) => setModel(value)}>
                               <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">

@@ -1,11 +1,14 @@
 import { relations, type InferSelectModel } from "drizzle-orm";
 import {
     jsonb,
+    pgTable,
     pgTableCreator,
     text,
     timestamp,
     uuid,
     varchar,
+    primaryKey,
+    foreignKey,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `ama_${name}`);
@@ -64,3 +67,20 @@ export const messageRelations = relations(message, ({ one }) => ({
     }),
 }));
 
+export const stream = pgTable(
+    "Stream",
+    {
+      id: uuid("id").notNull().defaultRandom(),
+      chatId: uuid("chatId").notNull(),
+      createdAt: timestamp("createdAt").notNull(),
+    },
+    (table) => ({
+      pk: primaryKey({ columns: [table.id] }),
+      chatRef: foreignKey({
+        columns: [table.chatId],
+        foreignColumns: [chat.id],
+      }),
+    })
+  );
+  
+  export type Stream = InferSelectModel<typeof stream>;
