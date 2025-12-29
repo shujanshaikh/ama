@@ -156,7 +156,13 @@ function DashboardPage() {
   };
 
   return (
-    <div className="w-full h-full bg-background text-foreground">
+    <div className="relative w-full h-full bg-background text-foreground">
+      <div className="absolute top-8 right-6">
+        <div className="text-sm text-muted-foreground">
+          {user?.email}
+        </div>
+      </div>
+
       <div className="flex flex-col justify-center min-h-[45vh] px-6 pt-24 pb-12">
         <div className="w-full max-w-2xl mx-auto">
           <div className="mb-12">
