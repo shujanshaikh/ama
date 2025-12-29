@@ -7,7 +7,7 @@ import { upgradeWebSocket, websocket } from 'hono/bun'
 import type { WSContext } from "hono/ws";
 import { logger } from "hono/logger";
 import { validateAuthToken } from "./lib/validateAuthToken";
-import { userStreams } from "./routes/api/v1/user-strems";
+import { userStreams } from "./routes/api/v1/user-streams";
 
 const app = new Hono();
 

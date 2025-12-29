@@ -472,7 +472,7 @@ function Chat() {
                                 </Reasoning>
                               );
                             default:
-                              return <ToolRenderer key={`${message.id}-${i}`} part={part} projectCwd={projectData?.cwd} />;
+                              return <ToolRenderer key={`${message.id}-${i}`} part={part} />;
                           }
                         })}
                       </div>

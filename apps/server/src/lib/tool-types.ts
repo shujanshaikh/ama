@@ -19,11 +19,9 @@ export interface FileType {
 }
 
 export interface FileEdit {
-  relative_file_path: string
-  code_edit: string
-  instructions: string
-  timestamp: Date
-  toolName: string
+  content: string
+  target_file: string  
+  providedNewFile: boolean 
 }
 
 export interface ToolCallFile {
@@ -166,6 +164,7 @@ export interface SuccessOutput {
 }
 
 export type ToolOutput = ReadFileOutput | ListOutput | GlobOutput | GrepOutput | SuccessOutput | EditFilesOutput | DeleteFileOutput | RunTerminalCommandOutput;
+
 
 export type ToolPart = {
   type: `tool-${keyof ChatTools}` | string;
