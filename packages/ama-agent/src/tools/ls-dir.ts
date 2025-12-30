@@ -4,12 +4,30 @@ import path from "node:path";
 import { validatePath, resolveProjectPath } from "../lib/sandbox";
 
 const excludePatterns = [
-  "node_modules",
-  "dist",
-  "build",
-  "coverage",
-  "logs",
-  "tmp",
+  "node_modules/",
+  "__pycache__/",
+  ".git/",
+  "dist/",
+  "build/",
+  "target/",
+  "vendor/",
+  "bin/",
+  "obj/",
+  ".idea/",
+  ".vscode/",
+  ".zig-cache/",
+  "zig-out",
+  ".coverage",
+  "coverage/",
+  "vendor/",
+  "tmp/",
+  "temp/",
+  ".cache/",
+  "cache/",
+  "logs/",
+  ".venv/",
+  "venv/",
+  "env/",
 ];
 
 const excludePattern = excludePatterns.join("|");

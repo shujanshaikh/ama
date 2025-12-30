@@ -1,6 +1,7 @@
 import { projectRegistry } from './project-registry';
 import { getContext } from './get-files';
 import { scanIdeProjects } from './ide-projects';
+import { Snapshot } from '../snapshot/snapshot';
 
 export interface RpcError {
     _tag: string;
@@ -112,4 +113,66 @@ export const rpcHandlers: Record<string, (input: any) => Promise<any>> = {
             arch: process.arch,
         };
     },
+
+    // Snapshot handlers for undo functionality
+    'daemon:snapshot_track': async ({ projectId }: { projectId: string }) => {
+        if (!projectId) {
+            const error: RpcError = {
+                _tag: 'ValidationError',
+                message: 'projectId is required',
+            };
+            throw error;
+        }
+        const hash = await Snapshot.track(projectId);
+        return { success: true, hash };
+    },
+
+    'daemon:snapshot_patch': async ({ projectId, hash }: { projectId: string; hash: string }) => {
+        if (!projectId || !hash) {
+            const error: RpcError = {
+                _tag: 'ValidationError',
+                message: 'projectId and hash are required',
+            };
+            throw error;
+        }
+        const patch = await Snapshot.patch(projectId, hash);
+        return { success: true, patch };
+    },
+
+    'daemon:snapshot_revert': async ({ projectId, patches }: { projectId: string; patches: Snapshot.Patch[] }) => {
+        if (!projectId || !patches) {
+            const error: RpcError = {
+                _tag: 'ValidationError',
+                message: 'projectId and patches are required',
+            };
+            throw error;
+        }
+        const success = await Snapshot.revert(projectId, patches);
+        return { success };
+    },
+
+    'daemon:snapshot_restore': async ({ projectId, snapshot }: { projectId: string; snapshot: string }) => {
+        if (!projectId || !snapshot) {
+            const error: RpcError = {
+                _tag: 'ValidationError',
+                message: 'projectId and snapshot are required',
+            };
+            throw error;
+        }
+        const success = await Snapshot.restore(projectId, snapshot);
+        return { success };
+    },
+
+    'daemon:snapshot_diff': async ({ projectId, hash }: { projectId: string; hash: string }) => {
+        if (!projectId || !hash) {
+            const error: RpcError = {
+                _tag: 'ValidationError',
+                message: 'projectId and hash are required',
+            };
+            throw error;
+        }
+        const diff = await Snapshot.diff(projectId, hash);
+        return { success: true, diff };
+    },
 };
+

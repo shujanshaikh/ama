@@ -1,4 +1,4 @@
-import { db, chat, getMessagesByChatId, eq } from "@ama/db";
+import { db, chat, getMessagesByChatId, eq, getLatestSnapshotByChatId, deleteSnapshotsByChatId, getProjectByChatId } from "@ama/db";
 import { protectedProcedure, router } from "../index";
 import { convertToUIMessages } from "../lib/convertToUIMessage";
 import { z } from "zod";
@@ -32,5 +32,39 @@ export const chatRouter = router({
         const dbMessages = await getMessagesByChatId({ chatId });
         const uiMessages = convertToUIMessages(dbMessages);
         return uiMessages;
+    }),
+
+    getLatestSnapshot: protectedProcedure.input(z.object({
+        chatId: z.string(),
+    })).query(async ({ input }) => {
+        const { chatId } = input;
+        const snapshot = await getLatestSnapshotByChatId({ chatId });
+        return snapshot;
+    }),
+
+    undoChanges: protectedProcedure.input(z.object({
+        chatId: z.string(),
+    })).mutation(async ({ input }) => {
+        const { chatId } = input;
+
+        const snapshot = await getLatestSnapshotByChatId({ chatId });
+        if (!snapshot) {
+            return { success: false, error: "No snapshot found for this chat" };
+        }
+
+        const projectInfo = await getProjectByChatId({ chatId });
+        if (!projectInfo) {
+            return { success: false, error: "Project not found" };
+        }
+
+        await deleteSnapshotsByChatId({ chatId });
+
+        return {
+            success: true,
+            snapshot: {
+                hash: snapshot.hash,
+                projectId: snapshot.projectId,
+            }
+        };
     }),
 });

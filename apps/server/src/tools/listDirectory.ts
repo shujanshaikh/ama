@@ -12,7 +12,7 @@ const listSchema = z.object({
   })
 
 export const listDirectory = tool({
-    description: 'Use this tool to list the contents of a directory',
+    description: 'Lists files and directories in a given path. The path parameter must be absolute; omit it to use the current workspace directory. You can optionally provide an array of glob patterns to ignore with the ignore parameter. You should generally prefer the Glob and Grep tools, if you know which directories to search.',
     inputSchema: listSchema,
     execute: async ({ path, recursive, maxDepth, pattern, includeDirectories, includeFiles }) => {
         try {

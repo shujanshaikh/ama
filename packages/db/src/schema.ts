@@ -70,17 +70,39 @@ export const messageRelations = relations(message, ({ one }) => ({
 export const stream = pgTable(
     "Stream",
     {
-      id: uuid("id").notNull().defaultRandom(),
-      chatId: uuid("chatId").notNull(),
-      createdAt: timestamp("createdAt").notNull(),
+        id: uuid("id").notNull().defaultRandom(),
+        chatId: uuid("chatId").notNull(),
+        createdAt: timestamp("createdAt").notNull(),
     },
     (table) => ({
-      pk: primaryKey({ columns: [table.id] }),
-      chatRef: foreignKey({
-        columns: [table.chatId],
-        foreignColumns: [chat.id],
-      }),
+        pk: primaryKey({ columns: [table.id] }),
+        chatRef: foreignKey({
+            columns: [table.chatId],
+            foreignColumns: [chat.id],
+        }),
     })
-  );
-  
-  export type Stream = InferSelectModel<typeof stream>;
+);
+
+export type Stream = InferSelectModel<typeof stream>;
+
+// Snapshot table for undo functionality
+export const snapshot = createTable("snapshot", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    chatId: uuid("chat_id").notNull().references(() => chat.id),
+    hash: text("hash").notNull(),
+    projectId: uuid("project_id").notNull().references(() => project.id),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type Snapshot = InferSelectModel<typeof snapshot>;
+
+export const snapshotRelations = relations(snapshot, ({ one }) => ({
+    chat: one(chat, {
+        fields: [snapshot.chatId],
+        references: [chat.id],
+    }),
+    project: one(project, {
+        fields: [snapshot.projectId],
+        references: [project.id],
+    }),
+}));

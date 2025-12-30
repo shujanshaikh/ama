@@ -90,20 +90,20 @@ Example:
 // Handle start command (start daemon)
 if (args[0] === "start") {
     if (isDaemonRunning()) {
-        console.log(pc.yellow('Daemon is already running'));
+        console.log(pc.yellow('ama is already running'));
         process.exit(0);
     }
     if (!isAuthenticated()) {
         console.log(pc.yellow('Not authenticated. Please log in first.'));
         login()
             .then(() => {
-                console.log(pc.green('Starting daemon...'));
+                console.log(pc.green('starting ama in background mode...'));
                 startDaemon();
-                console.log(pc.green('Daemon started successfully'));
+                console.log(pc.green('ama started in background mode successfully'));
                 process.exit(0);
             })
             .catch(() => {
-                console.error(pc.red('Login failed. Cannot start daemon.'));
+                console.error(pc.red('Login failed. Cannot start ama in background mode.'));
                 process.exit(1);
             });
     } else {

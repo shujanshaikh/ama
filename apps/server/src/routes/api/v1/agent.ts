@@ -2,12 +2,13 @@ import { Hono } from "hono";
 import { createUIMessageStream, stepCountIs, streamText, smoothStream, JsonToSseTransformStream } from "ai"
 import { convertToModelMessages } from "ai"
 import { tools } from "@/tools/tool";
-import { getMessagesByChatId, saveMessages, getProjectByChatId, type Chat, getChatById, getStreamIdsByChatId, createStreamId } from "@ama/db";
+import { getMessagesByChatId, saveMessages, getProjectByChatId, type Chat, getChatById, getStreamIdsByChatId, createStreamId, saveSnapshot } from "@ama/db";
 import { convertToUIMessages } from "@/lib/convertToUIMessage";
 import { requestContext } from "@/lib/context";
 import { agentStreams } from "@/index";
 import { models } from "@/lib/model";
 import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
+import { createSnapshot } from "@/lib/executeTool";
 import {
 	createResumableStreamContext,
 	type ResumableStreamContext,
@@ -81,6 +82,18 @@ agentRouter.post("/agent-proxy", async (c) => {
 		const uiMessages = [...convertToUIMessages(messagesFromDb), message];
 
 		const projectInfo = await getProjectByChatId({ chatId });
+
+		if (projectInfo?.projectId && token) {
+			try {
+				const snapshotHash = await createSnapshot(token, projectInfo.projectId);
+				if (snapshotHash) {
+					await saveSnapshot({ chatId, hash: snapshotHash, projectId: projectInfo.projectId });
+					console.log("[snapshot] Created snapshot before AI task", { hash: snapshotHash, chatId });
+				}
+			} catch (error) {
+				console.warn("[snapshot] Failed to create snapshot", error);
+			}
+		}
 
 		const streamId = generateUUID();
 		await createStreamId({ streamId, chatId: chatId });
@@ -262,4 +275,46 @@ agentRouter.get("/agent-proxy/:id/stream", async (c) => {
 		"Cache-Control": "no-cache",
 		"Connection": "keep-alive",
 	});
+});
+
+agentRouter.post("/undo", async (c) => {
+	try {
+		const { chatId, deleteOnly } = await c.req.json();
+
+		if (!chatId) {
+			return c.json({ success: false, error: "chatId is required" }, 400);
+		}
+
+		const { getLatestSnapshotByChatId, deleteSnapshotsByChatId } = await import("@ama/db");
+
+		const snapshot = await getLatestSnapshotByChatId({ chatId });
+		if (!snapshot) {
+			return c.json({ success: false, error: "No snapshot found for this chat" }, 404);
+		}
+
+		if (!deleteOnly) {
+			const { restoreSnapshot } = await import("@/lib/executeTool");
+
+			const [token] = agentStreams.keys();
+			if (!token) {
+				return c.json({ success: false, error: "Daemon not connected. Make sure amai is running." }, 503);
+			}
+
+			console.log("[undo] Restoring snapshot", { chatId, hash: snapshot.hash, projectId: snapshot.projectId });
+
+			const restored = await restoreSnapshot(snapshot.projectId, snapshot.hash);
+
+			if (!restored) {
+				return c.json({ success: false, error: "Failed to restore files" }, 500);
+			}
+		}
+
+		await deleteSnapshotsByChatId({ chatId });
+
+		console.log("[undo] Restore complete", { chatId, deleteOnly: !!deleteOnly });
+		return c.json({ success: true });
+	} catch (error: any) {
+		console.error("[undo] Error:", error);
+		return c.json({ success: false, error: error.message || "Unknown error" }, 500);
+	}
 });
