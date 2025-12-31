@@ -17,7 +17,7 @@ interface PierreDiffProps {
 }
 
 const DIFF_OPTIONS: FileDiffProps<undefined>['options'] = {
-  theme: { dark: "material-theme-darker", light: "material-theme-darker" },
+  theme: { dark: "andromeeda", light: "andromeeda" },
   diffStyle: "unified",
   diffIndicators: "classic",
   expandUnchanged: true,

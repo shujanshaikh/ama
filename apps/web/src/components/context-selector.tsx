@@ -168,6 +168,7 @@ export function ContextSelector({
           const isSelected = selectedIndex === index;
           const isInContext = selectedFiles.includes(file);
           const fileName = file.split('/').pop() || file;
+          const directoryPath = file.includes('/') ? file.substring(0, file.lastIndexOf('/')) : '';
 
           return (
             <div
@@ -182,9 +183,16 @@ export function ContextSelector({
               )}
             >
               {getFileIcon(file)}
-              <span className="truncate flex-1 font-mono text-[11px]">{fileName}</span>
+              <div className="truncate flex-1 min-w-0">
+                {directoryPath && (
+                  <div className="text-[10px] text-muted-foreground/70 truncate font-mono">
+                    {directoryPath}
+                  </div>
+                )}
+                <span className="font-mono text-[11px] truncate block">{fileName}</span>
+              </div>
               {isInContext && (
-                <CheckIcon className="size-3 text-primary/70" />
+                <CheckIcon className="size-3 text-primary/70 shrink-0" />
               )}
             </div>
           );
