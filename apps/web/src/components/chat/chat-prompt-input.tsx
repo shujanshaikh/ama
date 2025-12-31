@@ -130,7 +130,7 @@ export function ChatPromptInput({
             onChange={onInputChange}
             value={input}
             placeholder="Ask anything... (type @ to add file context)"
-            className="min-h-[36px] max-h-[120px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-2"
+            className="min-h-[32px] max-h-[96px] resize-none bg-transparent text-base placeholder:text-muted-foreground/50 border-0 focus:ring-0 focus:outline-none px-4 py-2"
           />
         </PromptInputBody>
         <PromptInputFooter className="px-3 pb-1.5 pt-0">

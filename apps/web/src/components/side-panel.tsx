@@ -75,15 +75,15 @@ export function Sidepanel() {
                 chat.title.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
-        
+
         return result.sort((a, b) => {
             const dateA = a.updatedAt || a.createdAt;
             const dateB = b.updatedAt || b.createdAt;
-            
+
             if (!dateA && !dateB) return 0;
             if (!dateA) return 1;
             if (!dateB) return -1;
-            
+
             return new Date(dateB).getTime() - new Date(dateA).getTime();
         });
     }, [chats, searchQuery]);

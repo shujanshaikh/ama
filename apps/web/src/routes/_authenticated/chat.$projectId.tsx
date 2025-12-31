@@ -392,7 +392,7 @@ function Chat() {
 
               <div className="bottom-4 pb-2 md:pb-3">
                 <div className="w-full px-3 md:px-4">
-                  <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto">
+                  <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-2xl mx-auto">
                     <ChatErrorAlert
                       error={error && !dismissedError ? error : null}
                       onDismiss={() => setDismissedError(true)}

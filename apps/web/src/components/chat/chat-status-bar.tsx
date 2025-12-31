@@ -2,6 +2,7 @@ import { Undo2Icon, CheckIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { cn } from '@/lib/utils';
+import {Shimmer} from "@/components/ai-elements/shimmer"
 
 interface ChatStatusBarProps {
   status: 'streaming' | 'submitted' | 'ready' | 'error';
@@ -27,16 +28,12 @@ export function ChatStatusBar({
       "flex items-center justify-between px-4 py-2",
       "bg-muted/40 backdrop-blur-sm",
       "border border-b-0 border-border/40",
-      "rounded-t-3xl"
+      "rounded-t-2xl"
+      
     )}>
       {status === 'streaming' ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="flex gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-foreground/60 animate-pulse" style={{ animationDelay: '0ms' }} />
-            <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-pulse" style={{ animationDelay: '150ms' }} />
-            <span className="w-1.5 h-1.5 rounded-full bg-foreground/20 animate-pulse" style={{ animationDelay: '300ms' }} />
-          </div>
-          <span>Generating...</span>
+          <Shimmer as="span">Generating...</Shimmer>
         </div>
       ) : null}
       {canUndo && (
