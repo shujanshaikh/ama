@@ -27,24 +27,24 @@ export function PreviewIframe({ collapsed, onCollapsedChange, projectId }: Previ
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-const injectScript = () => {
-  const iframe = iframeRef.current;
-  if (!iframe?.contentDocument) return;
+  const injectScript = () => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentDocument) return;
 
-  const script = iframe.contentDocument.createElement("script");
-  script.src = "//unpkg.com/react-grab/dist/index.global.js";
-  script.crossOrigin = "anonymous";
+    const script = iframe.contentDocument.createElement("script");
+    script.src = "//unpkg.com/react-grab/dist/index.global.js";
+    script.crossOrigin = "anonymous";
 
-  script.onload = () => {
-    console.log(
-      "Injected into iframe",
-      (iframe.contentWindow as any).ReactGrab
-    );
+    script.onload = () => {
+      console.log(
+        "Injected into iframe",
+        (iframe.contentWindow as any).ReactGrab
+      );
+    };
+
+    iframe.contentDocument.head.appendChild(script);
   };
 
-  iframe.contentDocument.head.appendChild(script);
-};
-  
   // Initialize from localStorage synchronously
   const getInitialUrl = () => {
     if (typeof window !== "undefined") {
@@ -131,10 +131,10 @@ const injectScript = () => {
       onLoad={injectScript}
       className="h-full border-0 rounded-none bg-transparent"
       defaultCollapsed={collapsed}
-        onCollapsedChange={onCollapsedChange}
-        onUrlChange={handleUrlChange}
-        ref={iframeRef}
-      >
+      onCollapsedChange={onCollapsedChange}
+      onUrlChange={handleUrlChange}
+      ref={iframeRef}
+    >
       <WebPreviewNavigation>
         <WebPreviewNavigationButton
           tooltip="Go back"

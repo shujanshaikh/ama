@@ -6,5 +6,9 @@ export const startHttpServer = () => {
   const app = new Hono();
   app.use(cors());
 
+  app.get("/", (c) => {
+    return c.text("Hello World");
+  });
+
   serve({ fetch: app.fetch, port: 3456 });
 };

@@ -64,7 +64,7 @@ export function CodeEditor({
   ...props
 }: CodeEditorProps) {
   const storageKey = getStorageKey(projectId);
-  
+
   // Initialize preview URL from localStorage
   const getInitialPreviewUrl = () => {
     if (typeof window !== "undefined") {
