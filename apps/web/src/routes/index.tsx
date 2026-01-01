@@ -128,6 +128,226 @@ function LandingPage() {
 
 			<section className="relative z-10 w-full border-t border-border">
 				<div className="px-8 md:px-16 lg:px-24 py-20">
+					<div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+						<motion.div
+							initial={{ opacity: 0, x: -20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+							className="flex-1 max-w-xl"
+						>
+							<div className="flex items-center gap-4 mb-6">
+								<div className="w-8 h-px bg-primary" />
+								<span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
+									Demo
+								</span>
+							</div>
+							<h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
+								See ama in action
+							</h2>
+							<p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+								Watch how ama works with your local codebase.
+							</p>
+						</motion.div>
+
+						<motion.div
+							initial={{ opacity: 0, x: 20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+							className="flex-1 w-full lg:max-w-2xl"
+						>
+							<div className="relative rounded-xl overflow-hidden border border-border bg-muted/30 shadow-2xl">
+								<video
+									autoPlay
+									loop
+									muted
+									playsInline
+									className="w-full h-auto"
+								>
+									<source
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM.mov"
+										type="video/quicktime"
+									/>
+									<source
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM.mov"
+										type="video/mp4"
+									/>
+									Your browser does not support the video tag.
+								</video>
+							</div>
+						</motion.div>
+					</div>
+				</div>
+			</section>
+
+			<section className="relative z-10 w-full border-t border-border">
+				<div className="px-8 md:px-16 lg:px-24 py-20">
+					<div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+						<motion.div
+							initial={{ opacity: 0, x: -20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+							className="flex-1 w-full lg:max-w-2xl"
+						>
+							<div className="relative rounded-xl overflow-hidden border border-border bg-muted/30 shadow-2xl">
+								<video
+									autoPlay
+									loop
+									muted
+									playsInline
+									className="w-full h-auto"
+								>
+									<source
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%203.mov"
+										type="video/quicktime"
+									/>
+									<source
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%203.mov"
+										type="video/mp4"
+									/>
+									Your browser does not support the video tag.
+								</video>
+							</div>
+						</motion.div>
+
+						<motion.div
+							initial={{ opacity: 0, x: 20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+							className="flex-1 max-w-xl"
+						>
+							<div className="flex items-center gap-4 mb-6">
+								<div className="w-8 h-px bg-primary" />
+								<span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
+									VS Code in browser
+								</span>
+							</div>
+							<h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
+								Full editor experience
+							</h2>
+							<p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+								Edit code with the familiar VS Code interface right in your browser.
+							</p>
+						</motion.div>
+					</div>
+				</div>
+			</section>
+
+			<section className="relative z-10 w-full border-t border-border">
+				<div className="px-8 md:px-16 lg:px-24 py-20">
+					<div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+						<motion.div
+							initial={{ opacity: 0, x: -20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+							className="flex-1 max-w-xl"
+						>
+							<div className="flex items-center gap-4 mb-6">
+								<div className="w-8 h-px bg-primary" />
+								<span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
+									Preview Window
+								</span>
+							</div>
+							<h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
+								Live preview as you build
+							</h2>
+							<p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+								See your changes reflected instantly in the preview window.
+							</p>
+						</motion.div>
+
+						<motion.div
+							initial={{ opacity: 0, x: 20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+							className="flex-1 w-full lg:max-w-2xl"
+						>
+							<div className="relative rounded-xl overflow-hidden border border-border bg-muted/30 shadow-2xl">
+								<video
+									autoPlay
+									loop
+									muted
+									playsInline
+									className="w-full h-auto"
+								>
+									<source
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%202.mov"
+										type="video/quicktime"
+									/>
+									<source
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%202.mov"
+										type="video/mp4"
+									/>
+									Your browser does not support the video tag.
+								</video>
+							</div>
+						</motion.div>
+					</div>
+				</div>
+			</section>
+				
+			<section className="relative z-10 w-full border-t border-border">
+				<div className="px-8 md:px-16 lg:px-24 py-20">
+					<div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+						<motion.div
+							initial={{ opacity: 0, x: -20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+							className="flex-1 w-full lg:max-w-2xl"
+						>
+							<div className="relative rounded-xl overflow-hidden border border-border bg-muted/30 shadow-2xl">
+								<video
+									autoPlay
+									loop
+									muted
+									playsInline
+									className="w-full h-auto"
+								>
+									<source
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%204.mov"
+										type="video/quicktime"
+									/>
+									<source
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%204.mov"
+										type="video/mp4"
+									/>
+									Your browser does not support the video tag.
+								</video>
+							</div>
+						</motion.div>
+
+						<motion.div
+							initial={{ opacity: 0, x: 20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+							className="flex-1 max-w-xl"
+						>
+							<div className="flex items-center gap-4 mb-6">
+								<div className="w-8 h-px bg-primary" />
+								<span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
+									Accept / Reject
+								</span>
+							</div>
+							<h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
+								Accept or reject agent changes
+							</h2>
+							<p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+								Review changes made by the agent and choose to accept or reject them.
+							</p>
+						</motion.div>
+					</div>
+				</div>
+			</section>
+
+			<section className="relative z-10 w-full border-t border-border">
+				<div className="px-8 md:px-16 lg:px-24 py-20">
 					<div className="text-center mb-12">
 						<h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
 							Try ama now.
