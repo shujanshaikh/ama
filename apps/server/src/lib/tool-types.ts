@@ -8,6 +8,7 @@ import type { stringReplace } from "@/tools/stringReplace"
 import type { runTerminalCommand } from "@/tools/runTerminalCommand"
 import type { InferUITool, UIMessage } from "ai"
 import z from "zod"
+import { webSearch } from "@/tools/web-search"
 
 
 export interface FileType {
@@ -68,7 +69,7 @@ type grepToolType = InferUITool<typeof grepTool>;
 type editFileType = InferUITool<typeof editFile>;
 type deleteFileType = InferUITool<typeof deleteFile>;
 type runTerminalCommand = InferUITool<typeof runTerminalCommand>;
-
+type webSearch = InferUITool<typeof webSearch>;
 
 export type ChatTools = {
   stringReplace: stringReplace;
@@ -79,6 +80,7 @@ export type ChatTools = {
   editFile: editFileType;
   deleteFile: deleteFileType;
   runTerminalCommand: runTerminalCommand;
+  webSearch: webSearch;
 };
 
 export type CustomUIDataTypes = {

@@ -60,7 +60,7 @@ export function PromptBox({
                         placeholder={placeholder}
                         disabled={disabled || isSubmitting}
                         className={cn(
-                            "min-h-[40px] max-h-[140px] resize-none bg-transparent",
+                            "max-h-[140px] resize-none bg-transparent",
                             "text-base placeholder:text-muted-foreground/50",
                             "border-0 focus:ring-0 focus:outline-none",
                             "px-4 py-2"

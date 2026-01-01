@@ -6,6 +6,8 @@ import { grepTool } from "./grep";
 import { globTool } from "./glob";
 import { listDirectory } from "./listDirectory";
 import { runTerminalCommand } from "./runTerminalCommand";
+import { webSearch } from "./web-search";
+
 
 export const tools = {
     readFile: readFile,
@@ -16,4 +18,5 @@ export const tools = {
     glob: globTool,
     listDirectory: listDirectory,
     runTerminalCommand: runTerminalCommand,
-}
+    webSearch: webSearch,
+} 

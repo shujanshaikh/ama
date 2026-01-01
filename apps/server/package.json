@@ -35,6 +35,7 @@
         "date-fns": "^4.1.0",
         "dotenv": "^17.2.3",
         "drizzle-orm": "^0.45.1",
+        "exa-js": "^2.0.12",
         "hono": "^4.10.7",
         "redis": "^5.10.0",
         "resumable-stream": "^2.2.10",

@@ -1,7 +1,7 @@
 import type { ChatMessage } from '@ama/server/lib/tool-types';
 import { motion } from 'motion/react';
 import { Badge } from './ui/badge';
-import { CheckCircle2, XCircle, Terminal } from 'lucide-react';
+import { CheckCircle2, XCircle, Terminal, Search } from 'lucide-react';
 import { PierreDiff } from './pierre-diff';
 import type { FileContents } from '@pierre/diffs/react';
 import {
@@ -337,6 +337,164 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       );
     }
   }
+  // Web Search Tool
+  if (part.type === "tool-webSearch") {
+    const { toolCallId, state } = part;
+    const query = part.input?.query as string | undefined;
+   
+    if(state === "input-streaming") {
+      return (
+        <div key={toolCallId} className="mb-4 py-2">
+          <div className="flex items-center gap-2">
+            <Search className="size-4 text-muted-foreground/60" />
+            <span className="text-sm">
+              Searching <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">{query || '...'}</span>
+            </span>
+            <StreamingDots />
+          </div>
+        </div>
+      );
+    }
 
+    if(state === "input-available") {
+      return (
+        <div key={toolCallId} className="mb-4 py-2">
+          <div className="flex items-center gap-2">
+            <Search className="size-4 text-muted-foreground/60" />
+          </div>
+          <div className="text-sm">
+            Searching <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">{query || '...'}</span>
+          </div>
+        </div>
+      );
+    }
+
+    if(state === "output-available") {
+      const output = part.output as {
+        success?: boolean;
+        message?: string;
+        error?: string;
+        results?: Array<{
+          url?: string;
+          title?: string;
+          text?: string;
+          summary?: string;
+          links?: string[];
+        }>;
+        // Legacy format support
+        markdown?: string;
+        links?: string[];
+        html?: string;
+      } | undefined;
+
+      const results = output?.results || [];
+      const hasResults = results.length > 0;
+
+      return (
+        <div key={toolCallId} className="mb-4 py-2">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Search className="size-4 text-muted-foreground/70" />
+              <span className="text-sm">
+                Searched <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">{query}</span>
+              </span>
+              {hasResults && (
+                <span className="text-xs text-muted-foreground/60">
+                  {results.length} result{results.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+
+            {output?.error && (
+              <div className="ml-6">
+                <div className="text-xs font-mono bg-destructive/10 px-2 py-1 rounded border border-destructive/20">
+                  <div className="text-destructive/70 text-[10px] mb-0.5">ERROR:</div>
+                  <div className="text-destructive/90 whitespace-pre-wrap wrap-break-word">{output.error}</div>
+                </div>
+              </div>
+            )}
+
+            {output?.message && !hasResults && (
+              <div className="ml-6">
+                <div className="text-xs text-muted-foreground/70">{output.message}</div>
+              </div>
+            )}
+
+            {hasResults && (
+              <div className="ml-6 space-y-2">
+                {results.slice(0, 5).map((result, idx) => (
+                  <div key={idx} className="space-y-1">
+                    {result.url && (
+                      <a
+                        href={result.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-foreground/80 hover:text-foreground hover:underline block truncate"
+                      >
+                        {result.title || result.url}
+                      </a>
+                    )}
+                    {result.summary && (
+                      <div className="text-xs text-muted-foreground/70 leading-relaxed line-clamp-2">
+                        {result.summary}
+                      </div>
+                    )}
+                    {result.text && !result.summary && (
+                      <div className="text-xs text-muted-foreground/70 leading-relaxed line-clamp-2">
+                        {result.text.slice(0, 200)}{result.text.length > 200 ? '...' : ''}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {results.length > 5 && (
+                  <div className="text-xs text-muted-foreground/50">
+                    +{results.length - 5} more result{results.length - 5 !== 1 ? 's' : ''}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Legacy format support */}
+            {!hasResults && output?.markdown && (
+              <div className="ml-6 space-y-2">
+                <div className="text-xs font-mono bg-muted/30 px-3 py-2 rounded border border-border/50 max-h-48 overflow-y-auto">
+                  <div className="text-muted-foreground/60 text-[10px] mb-1 font-semibold">CONTENT:</div>
+                  <div className="text-foreground/80 whitespace-pre-wrap wrap-break-word text-xs leading-relaxed">
+                    {output.markdown.slice(0, 500)}{output.markdown.length > 500 ? '...' : ''}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!hasResults && output?.links && output.links.length > 0 && (
+              <div className="ml-6 mt-2">
+                <div className="text-xs text-muted-foreground/70 mb-1">
+                  Links found: {output.links.length}
+                </div>
+                <div className="space-y-1">
+                  {output.links.slice(0, 3).map((link, idx) => (
+                    <a 
+                      key={idx}
+                      href={link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-foreground/80 hover:text-foreground hover:underline block truncate"
+                    >
+                      {link}
+                    </a>
+                  ))}
+                  {output.links.length > 3 && (
+                    <div className="text-xs text-muted-foreground/50">
+                      +{output.links.length - 3} more links
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+  }
   return null;
 };

@@ -89,6 +89,17 @@ IMPORTANT: You must NEVER generate or guess URLs for the user unless you are con
 | \`editFile\` | New files or large refactors only |
 | \`deleteFile\` | Confirm contents first |
 | \`runTerminalCommand\` | Run a terminal command |
+| \`webSearch\` | Search web for up-to-date information, package details, API docs, and current best practices |
+
+## WEB SEARCH USAGE
+Use \`webSearch\` strategically and only when necessary:
+- **Use when:** You need information about the latest version of a package, recent API changes, current best practices, or official documentation that may not be in your training data
+- **Use when:** You need to verify how a specific library or framework is currently being used in the ecosystem
+- **Use when:** You need to check official documentation or package repositories for accurate, up-to-date information
+- **Don't use when:** The information is already available in the codebase or your training data is sufficient
+- **Don't use when:** You're making assumptions or guesses - only search if you genuinely need current information to complete the task accurately
+
+Prioritize codebase exploration first. Only use web search when you've confirmed the information isn't available locally and is critical for the task.
 
 ## WORKFLOW
 1. Parse element (tag, text, classes, component stack)

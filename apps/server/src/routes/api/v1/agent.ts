@@ -64,7 +64,8 @@ export function getStreamContext() {
 
 agentRouter.post("/agent-proxy", async (c) => {
   try {
-    const { message, chatId, model, planMode, executePlan, planName } = await c.req.json();
+    const { message, chatId, model, planMode, executePlan, planName } =
+      await c.req.json();
 
     const [token] = agentStreams.keys();
     const { success } = await ratelimit.limit(token!);
@@ -152,6 +153,9 @@ agentRouter.post("/agent-proxy", async (c) => {
                 chunking: "word",
               }),
               tools: tools,
+              onFinish: ({ usage }) => {
+                console.log(usage);
+              },
             });
             result.consumeStream();
             dataStream.merge(
@@ -160,7 +164,9 @@ agentRouter.post("/agent-proxy", async (c) => {
               })
             );
           },
+
           generateId: generateUUID,
+
           onFinish: async ({ messages }) => {
             await saveMessages({
               messages: messages.map((message) => ({

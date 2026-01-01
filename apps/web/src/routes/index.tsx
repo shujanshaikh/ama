@@ -41,7 +41,7 @@ function LandingPage() {
 				initial={{ scaleY: 0 }}
 				animate={{ scaleY: 1 }}
 				transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-				className="absolute top-0 right-[15%] md:right-[20%] w-px h-[40vh] bg-gradient-to-b from-primary/60 via-primary/20 to-transparent origin-top hidden sm:block"
+				className="absolute top-0 right-[15%] md:right-[20%] w-px h-[40vh] from-primary/60 via-primary/20 to-transparent origin-top hidden sm:block"
 			/>
 
 			<header className="relative z-10 w-full py-6 px-8 md:px-16 lg:px-24">
@@ -53,7 +53,7 @@ function LandingPage() {
 						className="flex items-center gap-2.5"
 					>
 						<AmaLogo size={32} />
-						
+
 					</motion.div>
 					<motion.div
 						initial={{ opacity: 0, x: 12 }}
