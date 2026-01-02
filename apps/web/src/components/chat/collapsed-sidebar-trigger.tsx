@@ -5,12 +5,8 @@ import { useSidebar } from '@/components/ui/sidebar';
 export function CollapsedSidebarTrigger() {
   const { state, toggleSidebar } = useSidebar();
 
-  if (state === "expanded") {
-    return null;
-  }
-
   return (
-    <div className="absolute top-4 left-4 z-10">
+    <div className="absolute top-3 left-3 z-20">
       <Button
         data-sidebar="trigger"
         data-slot="sidebar-trigger"
@@ -20,7 +16,7 @@ export function CollapsedSidebarTrigger() {
         onClick={toggleSidebar}
       >
         <PanelLeftIcon />
-        <span className="sr-only">Toggle Sidebar</span>
+        <span className="sr-only">{state === "expanded" ? "Close Sidebar" : "Open Sidebar"}</span>
       </Button>
     </div>
   );

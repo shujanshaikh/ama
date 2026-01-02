@@ -46,7 +46,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
     if (state === "input-streaming") {
       return (
         isMdFile ? (<MarkdownEditor fileName={part.input?.target_file} content={part.input?.content} />) : (
-          <div key={toolCallId} className="mb-4 py-2">
+          <div key={toolCallId} className="mb-1 py-0.5">
             <span className="text-sm flex items-center gap-2">
               Editing <span className="text-foreground/50">{fileName}</span> {getFileIcon(fileName)}
             </span>
@@ -81,7 +81,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       const newString: FileContents = { contents: output?.new_string || '', name: fileName };
 
       return (
-        <div className="mb-4">
+        <div className="mb-1">
           <PierreDiff
             oldFile={oldString}
             newFile={newString}
@@ -98,7 +98,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
     if (state === "input-streaming") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
             Deleting <span className="text-foreground/50">{fileName}</span>
             <StreamingDots />
@@ -109,7 +109,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
     if (state === "output-available") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
             Deleted <span className="text-foreground/50">{fileName}</span>
           </span>
@@ -125,7 +125,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
     if (state === "input-streaming") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm flex items-center gap-2">
             Reading <span className="text-foreground/50">{fileName}</span> {getFileIcon(fileName)} <span className="text-muted-foreground/50 ml-1.5">{fileName}</span>
             <StreamingDots />
@@ -137,7 +137,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
     if (state === "output-available") {
       const output = part.output as { totalLines?: number } | undefined;
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm flex items-center gap-2">
             Read <span className="text-foreground/50">{fileName}</span> {getFileIcon(fileName)}
             {output?.totalLines && (
@@ -155,7 +155,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
     if (state === "input-streaming") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
             Listing <span className="text-foreground/50">{dirName}</span>
             <StreamingDots />
@@ -170,7 +170,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       const dirCount = output?.files?.filter(f => f.type === 'directory').length || 0;
 
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
             Listed <span className="text-foreground/50">{dirName}</span>
             {(fileCount > 0 || dirCount > 0) && (
@@ -190,7 +190,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
     if (state === "input-streaming") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
             Searching files
             <StreamingDots />
@@ -204,7 +204,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       const fileCount = Array.isArray(output?.files) ? output.files.length : 0;
 
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
             Found <span className="text-foreground/50">{fileCount}</span> file{fileCount !== 1 ? 's' : ''}
           </span>
@@ -219,7 +219,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
     if (state === "input-streaming") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
             Searching
             <StreamingDots />
@@ -233,7 +233,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       const matchCount = output?.matchCount || output?.result?.totalMatches || 0;
 
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
             Found <span className="text-foreground/50">{matchCount}</span> match{matchCount !== 1 ? 'es' : ''}
           </span>
@@ -262,7 +262,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       const newString = output?.new_string || inputNewString;
 
       return (
-        <div key={toolCallId} className="mb-4">
+        <div key={toolCallId} className="mb-1">
           <PierreDiff
             oldFile={{ contents: oldString, name: fileName }}
             newFile={{ contents: newString, name: fileName }}
@@ -279,7 +279,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
     if (state === "input-streaming") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <div className="flex items-center gap-2">
             <Terminal className="size-4 text-muted-foreground/60" />
             <span className="text-sm">
@@ -296,7 +296,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       const isSuccess = output?.success !== false && (!output?.exitCode || output.exitCode === 0);
 
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <Terminal className="size-4 text-muted-foreground/70" />
@@ -358,7 +358,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
     if (state === "input-streaming") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <div className="flex items-center gap-2">
             <Search className="size-4 text-muted-foreground/60" />
             <span className="text-sm">
@@ -372,7 +372,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
 
     if (state === "input-available") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <div className="flex items-center gap-2">
             <Search className="size-4 text-muted-foreground/60" />
           </div>
@@ -405,7 +405,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       const hasResults = results.length > 0;
 
       return (
-        <div key={toolCallId} className="mb-4 py-2">
+        <div key={toolCallId} className="mb-1 py-0.5">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <Search className="size-4 text-muted-foreground/70" />

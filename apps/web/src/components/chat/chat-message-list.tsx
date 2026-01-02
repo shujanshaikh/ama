@@ -71,7 +71,7 @@ export function ChatMessageList({
   return (
     <Conversation className="flex-1 min-h-0">
       <ConversationContent className="pb-6 pt-16">
-        <div className="w-full max-w-[95%] sm:max-w-[88%] md:max-w-3xl mx-auto space-y-3">
+        <div className="w-full max-w-[95%] sm:max-w-[88%] md:max-w-2xl mx-auto space-y-3">
           {isLoadingMessages && chatId && messages.length === 0 && (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (

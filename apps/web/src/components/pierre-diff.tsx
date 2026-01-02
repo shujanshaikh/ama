@@ -1,7 +1,7 @@
 import { memo, useMemo, lazy, Suspense, useState, useEffect } from 'react';
 import {
   type FileDiffMetadata,
-  parseDiffFromFile,
+  parseDiffFromFile 
 } from '@pierre/diffs';
 import type { FileContents, FileDiffProps } from '@pierre/diffs/react';
 import { Loader2 } from 'lucide-react';
@@ -19,7 +19,7 @@ interface PierreDiffProps {
 const DIFF_OPTIONS: FileDiffProps<undefined>['options'] = {
   theme: { dark: "andromeeda", light: "andromeeda" },
   diffStyle: "unified",
-  diffIndicators: "classic",
+  diffIndicators: "bars",
   expandUnchanged: true,
   lineDiffType: "word",
 };
@@ -72,6 +72,29 @@ export const PierreDiff = memo(function PierreDiff({
               }
             >
               <LazyFileDiff
+                style={{
+                  '--diffs-font-family': 'var(--font-mono)',
+                  '--diffs-font-size': '13px',
+                  '--diffs-line-height': '1.6',
+                  '--diffs-tab-size': '2',
+                  '--diffs-header-font-family': 'var(--font-sans)',
+                  '--diffs-font-features': 'normal',
+                  '--diffs-min-number-column-width': '3ch',
+                  // Deletion: using destructive red from theme
+                  '--diffs-deletion-color-override': 'oklch(0.67 0.145 17)',
+                  // Addition: using a softer green/teal that complements the purple theme
+                  '--diffs-addition-color-override': 'oklch(0.72 0.15 145)',
+                  // Modified: using chart-3 purple/magenta accent
+                  '--diffs-modified-color-override': 'oklch(0.61 0.22 293)',
+                  // Selection: using primary purple tones
+                  '--diffs-selection-color-override': 'var(--primary)',
+                  '--diffs-bg-selection-override': 'oklch(0.51 0.23 277 / 0.15)',
+                  '--diffs-bg-selection-number-override': 'oklch(0.51 0.23 277 / 0.35)',
+                  '--diffs-bg-selection-background-override': 'oklch(0.51 0.23 277 / 0.1)',
+                  '--diffs-bg-selection-number-background-override': 'oklch(0.51 0.23 277 / 0.25)',
+                  '--diffs-gap-inline': '6px',
+                  '--diffs-gap-block': '4px',
+                } as React.CSSProperties}
                 fileDiff={fileDiff}
                 options={DIFF_OPTIONS}
               />
