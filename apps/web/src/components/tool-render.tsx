@@ -7,6 +7,7 @@ import type { FileContents } from '@pierre/diffs/react';
 import {
   getFileIcon
 } from './file-icons';
+import { MarkdownEditor } from './markdown-editor';
 
 // Minimal streaming indicator
 export const StreamingDots = () => (
@@ -38,16 +39,18 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
   // Edit File
   if (part.type === "tool-editFile") {
     const { toolCallId, state } = part;
+    const isMdFile = part.input?.target_file?.endsWith('.md');
 
     const fileName = getFileName(part.input?.target_file);
 
     if (state === "input-streaming") {
       return (
-        <div key={toolCallId} className="mb-4 py-2">
-          <span className="text-sm flex items-center gap-2">
-            Editing <span className="text-foreground/50">{fileName}</span> {getFileIcon(fileName)}
-          </span>
-        </div>
+        isMdFile ? (<MarkdownEditor fileName={part.input?.target_file} content={part.input?.content} />) : (
+          <div key={toolCallId} className="mb-4 py-2">
+            <span className="text-sm flex items-center gap-2">
+              Editing <span className="text-foreground/50">{fileName}</span> {getFileIcon(fileName)}
+            </span>
+          </div>)
       );
     }
 
@@ -63,6 +66,17 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
         checkpointId?: string;
         afterHash?: string;
       } | undefined;
+
+      // Show custom UI for completed markdown/plan files
+      if (isMdFile) {
+        return (
+          <MarkdownEditor
+            fileName={part.input?.target_file}
+            content={output?.new_string}
+          />
+        );
+      }
+
       const oldString: FileContents = { contents: output?.old_string || '', name: fileName };
       const newString: FileContents = { contents: output?.new_string || '', name: fileName };
 
@@ -341,8 +355,8 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
   if (part.type === "tool-webSearch") {
     const { toolCallId, state } = part;
     const query = part.input?.query as string | undefined;
-   
-    if(state === "input-streaming") {
+
+    if (state === "input-streaming") {
       return (
         <div key={toolCallId} className="mb-4 py-2">
           <div className="flex items-center gap-2">
@@ -356,7 +370,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       );
     }
 
-    if(state === "input-available") {
+    if (state === "input-available") {
       return (
         <div key={toolCallId} className="mb-4 py-2">
           <div className="flex items-center gap-2">
@@ -369,7 +383,7 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
       );
     }
 
-    if(state === "output-available") {
+    if (state === "output-available") {
       const output = part.output as {
         success?: boolean;
         message?: string;
@@ -473,10 +487,10 @@ export const ToolRenderer = ({ part }: { part: ChatMessage['parts'][number] }) =
                 </div>
                 <div className="space-y-1">
                   {output.links.slice(0, 3).map((link, idx) => (
-                    <a 
+                    <a
                       key={idx}
-                      href={link} 
-                      target="_blank" 
+                      href={link}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-foreground/80 hover:text-foreground hover:underline block truncate"
                     >

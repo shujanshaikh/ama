@@ -1,7 +1,7 @@
 export const models = [
   {
     id: "kwaipilot/kat-coder-pro-v1",
-    name: "Kat Coder Pro V1",
+    name: "Auto",
   },
   // {
   //   id: "zai/glm-4.7",
