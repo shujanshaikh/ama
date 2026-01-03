@@ -1,7 +1,7 @@
 import { memo, useMemo, lazy, Suspense, useState, useEffect } from 'react';
 import {
   type FileDiffMetadata,
-  parseDiffFromFile 
+  parseDiffFromFile
 } from '@pierre/diffs';
 import type { FileContents, FileDiffProps } from '@pierre/diffs/react';
 import { Loader2 } from 'lucide-react';
@@ -14,19 +14,22 @@ const LazyFileDiff = lazy(() =>
 interface PierreDiffProps {
   oldFile: FileContents;
   newFile: FileContents;
+  splitView?: boolean;
 }
 
-const DIFF_OPTIONS: FileDiffProps<undefined>['options'] = {
+const getDiffOptions = (splitView: boolean): FileDiffProps<undefined>['options'] => ({
   theme: { dark: "andromeeda", light: "andromeeda" },
-  diffStyle: "unified",
+  diffStyle: splitView ? "split" : "unified",
   diffIndicators: "bars",
   expandUnchanged: true,
   lineDiffType: "word",
-};
+});
+
 
 export const PierreDiff = memo(function PierreDiff({
   oldFile,
   newFile,
+  splitView = false,
 }: PierreDiffProps) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -96,7 +99,7 @@ export const PierreDiff = memo(function PierreDiff({
                   '--diffs-gap-block': '4px',
                 } as React.CSSProperties}
                 fileDiff={fileDiff}
-                options={DIFF_OPTIONS}
+                options={getDiffOptions(splitView)}
               />
             </Suspense>
           </div>

@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Sidepanel } from '@/components/side-panel';
 import { PreviewIframe } from '@/components/web-view';
 import { CodeEditor } from '@/components/code-editor';
+import { DiffReviewPanel } from '@/components/diff-review-panel';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -60,6 +61,7 @@ function Chat() {
   const [selectedContextFiles, setSelectedContextFiles] = useState<string[]>([]);
   const [isUndoing, setIsUndoing] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hasGeneratedTitleRef = useRef(false);
@@ -191,6 +193,14 @@ function Chat() {
   }, [status, refetchSnapshot]);
 
   const canUndo = !!latestSnapshot && status !== 'streaming' && status !== 'submitted' && !isUndoing;
+
+  const handleReview = useCallback(() => {
+    setShowReview(prev => !prev);
+    // Also open the right panel if it's collapsed
+    if (previewCollapsed) {
+      setPreviewCollapsed(false);
+    }
+  }, [previewCollapsed]);
 
   const { mutate: generateTitle } = useMutation({
     ...trpc.generateTitle.generateTitle.mutationOptions(),
@@ -404,8 +414,10 @@ function Chat() {
                         canUndo={canUndo}
                         isUndoing={isUndoing}
                         isAccepting={isAccepting}
+                        isReviewing={showReview}
                         onUndo={handleUndo}
                         onAcceptAll={handleAcceptAll}
+                        onReview={handleReview}
                       />
                       <ChatPromptInput
                         input={input}
@@ -437,7 +449,14 @@ function Chat() {
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-h-0">
-                <PreviewIframe onCollapsedChange={setPreviewCollapsed} projectId={_projectId} />
+                {showReview ? (
+                  <DiffReviewPanel
+                    messages={messages}
+                    onClose={() => setShowReview(false)}
+                  />
+                ) : (
+                  <PreviewIframe onCollapsedChange={setPreviewCollapsed} projectId={_projectId} />
+                )}
               </ResizablePanel>
             </>
           )}
