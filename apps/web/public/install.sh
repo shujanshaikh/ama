@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # AMA CLI Installer
-# Install: curl -fsSL https://amadev.vercel.app/install.sh | bash
+# Install: curl -fsSL https://ama.shujan.xyz/install.sh | bash
 
 set -e
 

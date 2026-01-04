@@ -108,18 +108,92 @@ async function killExistingCodeServer(): Promise<void> {
     }
 }
 
+/**
+ * Setup default VS Code settings including theme
+ * IMPORTANT: Must be called BEFORE installExtensions() to disable signature verification
+ */
+async function setupDefaultSettings(): Promise<void> {
+    const userDir = path.join(STORAGE_DIR, 'User')
+    const settingsPath = path.join(userDir, 'settings.json')
+
+    // Ensure User directory exists
+    if (!fs.existsSync(userDir)) {
+        fs.mkdirSync(userDir, { recursive: true })
+    }
+
+    // Default settings with the theme (castrogusttavo.min-theme uses "Min Dark" and "Min Light")
+    const defaultSettings: Record<string, unknown> = {
+        // Disable signature verification for Open VSX extensions
+        "extensions.verifySignature": false,
+        // Theme settings
+        "workbench.colorTheme": "Min Dark",
+        "workbench.startupEditor": "none",
+        // Editor settings
+        "editor.fontSize": 14,
+        "editor.fontFamily": "'JetBrains Mono', 'Fira Code', Menlo, Monaco, 'Courier New', monospace",
+        "editor.minimap.enabled": false,
+        "editor.wordWrap": "on",
+        // UI settings
+        "window.menuBarVisibility": "compact",
+        "workbench.activityBar.location": "top",
+    }
+
+    // Merge with existing settings if they exist
+    let existingSettings: Record<string, unknown> = {}
+    if (fs.existsSync(settingsPath)) {
+        try {
+            const content = await fs.promises.readFile(settingsPath, 'utf-8')
+            existingSettings = JSON.parse(content)
+        } catch {
+            // If parsing fails, use empty object
+        }
+    }
+
+    const mergedSettings = { ...defaultSettings, ...existingSettings }
+    // Ensure critical settings are always set correctly
+    mergedSettings["workbench.colorTheme"] = "Min Dark"
+    mergedSettings["extensions.verifySignature"] = false
+
+    await fs.promises.writeFile(settingsPath, JSON.stringify(mergedSettings, null, 2))
+    console.log(pc.green('ama code-server settings configured'))
+}
+
+/**
+ * Install extensions using code-server CLI before starting the server
+ * NOTE: setupDefaultSettings() must be called first to disable signature verification
+ */
+async function installExtensions(): Promise<void> {
+    const binPath = getCodeServerBin()
+    const extensions = [
+        "castrogusttavo.min-theme",  
+    ]
+
+    for (const ext of extensions) {
+        try {
+            console.log(pc.cyan(`ama installing extension: ${ext}...`))
+            await execAsync(`"${binPath}" --user-data-dir "${STORAGE_DIR}" --install-extension ${ext}`)
+            console.log(pc.green(`ama extension ${ext} installed`))
+        } catch (error) {
+            console.log(pc.yellow(`ama failed to install extension ${ext}`), error)
+        }
+    }
+}
+
 export async function startCodeServer(cwd?: string): Promise<ReturnType<typeof spawn>> {
     const binPath = getCodeServerBin()
     const workDir = cwd || process.cwd()
 
     if (!fs.existsSync(binPath)) {
-        throw new Error('code-server is not installed. Run installCodeServer() first.')
+        throw new Error('ama code-server is not installed. Run installCodeServer() first.')
     }
 
     await killExistingCodeServer()
 
+    // Setup settings FIRST to disable signature verification, then install extensions
+    await setupDefaultSettings()
+    await installExtensions()
+
     const workspaceStoragePath = path.join(STORAGE_DIR, 'User', 'workspaceStorage')
-    const globalStoragePath = path.join(STORAGE_DIR, 'User', 'globalStorage')
     try {
         // Remove workspace storage to clear "last opened folder" memory
         if (fs.existsSync(workspaceStoragePath)) {
@@ -134,7 +208,7 @@ export async function startCodeServer(cwd?: string): Promise<ReturnType<typeof s
         // Ignore errors during cleanup
     }
 
-    console.log(pc.cyan(`Starting code-server in ${workDir}...`))
+    console.log(pc.cyan(`ama starting code-server`))
 
     const codeServer = spawn(
         binPath,
@@ -151,7 +225,7 @@ export async function startCodeServer(cwd?: string): Promise<ReturnType<typeof s
         }
     )
 
-    console.log(pc.green(`✓ code-server running at http://localhost:8081/?folder=${encodeURIComponent(workDir)}`))
+    console.log(pc.green(`ama code-server running at http://localhost:8081/?folder=${encodeURIComponent(workDir)}`))
 
     return codeServer
 }

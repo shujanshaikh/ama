@@ -8,7 +8,7 @@ export const Route = createFileRoute("/install")({
     component: InstallPage,
 });
 
-const INSTALL_COMMAND = "curl -fsSL https://amadev.vercel.app/install.sh | bash";
+const INSTALL_COMMAND = "curl -fsSL https://ama.shujan.xyz/install.sh | bash";
 const NPM_COMMAND = "npm install -g amai";
 const BUN_COMMAND = "bun add -g amai";
 

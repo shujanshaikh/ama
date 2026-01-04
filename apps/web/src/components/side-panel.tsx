@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Skeleton } from "./ui/skeleton";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Search, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 
@@ -137,22 +137,27 @@ export function Sidepanel() {
         <button
             onClick={() => handleChatClick(chat.id)}
             className={cn(
-                "w-full text-left px-3 py-1.5 rounded-md transition-colors",
+                "w-full text-left px-3 py-2 rounded-lg transition-all duration-200 group relative flex items-center gap-2",
                 isActive
-                    ? "bg-muted text-foreground"
-                    : "hover:bg-muted/50 text-foreground/70"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
             )}
         >
-            <div className="flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                    <div className={cn(
-                        "text-sm truncate",
-                        isActive ? "font-medium" : ""
-                    )}>
-                        {chat.title}
-                    </div>
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">
+            <MessageSquare className={cn(
+                "w-4 h-4 shrink-0 transition-colors",
+                isActive ? "text-sidebar-accent-foreground/70" : "text-muted-foreground/50 group-hover:text-muted-foreground"
+            )} />
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-2 overflow-hidden">
+                <span className={cn(
+                    "text-sm truncate",
+                    isActive ? "font-medium" : "font-normal"
+                )}>
+                    {chat.title}
+                </span>
+                <span className={cn(
+                    "text-[10px] tabular-nums shrink-0 transition-opacity",
+                    isActive ? "text-sidebar-accent-foreground/60" : "text-muted-foreground/40 group-hover:text-muted-foreground/70"
+                )}>
                     {formatRelativeTime(chat.updatedAt || chat.createdAt)}
                 </span>
             </div>
@@ -163,57 +168,61 @@ export function Sidepanel() {
         <Sidebar
             variant="sidebar"
             side="left"
+            className="bg-sidebar border-r border-sidebar-border"
         >
             <SidebarRail />
             <div className="flex flex-col h-full p-4">
                 <button
                     onClick={() => navigate({ to: '/dashboard' })}
-                    className="mb-6 flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
+                    className="mb-8 flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer px-1"
                 >
-                    <AmaLogo size={36} />
-                    <span className="text-xl font-medium text-foreground">ama</span>
+                    <div className="bg-primary/10 p-1.5 rounded-lg">
+                        <AmaLogo size={24} />
+                    </div>
+                    <span className="text-lg font-semibold tracking-tight text-foreground">ama</span>
                 </button>
 
                 {projectId && (
                     <>
                         {projectData ? (
-                            <div className="mb-4">
-                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
+                            <div className="mb-6 px-1 space-y-1.5">
+                                <div className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/60">
                                     Project
                                 </div>
-                                <div className="text-sm text-foreground">
+                                <div className="text-sm font-medium text-foreground flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/60 ring-2 ring-primary/20" />
                                     {projectData.name}
                                 </div>
                             </div>
                         ) : (
-                            <div className="mb-4">
-                                <Skeleton className="h-4 w-16 mb-1.5" />
+                            <div className="mb-6 px-1">
+                                <Skeleton className="h-3 w-12 mb-2" />
                                 <Skeleton className="h-4 w-32" />
                             </div>
                         )}
 
-                        <div className="flex gap-2 mb-6">
-                            <Input
-                                placeholder="Search chats"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-9 text-sm rounded-lg"
-                            />
+                        <div className="flex items-center gap-2 mb-6">
+                            <div className="relative flex-1 group">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors pointer-events-none" />
+                                <Input
+                                    placeholder="Search"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="h-9 pl-8 text-sm bg-sidebar-accent/30 border-sidebar-border/50 focus-visible:bg-sidebar-accent/50 focus-visible:border-sidebar-ring/50 transition-all rounded-lg shadow-none placeholder:text-muted-foreground/50"
+                                />
+                            </div>
                             <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-9 px-3 shrink-0"
                                 onClick={handleNewChat}
+                                className="h-9 whitespace-nowrap bg-sidebar-accent/50 text-sidebar-accent-foreground shadow-sm hover:bg-sidebar-accent hover:text-foreground border-sidebar-border/50 px-3"
+                                variant="outline"
                                 disabled={isCreatingChat}
                             >
                                 {isCreatingChat ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
-                                    <>
-                                        <Plus className="h-3.5 w-3.5 mr-1.5" />
-                                        <span className="text-sm">New</span>
-                                    </>
+                                    <Plus className="mr-2 h-4 w-4" />
                                 )}
+                                New Chat
                             </Button>
                         </div>
                     </>
@@ -222,21 +231,21 @@ export function Sidepanel() {
                 <SidebarContent className="flex-1 min-h-0 overflow-hidden -mx-2">
                     <ScrollArea className="h-full px-2">
                         {isLoading && projectId ? (
-                            <div className="space-y-4">
+                            <div className="space-y-4 px-2">
                                 <div>
-                                    <Skeleton className="h-3 w-16 mb-2 ml-3" />
-                                    <div className="space-y-1">
+                                    <Skeleton className="h-3 w-12 mb-3" />
+                                    <div className="space-y-2">
                                         {[1, 2, 3].map((i) => (
-                                            <Skeleton key={i} className="h-8 mx-3 rounded-md" />
+                                            <Skeleton key={i} className="h-8 w-full rounded-lg" />
                                         ))}
                                     </div>
                                 </div>
                             </div>
                         ) : projectId && filteredChats.length > 0 ? (
-                            <div className="space-y-4">
+                            <div className="space-y-6 pb-4">
                                 {recentChats.length > 0 && (
                                     <div>
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-3 mb-2">
+                                        <div className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest px-3 mb-2">
                                             Recent
                                         </div>
                                         <div className="space-y-0.5">
@@ -253,7 +262,7 @@ export function Sidepanel() {
 
                                 {olderChats.length > 0 && (
                                     <div>
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-3 mb-2">
+                                        <div className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest px-3 mb-2">
                                             Older
                                         </div>
                                         <div className="space-y-0.5">
@@ -269,8 +278,12 @@ export function Sidepanel() {
                                 )}
                             </div>
                         ) : projectId ? (
-                            <div className="text-sm text-muted-foreground px-3 py-8 text-center">
-                                No chats yet
+                            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                                <div className="w-12 h-12 rounded-full bg-sidebar-accent/50 flex items-center justify-center mb-3">
+                                    <MessageSquare className="w-6 h-6 text-muted-foreground/40" />
+                                </div>
+                                <p className="text-sm font-medium text-foreground mb-1">No chats yet</p>
+                                <p className="text-xs text-muted-foreground">Start a new conversation to get started</p>
                             </div>
                         ) : null}
                     </ScrollArea>

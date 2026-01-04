@@ -1,6 +1,11 @@
-import { CodeIcon, GlobeIcon } from 'lucide-react';
+import { TerminalIcon, AppWindowIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ChatToolbarProps {
   onShowCodeEditor: () => void;
@@ -15,34 +20,53 @@ export function ChatToolbar({
 }: ChatToolbarProps) {
   return (
     <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-      <div className="flex items-center rounded-lg bg-muted/50 p-0.5 shadow-sm border border-border/50 backdrop-blur-sm">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onShowCodeEditor}
-          className={cn(
-            "h-7 rounded-md px-3 text-xs font-medium transition-all",
-            "text-muted-foreground hover:text-foreground hover:bg-background/50"
-          )}
-        >
-          <CodeIcon className="mr-1.5 size-3.5" />
-          Editor
-        </Button>
-        {previewCollapsed && (
+      <Tooltip>
+        <TooltipTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
-            onClick={onTogglePreview}
+            onClick={onShowCodeEditor}
             className={cn(
-              "h-7 rounded-md px-3 text-xs font-medium transition-all",
-              "text-muted-foreground hover:text-foreground hover:bg-background/50"
+              "h-9 rounded-lg px-4 text-xs font-medium transition-all duration-200",
+              "bg-background/80 backdrop-blur-md border border-border/60",
+              "text-muted-foreground hover:text-foreground",
+              "hover:bg-background hover:border-border hover:shadow-md",
+              "active:scale-95"
             )}
           >
-            <GlobeIcon className="mr-1.5 size-3.5" />
-            Preview
+            <TerminalIcon className="mr-1.5 size-3.5" />
+            Editor
           </Button>
-        )}
-      </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="text-xs">
+          Open code editor
+        </TooltipContent>
+      </Tooltip>
+
+      {previewCollapsed && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onTogglePreview}
+              className={cn(
+                "h-9 rounded-lg px-4 text-xs font-medium transition-all duration-200",
+                "bg-background/80 backdrop-blur-md border border-border/60",
+                "text-muted-foreground hover:text-foreground",
+                "hover:bg-background hover:border-border hover:shadow-md",
+                "active:scale-95"
+              )}
+            >
+              <AppWindowIcon className="mr-1.5 size-3.5" />
+              Preview
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            Show live preview
+          </TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 }
