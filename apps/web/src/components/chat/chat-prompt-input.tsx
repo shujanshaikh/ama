@@ -44,6 +44,7 @@ interface ChatPromptInputProps {
   onSetModel: (model: string) => void;
   onSubmit: (message: PromptInputMessage) => void;
   onStop: () => void;
+  onToggleContextSelector: () => void;
 }
 
 export function ChatPromptInput({
@@ -64,6 +65,7 @@ export function ChatPromptInput({
   onSetModel,
   onSubmit,
   onStop,
+  onToggleContextSelector,
 }: ChatPromptInputProps) {
   return (
     <div className="relative">
@@ -141,14 +143,14 @@ export function ChatPromptInput({
                 <PromptInputActionAddAttachments />
               </PromptInputActionMenuContent>
             </PromptInputActionMenu>
-            <div className="flex items-center rounded-lg bg-muted/50 p-0.5 border border-border/50">
+            <div className="flex items-center h-8 rounded-xl bg-muted/50 px-0.5 border border-border/50">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => onSetMode('agent')}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
+                  "h-6 rounded-lg px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
                   mode === 'agent'
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-transparent"
@@ -162,7 +164,7 @@ export function ChatPromptInput({
                 size="sm"
                 onClick={() => onSetMode('plan')}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
+                  "h-6 rounded-lg px-2.5 text-xs font-medium transition-all flex items-center gap-1.5",
                   mode === 'plan'
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-transparent"
@@ -172,8 +174,22 @@ export function ChatPromptInput({
                 <span>Plan</span>
               </Button>
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onToggleContextSelector}
+              className={cn(
+                "h-8 rounded-xl px-2.5 text-xs font-medium transition-all flex items-center gap-1.5 bg-muted/50 border border-border/50",
+                showContextSelector
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+            >
+              <span>@ Context</span>
+            </Button>
             <PromptInputSelect defaultValue={model} onValueChange={(value) => onSetModel(value)}>
-              <PromptInputSelectTrigger className="rounded-xl text-xs h-7 px-2.5 border-0 bg-muted/40 hover:bg-muted/60">
+              <PromptInputSelectTrigger className="!rounded-xl text-xs font-medium !h-8 px-2.5 !bg-muted/50 !border !border-border/50 hover:!bg-muted/60 text-muted-foreground">
                 <PromptInputSelectValue />
               </PromptInputSelectTrigger>
               <PromptInputSelectContent>
@@ -200,7 +216,7 @@ export function ChatPromptInput({
             <PromptInputSubmit
               disabled={!input}
               status={status}
-              className="h-7 w-7 rounded-md transition-colors bg-foreground text-background hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="h-7 w-7 rounded-2xl transition-colors bg-foreground text-background hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
             />
           )}
         </PromptInputFooter>

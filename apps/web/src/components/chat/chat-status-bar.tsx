@@ -1,8 +1,12 @@
-import { Undo2Icon, CheckIcon, EyeIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ButtonGroup } from '@/components/ui/button-group';
+import { Separator } from '@/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Shimmer } from "@/components/ai-elements/shimmer"
+import { Loader2, Check, X, FileDiff } from "lucide-react";
 
 interface ChatStatusBarProps {
   status: 'streaming' | 'submitted' | 'ready' | 'error';
@@ -29,55 +33,81 @@ export function ChatStatusBar({
 
   return (
     <div className={cn(
-      "flex items-center justify-between px-4 py-2",
-      "bg-muted/40 backdrop-blur-sm",
-      "border border-b-0 border-border/40",
-      "rounded-t-2xl"
-
+      "flex items-center justify-between px-3.5 py-2",
+      "bg-background",
+      "border border-b-0 border-border",
+      "rounded-t-xl",
+      "animate-in fade-in slide-in-from-bottom-2 duration-300",
+      "min-h-[44px]"
     )}>
       {status === 'streaming' ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Shimmer as="span">Generating...</Shimmer>
+        <div className="flex items-center gap-2.5 px-0.5 animate-pulse">
+          <div className="flex items-center justify-center size-5 rounded-full bg-primary/10">
+            <Loader2 className="size-3 animate-spin text-primary" />
+          </div>
+          <span className="text-xs font-medium text-muted-foreground">Generating...</span>
         </div>
-      ) : null}
+      ) : <div />}
+
       {canUndo && (
-        <ButtonGroup orientation="horizontal" className="ml-auto">
-          <Button
-            variant="secondary"
-            size="default"
-            onClick={onAcceptAll}
-            disabled={isAccepting || isUndoing}
-            className="h-7 px-3 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200 hover:scale-105 hover:shadow-sm active:scale-100 disabled:hover:scale-100 disabled:hover:shadow-none group rounded-xl"
-          >
-            <CheckIcon className="size-3.5 mr-1.5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12" />
-            {isAccepting ? 'Accepting...' : 'Accept'}
-          </Button>
-          <Button
-            variant="secondary"
-            size="default"
-            onClick={onReview}
-            disabled={isAccepting || isUndoing}
-            className={cn(
-              "h-7 px-3 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200 hover:scale-105 hover:shadow-sm active:scale-100 disabled:hover:scale-100 disabled:hover:shadow-none group rounded-xl",
-              isReviewing && "bg-primary/20 text-primary"
-            )}
-          >
-            <EyeIcon className="size-3.5 mr-1.5 transition-transform duration-200 group-hover:scale-110" />
-            Review
-          </Button>
-          <Button
-            variant="secondary"
-            size="default"
-            onClick={onUndo}
-            disabled={isUndoing || isAccepting}
-            className="h-7 px-3 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200 hover:scale-105 hover:shadow-sm active:scale-100 disabled:hover:scale-100 disabled:hover:shadow-none group rounded-xl"
-          >
-            <Undo2Icon className="size-3.5 mr-1.5 transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-12" />
-            {isUndoing ? 'Reverting...' : 'Undo'}
-          </Button>
-        </ButtonGroup>
+        <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onReview}
+                disabled={isAccepting || isUndoing}
+                className={cn(
+                  "h-7 gap-1.5 px-2.5 text-xs font-medium rounded-lg transition-all",
+                  isReviewing
+                    ? "bg-primary/10 text-primary hover:bg-primary/15"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <FileDiff className="size-3.5" />
+                {isReviewing ? 'Reviewing' : 'Review'}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Review changes before accepting</TooltipContent>
+          </Tooltip>
+
+          <Separator orientation="vertical" className="h-4 mx-1" />
+
+          <div className="flex items-center gap-1.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onUndo}
+                  disabled={isUndoing || isAccepting}
+                  className="h-7 gap-1.5 px-2.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                >
+                  <X className="size-3.5" />
+                  {isUndoing ? 'Rejecting...' : 'Reject'}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Discard all changes</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  onClick={onAcceptAll}
+                  disabled={isAccepting || isUndoing}
+                  className="h-7 gap-1.5 px-2.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                >
+                  <Check className="size-3.5" />
+                  {isAccepting ? 'Accepting...' : 'Accept'}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Accept all changes</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
       )}
     </div>
   );
 }
-

@@ -161,7 +161,7 @@ export function Sidepanel() {
 
     return (
         <Sidebar
-            variant="inset"
+            variant="sidebar"
             side="left"
         >
             <SidebarRail />

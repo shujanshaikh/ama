@@ -325,12 +325,17 @@ function Chat() {
     const textAfterCursor = input.slice(cursorPosition);
 
     if (lastAtIndex !== -1) {
+      // Typing @ case - replace the @ and text after it with the file
       const newInput = input.slice(0, lastAtIndex) + '@' + file + ' ' + textAfterCursor;
       setInput(newInput);
+    } else {
+      // Button click case - just add @file at cursor position
+      const newInput = input.slice(0, cursorPosition) + '@' + file + ' ' + textAfterCursor;
+      setInput(newInput);
+    }
 
-      if (!selectedContextFiles.includes(file)) {
-        setSelectedContextFiles(prev => [...prev, file]);
-      }
+    if (!selectedContextFiles.includes(file)) {
+      setSelectedContextFiles(prev => [...prev, file]);
     }
 
     setShowContextSelector(false);
@@ -437,6 +442,7 @@ function Chat() {
                         onSetModel={setModel}
                         onSubmit={handleSubmit}
                         onStop={stop}
+                        onToggleContextSelector={() => setShowContextSelector(prev => !prev)}
                       />
                     </div>
                   </div>

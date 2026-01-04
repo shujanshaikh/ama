@@ -45,7 +45,6 @@ export const MarkdownEditor = memo(({ fileName, content, isStreaming }: Markdown
   return (
     <>
       <div className="mb-4 rounded-lg border border-border bg-card overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/40">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-muted-foreground" />
@@ -128,7 +127,7 @@ export const MarkdownEditor = memo(({ fileName, content, isStreaming }: Markdown
 
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader className="flex-shrink-0 space-y-3">
+          <DialogHeader className="space-y-3">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-muted-foreground" />
               <span className="truncate">{displayName}</span>
