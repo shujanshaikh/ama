@@ -166,11 +166,11 @@ function LandingPage() {
 									className="w-full h-auto"
 								>
 									<source
-										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM.mov"
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/1767525316123447.MP4"
 										type="video/quicktime"
 									/>
 									<source
-										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM.mov"
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/1767525316123447.MP4"
 										type="video/mp4"
 									/>
 									Your browser does not support the video tag.
@@ -200,11 +200,11 @@ function LandingPage() {
 									className="w-full h-auto"
 								>
 									<source
-										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%203.mov"
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202026-01-04%20at%204.20.02%E2%80%AFPM.mov"
 										type="video/quicktime"
 									/>
 									<source
-										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%203.mov"
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202026-01-04%20at%204.20.02%E2%80%AFPM.mov"
 										type="video/mp4"
 									/>
 									Your browser does not support the video tag.
@@ -253,10 +253,10 @@ function LandingPage() {
 								</span>
 							</div>
 							<h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
-								Live preview as you build
+								Type @ to select the context of the file
 							</h2>
 							<p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-								See your changes reflected instantly in the preview window.
+								Easily reference files and add context by typing @ in the chat.
 							</p>
 						</motion.div>
 
@@ -276,11 +276,11 @@ function LandingPage() {
 									className="w-full h-auto"
 								>
 									<source
-										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%202.mov"
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202026-01-04%20at%204.20.02%E2%80%AFPM%203.mov"
 										type="video/quicktime"
 									/>
 									<source
-										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%202.mov"
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202026-01-04%20at%204.20.02%E2%80%AFPM%203.mov"
 										type="video/mp4"
 									/>
 									Your browser does not support the video tag.
@@ -310,11 +310,11 @@ function LandingPage() {
 									className="w-full h-auto"
 								>
 									<source
-										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%204.mov"
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202026-01-04%20at%204.20.02%E2%80%AFPM%202.mov"
 										type="video/quicktime"
 									/>
 									<source
-										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202025-12-31%20at%202.01.54%E2%80%AFPM%204.mov"
+										src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/Screen%20Recording%202026-01-04%20at%204.20.02%E2%80%AFPM%202.mov"
 										type="video/mp4"
 									/>
 									Your browser does not support the video tag.
