@@ -32,6 +32,8 @@ import type { ChatMessage } from "@/lib/tool-types";
 import { differenceInSeconds } from "date-fns";
 import { generateUUID } from "@/lib/utils";
 import { ratelimit } from "@/lib/rate-limiter";
+import { supermemoryTools } from "@supermemory/tools/ai-sdk"
+
 
 export const agentRouter = new Hono();
 
@@ -112,10 +114,10 @@ agentRouter.post("/agent-proxy", async (c) => {
             hash: snapshotHash,
             projectId: projectInfo.projectId,
           });
-          console.log("[snapshot] Created snapshot before AI task", {
-            hash: snapshotHash,
-            chatId,
-          });
+          // console.log("[snapshot] Created snapshot before AI task", {
+          //   hash: snapshotHash,
+          //   chatId,
+          // });
         }
       } catch (error) {
         console.warn("[snapshot] Failed to create snapshot", error);
@@ -152,10 +154,13 @@ agentRouter.post("/agent-proxy", async (c) => {
                 delayInMs: 20,
                 chunking: "word",
               }),
-              tools: tools,
-              onFinish: ({ usage }) => {
-                console.log(usage);
+              tools: {
+                ...tools,
+                ...supermemoryTools(process.env.SUPERMEMORY_API_KEY!),
               },
+              // onFinish: ({ usage }) => {
+              //   console.log(usage);
+              // },
             });
             result.consumeStream();
             dataStream.merge(

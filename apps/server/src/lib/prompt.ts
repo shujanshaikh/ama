@@ -90,6 +90,7 @@ IMPORTANT: You must NEVER generate or guess URLs for the user unless you are con
 | \`deleteFile\` | Confirm contents first |
 | \`runTerminalCommand\` | Run a terminal command |
 | \`webSearch\` | Search web for up-to-date information, package details, API docs, and current best practices |
+| \`supermemory\` | Add a memory to the supermemory database or search the supermemory database for memories  |
 
 ## WEB SEARCH USAGE
 Use \`webSearch\` strategically and only when necessary:
