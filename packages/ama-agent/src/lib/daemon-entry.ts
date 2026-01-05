@@ -7,12 +7,12 @@ if (process.env.AMA_DAEMON === '1') {
     (async () => {
         try {
             if (!isCodeServerInstalled()) {
-                console.log(pc.cyan('First run detected. Setting up code-server...'));
+                console.log(pc.gray('setting up code-server...'));
                 try {
                     await installCodeServer();
                 } catch (error: any) {
-                    console.error(pc.red(`Failed to install code-server: ${error.message}`));
-                    console.log(pc.yellow('Continuing without code-server...'));
+                    console.error(pc.red(`code-server install failed: ${error.message}`));
+                    console.log(pc.gray('continuing without code-server...'));
                 }
             }
 
@@ -21,18 +21,18 @@ if (process.env.AMA_DAEMON === '1') {
                     const projectDir = process.cwd() || os.homedir();
                     await startCodeServer(projectDir);
                 } catch (error: any) {
-                    console.error(pc.red(`Failed to start code-server: ${error.message}`));
+                    console.error(pc.red(`code-server start failed: ${error.message}`));
                 }
             }
 
             await main();
         } catch (error) {
-            console.error('Daemon error:', error);
+            console.error(pc.red('daemon error'));
             process.exit(1);
         }
     })();
 } else {
-    console.error('This script should only be run as a daemon');
+    console.error(pc.red('this script should only be run as a daemon'));
     process.exit(1);
 }
 

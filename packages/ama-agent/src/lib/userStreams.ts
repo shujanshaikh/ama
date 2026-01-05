@@ -3,8 +3,24 @@ import { getTokens, getUserId } from "./auth-login";
 import { rpcHandlers, type RpcError } from "./rpc-handlers";
 import pc from "picocolors";
 
+// Reconnection config
+const INITIAL_RECONNECT_DELAY = 1000;
+const MAX_RECONNECT_DELAY = 60000;
+const BACKOFF_MULTIPLIER = 2;
+
 let wsConnection: WebSocket | null = null;
 let reconnectTimeout: NodeJS.Timeout | null = null;
+let reconnectAttempts = 0;
+
+function getReconnectDelay(): number {
+  const delay = Math.min(
+    INITIAL_RECONNECT_DELAY * Math.pow(BACKOFF_MULTIPLIER, reconnectAttempts),
+    MAX_RECONNECT_DELAY
+  );
+  // Add jitter (±25%) to prevent thundering herd
+  const jitter = delay * 0.25 * (Math.random() * 2 - 1);
+  return Math.floor(delay + jitter);
+}
 
 export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket> => {
   const userId = getUserId();
@@ -32,7 +48,8 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
   wsConnection = ws;
 
   ws.on("open", () => {
-    console.log(pc.green("CLI connected to user-streams"));
+    reconnectAttempts = 0; // Reset on successful connection
+    console.log(pc.cyan("connected to user streams"));
 
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
@@ -46,7 +63,7 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
 
       if (message._tag === 'rpc_call') {
         const { requestId, method, input } = message;
-        console.log(pc.gray(`RPC call: ${method}`));
+        console.log(pc.gray(`> ${method}`));
 
         const handler = rpcHandlers[method];
 
@@ -59,7 +76,6 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
               message: `Unknown RPC method: ${method}`,
             },
           }));
-          console.log(pc.yellow(`Unknown RPC method: ${method}`));
           return;
         }
 
@@ -70,7 +86,6 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
             requestId,
             data: result,
           }));
-          console.log(pc.green(`RPC completed: ${method}`));
         } catch (error: any) {
           const rpcError: RpcError = error._tag
             ? error
@@ -84,7 +99,7 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
             requestId,
             data: rpcError,
           }));
-          console.log(pc.red(`RPC failed: ${method} - ${rpcError.message}`));
+          console.log(pc.red(`  ${method} failed`));
         }
         return;
       }
@@ -104,24 +119,24 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
         }
       }
     } catch (parseError) {
-      console.error(pc.red(`Failed to parse message: ${parseError}`));
+      console.error(pc.red(`parse error`));
     }
   });
 
   ws.on("close", (code, reason) => {
-    console.log(pc.yellow(`CLI disconnected from user-streams (code: ${code})`));
     wsConnection = null;
-
-    console.log(pc.gray("Reconnecting in 5 seconds..."));
+    const delay = getReconnectDelay();
+    reconnectAttempts++;
+    console.log(pc.gray(`user streams disconnected, reconnecting in ${Math.round(delay / 1000)}s...`));
     reconnectTimeout = setTimeout(() => {
       connectToUserStreams(serverUrl).catch(err => {
-        console.error(pc.red(`Reconnection failed: ${err.message}`));
+        console.error(pc.red(`reconnection failed`));
       });
-    }, 5000);
+    }, delay);
   });
 
   ws.on("error", (error) => {
-    console.error(pc.red(`User streams WebSocket error: ${error.message}`));
+    console.error(pc.red(`stream error: ${error.message}`));
   });
 
   return ws;
@@ -134,3 +149,4 @@ export const getUserStreamConnection = (): WebSocket | null => {
 export const isUserStreamConnected = (): boolean => {
   return wsConnection?.readyState === WebSocket.OPEN;
 };
+

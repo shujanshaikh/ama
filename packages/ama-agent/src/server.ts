@@ -15,6 +15,22 @@ import { connectToUserStreams } from './lib/userStreams'
 import { rpcHandlers } from './lib/rpc-handlers'
 
 
+// Reconnection config
+const INITIAL_RECONNECT_DELAY = 1000
+const MAX_RECONNECT_DELAY = 60000
+const BACKOFF_MULTIPLIER = 2
+
+let reconnectAttempts = 0
+
+function getReconnectDelay(): number {
+  const delay = Math.min(
+    INITIAL_RECONNECT_DELAY * Math.pow(BACKOFF_MULTIPLIER, reconnectAttempts),
+    MAX_RECONNECT_DELAY
+  )
+  // Add jitter (±25%) to prevent thundering herd
+  const jitter = delay * 0.25 * (Math.random() * 2 - 1)
+  return Math.floor(delay + jitter)
+}
 
 interface ToolCall {
   type: 'tool_call'
@@ -64,14 +80,15 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
   })
 
   ws.on('open', () => {
-    console.log(pc.green('Connected to server agent streams'))
+    reconnectAttempts = 0 // Reset on successful connection
+    console.log(pc.cyan('connected to server'))
   })
 
   ws.on('message', async (data) => {
     const message = JSON.parse(data.toString()) as ToolCall | RpcCall
 
     if (message.type === 'tool_call') {
-      console.log(`tool call: ${message.tool}${message.projectCwd ? ` (project: ${message.projectCwd})` : ''}`)
+      console.log(pc.gray(`> ${message.tool}`))
 
       try {
         const executor = toolExecutors[message.tool]
@@ -87,7 +104,6 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
           result,
         }))
 
-        console.log(pc.green(`tool call completed: ${message.tool}`))
       } catch (error: any) {
         ws.send(JSON.stringify({
           type: 'tool_result',
@@ -95,10 +111,10 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
           error: error.message,
         }))
 
-        console.error(pc.red(`tool call failed: ${message.tool} ${error.message}`))
+        console.error(pc.red(`  ${message.tool} failed: ${error.message}`))
       }
     } else if (message.type === 'rpc_call') {
-      console.log(`rpc call: ${message.method}`)
+      console.log(pc.gray(`> rpc: ${message.method}`))
 
       try {
         const handler = rpcHandlers[message.method]
@@ -114,7 +130,6 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
           result,
         }))
 
-        console.log(pc.green(`rpc call completed: ${message.method}`))
       } catch (error: any) {
         ws.send(JSON.stringify({
           type: 'tool_result',
@@ -122,18 +137,20 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
           error: error.message,
         }))
 
-        console.error(pc.red(`rpc call failed: ${message.method} ${error.message}`))
+        console.error(pc.red(`  rpc failed: ${message.method}`))
       }
     }
   })
 
   ws.on('close', () => {
-    console.log(pc.red('disconnected from server. reconnecting in 5s...'))
-    setTimeout(() => connectToServer(serverUrl), 5000)
+    const delay = getReconnectDelay()
+    reconnectAttempts++
+    console.log(pc.gray(`disconnected, reconnecting in ${Math.round(delay / 1000)}s...`))
+    setTimeout(() => connectToServer(serverUrl), delay)
   })
 
   ws.on('error', (error) => {
-    console.error(pc.red(`web socket error: ${error.message}`))
+    console.error(pc.red(`connection error: ${error.message}`))
   })
 
   return ws
@@ -142,7 +159,7 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
 
 export async function main() {
   const serverUrl = DEFAULT_SERVER_URL
-  console.log(pc.green('starting local amai...'))
+  console.log(pc.gray('starting ama...'))
   connectToServer(serverUrl)
   await connectToUserStreams(serverUrl)
   startHttpServer()

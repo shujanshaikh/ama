@@ -144,30 +144,19 @@ export async function login() {
   try {
     const device = await authorizeDevice();
 
-    console.log(pc.bold('To sign in, follow these steps:'));
+    console.log('');
     if (device.verification_uri_complete) {
-      console.log(
-        `  1. Open this URL in your browser: ${pc.cyan(
-          device.verification_uri_complete,
-        )}`,
-      );
+      console.log(pc.cyan(`open: ${device.verification_uri_complete}`));
     } else {
-      console.log(
-        `  1. Open this URL in your browser: ${pc.cyan(
-          device.verification_uri,
-        )}`,
-      );
-      console.log(
-        `  2. Enter this code when prompted: ${pc.bold(device.user_code)}`,
-      );
+      console.log(pc.cyan(`open: ${device.verification_uri}`));
+      console.log(pc.gray(`code: ${device.user_code}`));
     }
-    console.log('  3. Come back here; we will detect when you finish logging in.');
-    console.log();
+    console.log('');
     console.log(
       pc.gray(
-        `Waiting for authorization (expires in ~${Math.round(
+        `waiting for authorization (~${Math.round(
           device.expires_in / 60,
-        )} minutes)...`,
+        )} min)...`,
       ),
     );
 
@@ -178,11 +167,11 @@ export async function login() {
       interval: device.interval,
     });
 
-    console.log(pc.green('Successfully authenticated!'));
+    console.log(pc.cyan('authenticated'));
     saveTokens(tokens)
     return tokens;
   } catch (error: any) {
-    console.error(pc.red(error.message || 'Login failed'));
+    console.error(pc.red(error.message || 'login failed'));
     throw error;
   }
 }
@@ -218,7 +207,7 @@ export const getUserId = () => {
     const raw = fs.readFileSync(CREDENTIALS_PATH, 'utf8')
     const data = JSON.parse(raw)
     return {
-      userId : data.user.id
+      userId: data.user.id
     }
   } catch {
     throw new Error("Error while getting userId")

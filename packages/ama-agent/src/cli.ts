@@ -7,10 +7,18 @@ import { projectRegistry } from "./lib/project-registry";
 import path from "path";
 import fs from "fs";
 import readline from "readline";
+import { spawn } from "child_process";
 
-const VERSION = process.env.VERSION ?? "0.0.1";
+const VERSION = process.env.VERSION ?? "0.0.9";
 
 const PROJECT_DIR = process.cwd();
+
+const LOGO = `
+   __ _ _ __ ___   __ _ 
+  / _\` | '_ \` _ \\ / _\` |
+ | (_| | | | | | | (_| |
+  \\__,_|_| |_| |_|\\__,_|
+`;
 
 // Prompt user for input
 function promptUser(question: string): Promise<string> {
@@ -29,202 +37,285 @@ function promptUser(question: string): Promise<string> {
 
 // Start server with code-server
 async function startWithCodeServer() {
-    // First run detection - install code-server if not present
     if (!isCodeServerInstalled()) {
-        console.log(pc.cyan('First run detected. Setting up code-server...'));
+        console.log(pc.gray('setting up code-server...'));
         try {
             await installCodeServer();
         } catch (error: any) {
-            console.error(pc.red(`Failed to install code-server: ${error.message}`));
-            console.log(pc.yellow('Continuing without code-server...'));
+            console.error(pc.red(`failed to install code-server: ${error.message}`));
+            console.log(pc.gray('continuing without code-server...'));
         }
     }
 
-    // Start code-server if installed
     if (isCodeServerInstalled()) {
         try {
             await startCodeServer(PROJECT_DIR);
         } catch (error: any) {
-            console.error(pc.red(`Failed to start code-server: ${error.message}`));
+            console.error(pc.red(`failed to start code-server: ${error.message}`));
         }
     }
 
-    // Start the main ama server
     main();
 }
 
-// Parse command line arguments
+// Check for updates from npm registry
+async function checkForUpdates(): Promise<{ current: string; latest: string; hasUpdate: boolean }> {
+    try {
+        const response = await fetch("https://registry.npmjs.org/amai/latest");
+        const data = await response.json() as { version: string };
+        const latestVersion = data.version;
+        return {
+            current: VERSION,
+            latest: latestVersion,
+            hasUpdate: latestVersion !== VERSION
+        };
+    } catch {
+        return { current: VERSION, latest: VERSION, hasUpdate: false };
+    }
+}
+
+// Run npm install globally
+function runNpmInstall(): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const child = spawn('npm', ['install', '-g', 'amai@latest'], {
+            stdio: 'inherit',
+            shell: true
+        });
+        child.on('close', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`npm install exited with code ${code}`));
+        });
+        child.on('error', reject);
+    });
+}
+
 const args = process.argv.slice(2);
+
+// Handle version
+if (args[0] === "--version" || args[0] === "-v") {
+    console.log(pc.gray(`amai ${VERSION}`));
+    process.exit(0);
+}
 
 // Handle help
 if (args[0] === "--help" || args[0] === "-h") {
-    console.log(`
-${pc.bold("amai cli")} ${pc.gray(VERSION)}
-
-Usage: amai [command] [options]
-
-Commands:
-  login                 Authorize device
-  logout                Log out and remove credentials
-  start                 Start background daemon (background mode is highly recommended for better performance and stability)
-  stop                  Stop background daemon
-  status                Check daemon status
-  project add <path>    Register a project directory
-  project list          List registered projects
-Options:
-  --help, -h            Show this help message
-  --logout, -l          Log out and remove credentials
-Environment Variables:
-  SERVER_URL            Server URL to connect to
-
-Example:
-  amai login
-  amai start
-  amai project add /path/to/project
-  amai                  Start the agent (will prompt for background mode)
-    `);
+    console.log(pc.cyan(LOGO));
+    console.log(pc.gray(`  v${VERSION}`));
+    console.log('');
+    console.log(pc.cyan('  usage'));
+    console.log(pc.gray('    amai [command]'));
+    console.log('');
+    console.log(pc.cyan('  commands'));
+    console.log(pc.gray('    login           authenticate with amai'));
+    console.log(pc.gray('    logout          remove credentials'));
+    console.log(pc.gray('    start           start background daemon'));
+    console.log(pc.gray('    stop            stop background daemon'));
+    console.log(pc.gray('    status          check daemon status'));
+    console.log(pc.gray('    update          update to latest version'));
+    console.log(pc.gray('    project add     register a project'));
+    console.log(pc.gray('    project list    list projects'));
+    console.log('');
+    console.log(pc.cyan('  options'));
+    console.log(pc.gray('    -h, --help      show help'));
+    console.log(pc.gray('    -v, --version   show version'));
+    console.log('');
     process.exit(0);
 }
 
+// Handle update command
+if (args[0] === "update") {
+    (async () => {
+        console.log(pc.gray('checking for updates...'));
+        const { current, latest, hasUpdate } = await checkForUpdates();
 
-// Handle start command (start daemon)
-if (args[0] === "start") {
-    if (isDaemonRunning()) {
-        console.log(pc.yellow('ama is already running'));
-        process.exit(0);
-    }
-    if (!isAuthenticated()) {
-        console.log(pc.yellow('Not authenticated. Please log in first.'));
-        login()
-            .then(() => {
-                console.log(pc.green('starting ama in background mode...'));
-                startDaemon();
-                console.log(pc.green('ama started in background mode successfully'));
-                process.exit(0);
-            })
-            .catch(() => {
-                console.error(pc.red('Login failed. Cannot start ama in background mode.'));
+        if (!hasUpdate) {
+            console.log(pc.cyan(`already on latest version (${current})`));
+            process.exit(0);
+        }
+
+        console.log(pc.cyan(`update available: ${current} -> ${latest}`));
+        const answer = await promptUser(pc.gray('install update? (Y/n): '));
+
+        if (answer === '' || answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
+            console.log(pc.gray('updating...'));
+            try {
+                await runNpmInstall();
+                console.log(pc.cyan(`updated to ${latest}`));
+            } catch (error: any) {
+                console.error(pc.red(`update failed: ${error.message}`));
                 process.exit(1);
-            });
-    } else {
-        startDaemon();
-        console.log(pc.green(pc.bold('amai started in background mode')));
-        console.log(pc.gray(`Tip: You can check status any time with ${pc.bold('amai status')}`));
+            }
+        }
         process.exit(0);
-    }
-}
+    })();
+} else if (args[0] === "start") {
+    // Handle start command
+    (async () => {
+        if (isDaemonRunning()) {
+            console.log(pc.gray('amai is already running'));
+            process.exit(0);
+        }
 
-// Handle stop command
-if (args[0] === "stop") {
+        if (!isAuthenticated()) {
+            console.log(pc.gray('not authenticated'));
+            try {
+                await login();
+            } catch {
+                console.error(pc.red('login failed'));
+                process.exit(1);
+            }
+        }
+
+        startDaemon();
+        console.log(pc.cyan('amai started'));
+        console.log(pc.gray(`check status: amai status`));
+        process.exit(0);
+    })();
+} else if (args[0] === "stop") {
+    // Handle stop command
     if (stopDaemon()) {
-        console.log(pc.green('Daemon stopped successfully'));
+        console.log(pc.cyan('daemon stopped'));
     } else {
-        console.log(pc.yellow('Daemon was not running'));
+        console.log(pc.gray('daemon was not running'));
     }
     process.exit(0);
-}
-
-// Handle status command
-if (args[0] === "status") {
+} else if (args[0] === "status") {
+    // Handle status command
     const running = isDaemonRunning();
     const pid = getDaemonPid();
+    console.log('');
+    console.log(pc.cyan('  amai status'));
+    console.log('');
     if (running && pid) {
-        console.log(pc.green(`Daemon is running (PID: ${pid})`));
+        console.log(pc.gray(`  status   running`));
+        console.log(pc.gray(`  pid      ${pid}`));
     } else {
-        console.log(pc.yellow('Daemon is not running'));
+        console.log(pc.gray(`  status   stopped`));
     }
+    console.log(pc.gray(`  version  ${VERSION}`));
+    console.log('');
     process.exit(0);
-}
-
-// Handle project commands
-if (args[0] === "project") {
+} else if (args[0] === "project") {
+    // Handle project commands
     if (args[1] === "add") {
         const projectPath = args[2];
         if (!projectPath) {
-            console.error(pc.red('Please provide a project path'));
-            console.log('Usage: amai project add <path>');
+            console.error(pc.red('please provide a project path'));
+            console.log(pc.gray('usage: amai project add <path>'));
             process.exit(1);
         }
         const resolvedPath = path.resolve(projectPath);
         if (!fs.existsSync(resolvedPath)) {
-            console.error(pc.red(`Path does not exist: ${resolvedPath}`));
+            console.error(pc.red(`path does not exist: ${resolvedPath}`));
             process.exit(1);
         }
         if (!fs.statSync(resolvedPath).isDirectory()) {
-            console.error(pc.red(`Path is not a directory: ${resolvedPath}`));
+            console.error(pc.red(`path is not a directory: ${resolvedPath}`));
             process.exit(1);
         }
-        // Use path basename as project ID for CLI
         const projectId = path.basename(resolvedPath);
         projectRegistry.register(projectId, resolvedPath);
-        console.log(pc.green(`Project registered: ${projectId} -> ${resolvedPath}`));
+        console.log(pc.cyan(`project registered: ${projectId}`));
+        console.log(pc.gray(`  ${resolvedPath}`));
         process.exit(0);
     } else if (args[1] === "list") {
         const projects = projectRegistry.list();
+        console.log('');
+        console.log(pc.cyan('  projects'));
+        console.log('');
         if (projects.length === 0) {
-            console.log(pc.yellow('No projects registered'));
+            console.log(pc.gray('  no projects registered'));
         } else {
-            console.log(pc.bold('Registered projects:'));
             projects.forEach(project => {
-                console.log(`  ${pc.cyan(project.id)}: ${project.cwd} ${project.active ? pc.green('(active)') : ''}`);
+                const status = project.active ? pc.cyan('active') : pc.gray('inactive');
+                console.log(pc.gray(`  ${project.id} [${status}]`));
+                console.log(pc.gray(`    ${project.cwd}`));
             });
         }
+        console.log('');
         process.exit(0);
     } else {
-        console.error(pc.red(`Unknown project command: ${args[1]}`));
-        console.log('Use "amai project add <path>" or "amai project list"');
+        console.error(pc.red(`unknown project command: ${args[1]}`));
+        console.log(pc.gray('usage: amai project add <path> | amai project list'));
         process.exit(1);
     }
-}
+} else if (args[0] === "login" || args[0] === "--login") {
+    (async () => {
+        try {
+            await login();
+            console.log('');
 
+            // After login, ask if they want to start
+            if (isDaemonRunning()) {
+                console.log(pc.gray('amai is already running'));
+                process.exit(0);
+            }
 
-if (args[0] === "login" || args[0] === "--login") {
-    login()
-        .then(() => process.exit(0))
-        .catch(() => process.exit(1));
+            const answer = await promptUser(pc.gray('start amai now? (Y/n): '));
+            const shouldStart = answer === '' || answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes';
+
+            if (shouldStart) {
+                const bgAnswer = await promptUser(pc.gray('run in background? (Y/n): '));
+                const runInBackground = bgAnswer === '' || bgAnswer.toLowerCase() === 'y' || bgAnswer.toLowerCase() === 'yes';
+
+                if (runInBackground) {
+                    console.log(pc.gray('starting...'));
+                    startDaemon();
+                    console.log(pc.cyan('amai started'));
+                    console.log(pc.gray('use "amai status" to check status'));
+                } else {
+                    console.log(pc.gray('starting in foreground...'));
+                    startWithCodeServer();
+                    return; // Don't exit, foreground mode runs
+                }
+            }
+            process.exit(0);
+        } catch {
+            console.error(pc.red('login failed'));
+            process.exit(1);
+        }
+    })();
 } else if (args[0] === "logout" || args[0] === "--logout") {
-    logout()
-    console.log(pc.green('Logged out successfully'))
-    process.exit(0)
+    logout();
+    console.log(pc.cyan('logged out'));
+    process.exit(0);
 } else {
     // No command provided - prompt for background mode
     (async () => {
+        console.log(pc.cyan(LOGO));
+
         // Check authentication first
         if (!isAuthenticated()) {
-            console.log(pc.yellow('Not authenticated. Please log in first.'));
+            console.log(pc.gray('not authenticated'));
             try {
                 await login();
+                console.log('');
             } catch {
-                console.error(pc.red('Login failed. Cannot start server.'));
+                console.error(pc.red('login failed'));
                 process.exit(1);
             }
         }
 
         // Check if daemon is already running
         if (isDaemonRunning()) {
-            console.log(pc.yellow('Daemon is already running. Use "amai status" to check its status.'));
+            console.log(pc.gray('amai is already running'));
+            console.log(pc.gray('use "amai status" to check status'));
             process.exit(0);
         }
 
         // Prompt user for background mode
-        console.log('');
-        console.log(pc.bold('How would you like to run amai?'));
-        console.log(pc.gray('Background mode is highly recommended for better performance and stability.'));
-        const answer = await promptUser(
-            pc.cyan('Run in background? (Y/n): ')
-        );
-
+        const answer = await promptUser(pc.gray('run in background? (Y/n): '));
         const runInBackground = answer === '' || answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes';
 
         if (runInBackground) {
-            console.log(pc.green('Starting daemon in background...'));
+            console.log(pc.gray('starting...'));
             startDaemon();
-            console.log(pc.green('Daemon started successfully!'));
-            console.log(pc.gray('Use "amai status" to check daemon status.'));
-            console.log(pc.gray('Use "amai stop" to stop the daemon.'));
+            console.log(pc.cyan('amai started'));
+            console.log(pc.gray('use "amai status" to check status'));
+            console.log(pc.gray('use "amai stop" to stop'));
             process.exit(0);
         } else {
-            console.log(pc.yellow('Starting in foreground mode...'));
+            console.log(pc.gray('starting in foreground...'));
             startWithCodeServer();
         }
     })();
