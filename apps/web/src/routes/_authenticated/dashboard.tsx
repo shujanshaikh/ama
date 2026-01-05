@@ -7,8 +7,16 @@ import { useNavigate } from "@tanstack/react-router";
 import { IdeProjects } from "@/components/ideProjects";
 import { getSignInUrl } from "@/authkit/serverFunction";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useRef, useEffect } from "react";
-import { Search, FolderPlus, Plus, X } from "lucide-react";
+import { useState } from "react";
+import { Search, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useUserStreamContextOptional } from "@/components/user-stream-provider";
 import { Button } from "@/components/ui/button";
 
@@ -82,24 +90,7 @@ function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [manualPath, setManualPath] = useState("");
   const [isCreatingManual, setIsCreatingManual] = useState(false);
-  const [showAddProjectCard, setShowAddProjectCard] = useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
-
-  // Close popover when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        setShowAddProjectCard(false);
-      }
-    };
-
-    if (showAddProjectCard) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showAddProjectCard]);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   const filteredProjects = projectsList.filter((project) => {
     const query = searchQuery.toLowerCase();
@@ -141,7 +132,7 @@ function DashboardPage() {
         });
 
         setManualPath("");
-        setShowAddProjectCard(false);
+        setIsImportDialogOpen(false);
         navigate({
           to: "/chat/$projectId",
           params: { projectId: newProject.id },
@@ -172,39 +163,29 @@ function DashboardPage() {
             </h1>
           </div>
 
-          <div className="relative mb-4">
-            <Button
-              onClick={() => setShowAddProjectCard(!showAddProjectCard)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 hover:border-zinc-600 rounded-lg transition-all duration-200"
-            >
-              <Plus className="size-3.5 text-muted-foreground" />
-              <span>Import</span>
-            </Button>
+          <div className="mb-4">
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary hover:bg-accent border border-border rounded-lg transition-colors">
+                  <Plus className="size-3.5" />
+                  <span>Import</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="text-sm font-medium">
+                    Import project
+                  </DialogTitle>
+                  <DialogDescription className="text-xs">
+                    Provide the full path to your project directory to import it
+                  </DialogDescription>
+                </DialogHeader>
 
-            {showAddProjectCard && (
-              <div
-                ref={popoverRef}
-                className="absolute top-full left-0 mt-2 w-full max-w-md z-50 animate-in fade-in slide-in-from-top-2 duration-200"
-              >
-                <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl shadow-black/50 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <FolderPlus className="size-4 text-muted-foreground" />
-                      <h3 className="text-sm font-medium text-foreground">
-                        Add project manually
-                      </h3>
-                    </div>
-                    <button
-                      onClick={() => setShowAddProjectCard(false)}
-                      className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-zinc-800 transition-colors"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Enter the full path to your project directory
-                  </p>
-                  <div className="flex gap-2">
+                <div className="space-y-3 pt-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1.5 block">
+                      Project path
+                    </label>
                     <input
                       type="text"
                       placeholder="/Users/name/projects/my-app"
@@ -214,29 +195,27 @@ function DashboardPage() {
                         if (e.key === "Enter" && manualPath.trim()) {
                           handleManualPathSubmit();
                         }
-                        if (e.key === "Escape") {
-                          setShowAddProjectCard(false);
-                        }
                       }}
                       autoFocus
-                      className="flex-1 h-9 px-3 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-foreground placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-transparent transition-all"
+                      className="w-full h-9 px-3 text-sm bg-secondary border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
                     />
-                    <button
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
                       onClick={handleManualPathSubmit}
                       disabled={!manualPath.trim() || isCreatingManual}
-                      className="flex items-center gap-1.5 px-4 h-9 bg-white hover:bg-zinc-200 text-zinc-900 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                      className="h-8 px-3 text-xs bg-foreground text-background hover:bg-foreground/90 rounded-md transition-colors disabled:opacity-50"
                     >
                       {isCreatingManual ? (
-                        <div className="size-3.5 border-2 border-zinc-400 border-t-zinc-800 rounded-full animate-spin" />
+                        <div className="size-3 border-2 border-background/30 border-t-background rounded-full animate-spin" />
                       ) : (
-                        <Plus className="size-4" />
+                        "Add project"
                       )}
-                      <span>Add</span>
-                    </button>
+                    </Button>
                   </div>
                 </div>
-              </div>
-            )}
+              </DialogContent>
+            </Dialog>
           </div>
 
           <PromptBox
@@ -259,7 +238,7 @@ function DashboardPage() {
           </section>
         ) : projectsList.length > 0 ? (
           <section className="mb-8">
-            <div className="border border-zinc-800 rounded-lg p-3 bg-zinc-900/30">
+            <div className="border border-border rounded-lg p-3 bg-secondary/30">
               <div className="flex items-center justify-between gap-3 mb-3 px-1">
                 <h2 className="text-xs font-medium text-muted-foreground">
                   Open existing project
@@ -271,7 +250,7 @@ function DashboardPage() {
                     placeholder="Search projects..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-7 w-40 pl-7 pr-2 text-xs bg-zinc-800/50 border border-zinc-700 rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-all"
+                    className="h-7 w-40 pl-7 pr-2 text-xs bg-secondary/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
                   />
                 </div>
               </div>
@@ -304,7 +283,7 @@ function DashboardPage() {
                     return (
                       <div
                         key={project.id}
-                        className="group cursor-pointer bg-zinc-800/40 hover:bg-zinc-800/70 rounded-md p-2.5 transition-colors"
+                        className="group cursor-pointer bg-secondary/40 hover:bg-accent rounded-md p-2.5 transition-colors"
                         onClick={() => handleProjectClick(project)}
                       >
                         <div className="flex items-center gap-2">
