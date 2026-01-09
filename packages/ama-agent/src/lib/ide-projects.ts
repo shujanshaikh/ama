@@ -14,14 +14,22 @@ const IDE_PROJECTS_PATHS = {
 function getWorkspaceStoragePath(ide: 'cursor' | 'vscode'): string {
     const platform = os.platform();
     const appName = ide === 'cursor' ? 'Cursor' : 'Code';
+    const appNameLower = appName.toLowerCase();
     
     if (platform === 'darwin') {
         return path.join(HOME, 'Library', 'Application Support', appName, 'User', 'workspaceStorage');
     } else if (platform === 'win32') {
         return path.join(process.env.APPDATA || '', appName, 'User', 'workspaceStorage');
     } else {
-        // Linux
-        return path.join(HOME, '.config', appName, 'User', 'workspaceStorage');
+        // Linux - check both capitalized and lowercase variants
+        const capitalizedPath = path.join(HOME, '.config', appName, 'User', 'workspaceStorage');
+        const lowercasePath = path.join(HOME, '.config', appNameLower, 'User', 'workspaceStorage');
+        
+        // Prefer capitalized path if it exists, otherwise try lowercase
+        if (fs.existsSync(capitalizedPath)) {
+            return capitalizedPath;
+        }
+        return lowercasePath;
     }
 }
 
@@ -108,10 +116,15 @@ export const scanIdeProjects = async () => {
             addProject(project.path, 'cursor');
         }
         
-        // For other IDEs (claude, vscode if using ~/.vscode/projects pattern), use legacy scanning
+        const vscodeProjects = scanWorkspaceStorage('vscode');
+        for (const project of vscodeProjects) {
+            addProject(project.path, 'vscode');
+        }
+        
+        // For other IDEs (claude, or legacy ~/.vscode/projects pattern), use legacy scanning
         for (const [ide, dirPath] of Object.entries(IDE_PROJECTS_PATHS)) {
-            // Skip cursor as we handle it via workspaceStorage
-            if (ide === 'cursor') continue;
+            // Skip cursor and vscode as we handle them via workspaceStorage
+            if (ide === 'cursor' || ide === 'vscode') continue;
             
             if (fs.existsSync(dirPath)) {
                 const projects = fs.readdirSync(dirPath);

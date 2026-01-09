@@ -1,6 +1,5 @@
 import { z } from "zod"
 import path from "node:path";
-import fs from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { calculateDiffStats } from "../lib/diff";
 import { validatePath, resolveProjectPath } from "../lib/sandbox";
@@ -37,28 +36,27 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>, 
 
       let isNewFile = providedNewFile
       let existingContent = ""
+      const file = Bun.file(filePath);
+      
       if(isNewFile === undefined) {
-        try {
-          existingContent = await fs.promises.readFile(filePath, 'utf-8');
-          isNewFile = false
-        } catch (error) {
-          isNewFile = true
+        const exists = await file.exists();
+        if (exists) {
+          existingContent = await file.text();
+          isNewFile = false;
+        } else {
+          isNewFile = true;
         }
       } else if (!isNewFile) {
-        try {
-          existingContent = await fs.promises.readFile(filePath, 'utf-8');
-        } catch (error) {
-          isNewFile = true
+        const exists = await file.exists();
+        if (exists) {
+          existingContent = await file.text();
+        } else {
+          isNewFile = true;
         }
       }
 
-      // Write the new content
-      try {
-        await fs.promises.writeFile(filePath, content);
-      } catch (writeError: any) {
-        // Remove checkpoint if write failed
-        throw writeError;
-      }
+      // Write the new content using Bun.write
+      await Bun.write(filePath, content);
 
       const diffStats = calculateDiffStats(existingContent, content);
       

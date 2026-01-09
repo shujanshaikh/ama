@@ -66,7 +66,7 @@ export async function installCodeServer(): Promise<void> {
         fs.mkdirSync(STORAGE_DIR, { recursive: true })
     }
 
-    console.log(pc.cyan(`Downloading code-server v${CODE_SERVER_VERSION}...`))
+    console.log(pc.cyan(`downloading code-server v${CODE_SERVER_VERSION}...`))
     console.log(pc.gray(downloadUrl))
 
     const response = await fetch(downloadUrl)
@@ -88,7 +88,7 @@ export async function installCodeServer(): Promise<void> {
         await fs.promises.chmod(binPath, 0o755)
     }
 
-    console.log(pc.green('✓ code-server installed successfully'))
+    console.log(pc.green('code-server installed successfully'))
 }
 
 async function killExistingCodeServer(): Promise<void> {

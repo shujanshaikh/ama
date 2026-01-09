@@ -1,8 +1,8 @@
 {
     "name": "amai",
     "type": "module",
-    "version": "0.0.10",
-    "description": "ama rpc daemon",
+    "version": "0.0.11",
+    "description": "ama cli",
     "keywords": [
         "ama",
         "cli",

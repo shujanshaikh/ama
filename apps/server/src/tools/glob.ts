@@ -3,13 +3,13 @@ import { tool } from "ai";
 import { z } from "zod";
     
 const globSchema = z.object({
-    pattern: z.string().describe('Glob pattern (e.g., "**/*.js")'),
-    path: z.string().optional().describe('Relative directory path to search in'),
+    pattern: z.string().describe('Glob pattern to match files (e.g., "**/*.js", "src/**/*.ts", "*.json"). Supports standard glob syntax with *, **, and ? wildcards'),
+    path: z.string().optional().describe('Optional relative directory path within the project to limit the search scope. If not provided, searches from the project root'),
 })
 
 
 export const globTool = tool({
-    description: 'Use this tool to find files matching a glob pattern in a given path',
+    description: 'Search for files in the project using glob patterns. Supports wildcards like *, **, and ? to match multiple files. Optionally specify a subdirectory to limit the search scope.',
     inputSchema: globSchema,
     execute: async ({ pattern, path }) => {
         try {

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { spawn } from "node:child_process";
 
 const ExplanationSchema = z.object({
   explanation: z
@@ -54,6 +53,7 @@ export const RunTerminalCmdParamsSchema = z
 export const runSecureTerminalCommand = async (
   command: string,
   timeout: number,
+  cwd?: string,
 ) => {
   try {
     if (isHarmfulCommand(command)) {
@@ -65,51 +65,53 @@ export const runSecureTerminalCommand = async (
       };
     }
 
-    return new Promise((resolve, reject) => {
-      const child = spawn(command, {
-        cwd: process.cwd(),
-        stdio: ["pipe", "pipe", "pipe"],
-        shell: true,
-      });
-
-      let stdout = "";
-      let stderr = "";
-      let timeoutId: NodeJS.Timeout | null = null!;
-
-      if (timeoutId > 0) {
-        timeoutId = setTimeout(() => {
-          child.kill("SIGKILL");
-          reject(new Error(`Command timed out after ${timeout}ms`));
-        }, timeout);
-      }
-
-      child.stdout?.on("data", (data) => {
-        stdout += data.toString();
-      });
-
-      child.stderr?.on("data", (data) => {
-        stderr += data.toString();
-      });
-
-      // Handle process exit
-      child.stdout.on("close", (code : string) => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-        // Always resolve - let caller handle exit code
-        resolve({ stdout, stderr, exitCode: code || 0 });
-      });
-
-      // Handle process errors
-      child.stderr.on("error", (error : string) => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-        reject(error);
-      });
+    // Use Bun.spawn with shell (Unix only - macOS/Linux)
+    const proc = Bun.spawn(["sh", "-c", command], {
+      cwd: cwd || process.cwd(),
+      stdout: "pipe",
+      stderr: "pipe",
     });
-  } catch {
-    console.error("Error while ecexuting the securedShell command")
+
+    // Set up timeout
+    let timedOut = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    
+    if (timeout > 0) {
+      timeoutId = setTimeout(() => {
+        timedOut = true;
+        proc.kill();
+      }, timeout);
+    }
+
+    // Read stdout and stderr
+    const [stdout, stderr, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    if (timedOut) {
+      return {
+        success: false,
+        message: `Command timed out after ${timeout}ms`,
+        error: "TIMEOUT",
+        stdout,
+        stderr,
+      };
+    }
+
+    return { stdout, stderr, exitCode };
+  } catch (error: any) {
+    console.error("Error while executing the securedShell command", error);
+    return {
+      success: false,
+      message: "Error while executing the securedShell command",
+      error: error.message,
+    };
   }
 };
 
@@ -119,7 +121,7 @@ export const runTerminalCommand = async (
 ) => {
   try {
     if (input?.is_background) {
-      // For background commands, use spawn with shell enabled
+      // For background commands, use Bun.spawn with shell enabled
       if (isHarmfulCommand(input.command)) {
         console.log(`[CLI] Harmful command detected: ${input.command}`);
         return {
@@ -128,14 +130,15 @@ export const runTerminalCommand = async (
           error: "HARMFUL_COMMAND_DETECTED",
         };
       }
-      const child = spawn(input.command, {
-        cwd: projectCwd,
-        detached: true,
-        stdio: "ignore",
-        shell: true,
+
+      const proc = Bun.spawn(["sh", "-c", input.command], {
+        cwd: projectCwd || process.cwd(),
+        stdout: "ignore",
+        stderr: "ignore",
       });
 
-      child.unref(); // Allow parent to exit
+      // Unref to allow parent to exit (Bun handles this automatically for detached processes)
+      proc.unref();
 
       console.log(`[LOCAL] Background command started: ${input.command}`);
 
@@ -146,10 +149,15 @@ export const runTerminalCommand = async (
       };
     } else {
       // For foreground commands, use secure spawn with timeout and shell
-      const result : any = await runSecureTerminalCommand(
+      const result: any = await runSecureTerminalCommand(
         input.command,
-        30000 // 30 second timeout
+        30000, // 30 second timeout
+        projectCwd
       );
+
+      if (result?.error && !result?.exitCode) {
+        return result;
+      }
 
       const success = result?.exitCode === 0;
       return {
@@ -162,12 +170,12 @@ export const runTerminalCommand = async (
           : `Command failed with exit code ${result?.exitCode}: ${input.command}`,
       };
     }
-  } catch (error : any) {
-    console.error("Error while executing the terminal command", error)
+  } catch (error: any) {
+    console.error("Error while executing the terminal command", error);
     return {
       success: false,
       message: "Error while executing the terminal command",
       error: error.message,
-    }
+    };
   }
 };

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { readFile, writeFile } from "node:fs/promises";
 import { calculateDiffStats } from "../lib/diff";
 import { validatePath, resolveProjectPath } from "../lib/sandbox";
 
@@ -59,17 +58,24 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
             const basePath = projectCwd || process.cwd();
             const absolute_file_path = resolveProjectPath(file_path, basePath);
 
+            // Use Bun's file API
+            const file = Bun.file(absolute_file_path);
+            
+            // Check if file exists
+            const exists = await file.exists();
+            if (!exists) {
+                return {
+                    success: false,
+                    message: `File not found: ${file_path}`,
+                    error: 'FILE_NOT_FOUND',
+                };
+            }
+
+            // Read file content
             let fileContent: string;
             try {
-                fileContent = await readFile(absolute_file_path, 'utf-8');
+                fileContent = await file.text();
             } catch (error: any) {
-                if (error?.code === 'ENOENT') {
-                    return {
-                        success: false,
-                        message: `File not found: ${file_path}`,
-                        error: 'FILE_NOT_FOUND',
-                    };
-                }
                 return {
                     success: false,
                     message: `Failed to read file: ${file_path}`,
@@ -97,7 +103,8 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
             const newContent = fileContent.replace(old_string, new_string);
 
             try {
-                await writeFile(absolute_file_path, newContent, 'utf-8');
+                // Use Bun.write for writing
+                await Bun.write(absolute_file_path, newContent);
                 const diffStats = calculateDiffStats(fileContent, newContent);
                 return {
                     success: true,

@@ -35,9 +35,9 @@ export default defineConfig([
       // Packages that need to be external
       "ws",
     ],
-    // Add shebang to make CLI executable
+    // Add shebang to make CLI executable with Bun runtime
     banner: {
-      js: "#!/usr/bin/env node",
+      js: "#!/usr/bin/env bun",
     },
     env: {
       VERSION: process.env.VERSION ?? packageJson.version ?? "0.0.0",

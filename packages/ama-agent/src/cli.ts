@@ -77,13 +77,13 @@ async function checkForUpdates(): Promise<{ current: string; latest: string; has
 // Run npm install globally
 function runNpmInstall(): Promise<void> {
     return new Promise((resolve, reject) => {
-        const child = spawn('npm', ['install', '-g', 'amai@latest'], {
+        const child = spawn('bun', ['add', '-g', 'amai@latest'], {
             stdio: 'inherit',
             shell: true
         });
         child.on('close', (code) => {
             if (code === 0) resolve();
-            else reject(new Error(`npm install exited with code ${code}`));
+            else reject(new Error(`bun add exited with code ${code}`));
         });
         child.on('error', reject);
     });
