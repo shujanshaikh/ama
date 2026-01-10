@@ -31,7 +31,7 @@
     "@hono/node-server": "^1.19.7",
     "@trpc/tanstack-react-query": "^11.8.1",
     "@types/ws": "^8.18.1",
-    "ai": "^5.0.118",
+    "ai": "^6.0.26",
     "diff": "^8.0.2",
     "framer-motion": "^12.24.12",
     "nitro": "^3.0.1-alpha.1",

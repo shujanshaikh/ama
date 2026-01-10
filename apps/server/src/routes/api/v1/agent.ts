@@ -21,7 +21,7 @@ import {
 import { convertToUIMessages } from "@/lib/convertToUIMessage";
 import { requestContext } from "@/lib/context";
 import { agentStreams } from "@/index";
-import { models } from "@/lib/model";
+import { createOpenCodeZenModel, models } from "@/lib/model";
 import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
 import { createSnapshot } from "@/lib/executeTool";
 import {
@@ -32,7 +32,6 @@ import type { ChatMessage } from "@/lib/tool-types";
 import { differenceInSeconds } from "date-fns";
 import { generateUUID } from "@/lib/utils";
 import { ratelimit } from "@/lib/rate-limiter";
-import { supermemoryTools } from "@supermemory/tools/ai-sdk"
 
 
 export const agentRouter = new Hono();
@@ -81,10 +80,13 @@ agentRouter.post("/agent-proxy", async (c) => {
       );
     }
 
+  
+
     const modelInfo = models.find((m) => m.id === model);
     if (!modelInfo) {
       return c.json({ error: "Model not found" }, 404);
     }
+
     await saveMessages({
       messages: [
         {
@@ -145,8 +147,8 @@ agentRouter.post("/agent-proxy", async (c) => {
             );
 
             const result = streamText({
-              messages: convertToModelMessages(uiMessages),
-              model: modelInfo.id,
+              messages: await convertToModelMessages(uiMessages),
+              model: createOpenCodeZenModel(model),
               system: systemPrompt,
               temperature: 0.7,
               stopWhen: stepCountIs(10),
@@ -154,13 +156,7 @@ agentRouter.post("/agent-proxy", async (c) => {
                 delayInMs: 20,
                 chunking: "word",
               }),
-              tools: {
-                ...tools,
-                ...supermemoryTools(process.env.SUPERMEMORY_API_KEY!),
-              },
-              // onFinish: ({ usage }) => {
-              //   console.log(usage);
-              // },
+              tools: tools,
             });
             result.consumeStream();
             dataStream.merge(

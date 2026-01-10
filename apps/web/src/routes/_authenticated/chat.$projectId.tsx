@@ -241,7 +241,7 @@ function Chat() {
 
     if (initialMessages && initialMessages.length > 0) {
       if (messages.length === 0 || !hasInitializedRef.current) {
-        setMessages(initialMessages as ChatMessage[]);
+        setMessages(initialMessages as unknown as ChatMessage[]);
         hasInitializedRef.current = true;
       }
     } else {
@@ -314,7 +314,7 @@ function Chat() {
 
   useAutoResume({
     autoResume: true,
-    initialMessages: initialMessages as ChatMessage[],
+    initialMessages: initialMessages as unknown as ChatMessage[],
     resumeStream,
     setMessages,
   });
