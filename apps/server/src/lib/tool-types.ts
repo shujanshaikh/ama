@@ -9,6 +9,7 @@ import type { runTerminalCommand } from "@/tools/runTerminalCommand"
 import type { InferUITool, UIMessage } from "ai"
 import z from "zod"
 import { webSearch } from "@/tools/web-search"
+import type { batchTool } from "@/tools/batch"
 
 
 export interface FileType {
@@ -70,6 +71,7 @@ type editFileType = InferUITool<typeof editFile>;
 type deleteFileType = InferUITool<typeof deleteFile>;
 type runTerminalCommand = InferUITool<typeof runTerminalCommand>;
 type webSearch = InferUITool<typeof webSearch>;
+type batchToolType = InferUITool<typeof batchTool>;
 
 export type ChatTools = {
   stringReplace: stringReplace;
@@ -81,6 +83,7 @@ export type ChatTools = {
   deleteFile: deleteFileType;
   runTerminalCommand: runTerminalCommand;
   webSearch: webSearch;
+  batch: batchToolType;
 };
 
 export type CustomUIDataTypes = {
@@ -165,7 +168,24 @@ export interface SuccessOutput {
   codes?: unknown;
 }
 
-export type ToolOutput = ReadFileOutput | ListOutput | GlobOutput | GrepOutput | SuccessOutput | EditFilesOutput | DeleteFileOutput | RunTerminalCommandOutput;
+export interface BatchToolCallResult {
+  tool: string;
+  success: boolean;
+  result?: ToolOutput;
+  error?: string;
+}
+
+export interface BatchOutput {
+  success: boolean;
+  message: string;
+  error?: string;
+  totalCalls: number;
+  successful: number;
+  failed: number;
+  results: BatchToolCallResult[];
+}
+
+export type ToolOutput = ReadFileOutput | ListOutput | GlobOutput | GrepOutput | SuccessOutput | EditFilesOutput | DeleteFileOutput | RunTerminalCommandOutput | BatchOutput;
 
 
 export type ToolPart = {

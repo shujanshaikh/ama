@@ -1,62 +1,62 @@
 {
-    "name": "amai",
-    "type": "module",
-    "version": "0.0.11",
-    "description": "ama cli",
-    "keywords": [
-        "ama",
-        "cli",
-        "agent",
-        "local",
-        "tools"
-    ],
-    "author": "",
-    "license": "ISC",
-    "repository": {
-        "type": "git"
+  "name": "amai",
+  "type": "module",
+  "version": "0.0.12",
+  "description": "ama cli",
+  "keywords": [
+    "ama",
+    "cli",
+    "agent",
+    "local",
+    "tools"
+  ],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git"
+  },
+  "prepare": "bun run build",
+  "bin": {
+    "amai": "./dist/cli.js"
+  },
+  "main": "./dist/cli.js",
+  "types": "./dist/cli.d.ts",
+  "exports": {
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js",
+      "require": "./dist/server.cjs"
     },
-    "prepare": "bun run build",
-    "bin": {
-        "amai": "./dist/cli.js"
-    },
-    "main": "./dist/cli.js",
-    "types": "./dist/cli.d.ts",
-    "exports": {
-        "./server": {
-            "types": "./dist/server.d.ts",
-            "import": "./dist/server.js",
-            "require": "./dist/server.cjs"
-        },
-        "./dist/*": "./dist/*.js",
-        "./dist/*.js": "./dist/*.js"
-    },
-    "browser": "dist/client.global.js",
-    "files": [
-        "dist"
-    ],
-    "scripts": {
-        "dev": "tsup --watch",
-        "build": "rm -rf dist && NODE_ENV=production tsup",
-        "prepublishOnly": "bun run build",
-        "install-global": "bun run build && npm link || bun link"
-    },
-    "devDependencies": {
-        "@types/bun": "latest",
-        "@types/ws": "^8.18.1"
-    },
-    "peerDependencies": {
-        "typescript": "^5"
-    },
-    "dependencies": {
-        "@hono/node-server": "^1.19.7",
-        "hono": "^4.10.7",
-        "picocolors": "^1.1.1",
-        "react-grab": "^0.0.74",
-        "tsup": "^8.5.1",
-        "ws": "^8.18.3",
-        "zod": "^4.1.13"
-    },
-    "publishConfig": {
-        "access": "public"
-    }
+    "./dist/*": "./dist/*.js",
+    "./dist/*.js": "./dist/*.js"
+  },
+  "browser": "dist/client.global.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "rm -rf dist && NODE_ENV=production tsup",
+    "prepublishOnly": "bun run build",
+    "install-global": "bun run build && npm link || bun link"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/ws": "^8.18.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.7",
+    "hono": "^4.10.7",
+    "picocolors": "^1.1.1",
+    "react-grab": "^0.0.74",
+    "tsup": "^8.5.1",
+    "ws": "^8.18.3",
+    "zod": "^4.1.13"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

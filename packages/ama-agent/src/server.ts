@@ -13,6 +13,7 @@ import { getTokens } from './lib/auth-login'
 import { runTerminalCommand } from './tools/runTerminalCommand'
 import { connectToUserStreams } from './lib/userStreams'
 import { rpcHandlers } from './lib/rpc-handlers'
+import { batchTool } from './tools/batch'
 
 
 // Reconnection config
@@ -58,7 +59,7 @@ const toolExecutors: Record<string, (args: any, projectCwd?: string) => Promise<
   readFile: read_file,
   stringReplace: apply_patch,
   runTerminalCommand: runTerminalCommand,
-
+  batch: batchTool,
 }
 
 export function getConnectionStatus(ws: WebSocket): 'connecting' | 'open' | 'closing' | 'closed' {

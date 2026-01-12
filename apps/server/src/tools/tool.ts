@@ -7,6 +7,7 @@ import { globTool } from "./glob";
 import { listDirectory } from "./listDirectory";
 import { runTerminalCommand } from "./runTerminalCommand";
 import { webSearch } from "./web-search";
+import { batchTool } from "./batch";
 
 
 export const tools = {
@@ -19,4 +20,5 @@ export const tools = {
     listDirectory: listDirectory,
     runTerminalCommand: runTerminalCommand,
     webSearch: webSearch,
+    batch: batchTool,
 } 
