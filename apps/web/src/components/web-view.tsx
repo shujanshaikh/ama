@@ -177,12 +177,6 @@ export function PreviewIframe({ collapsed, onCollapsedChange, projectId }: Previ
           <RefreshCwIcon className="size-4" />
         </WebPreviewNavigationButton>
         <WebPreviewUrl placeholder="Enter localhost URL (e.g., http://localhost:3000)" />
-        <WebPreviewNavigationButton
-          tooltip="Close preview"
-          onClick={handleClose}
-        >
-          <XIcon className="size-4" />
-        </WebPreviewNavigationButton>
       </WebPreviewNavigation>
       <WebPreviewBody />
     </WebPreview>
