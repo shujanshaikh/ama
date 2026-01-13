@@ -6,7 +6,7 @@ import {
   WebPreviewUrl,
 } from "@/components/ai-elements/web-preview";
 import { ArrowLeftIcon, ArrowRightIcon, RefreshCwIcon, XIcon, GlobeIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export type PreviewIframeProps = {
   collapsed?: boolean;
@@ -23,26 +23,6 @@ function getStorageKey(projectId?: string): string {
 
 export function PreviewIframe({ collapsed, onCollapsedChange, projectId }: PreviewIframeProps) {
   const storageKey = getStorageKey(projectId);
-
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  const injectScript = () => {
-    const iframe = iframeRef.current;
-    if (!iframe?.contentDocument) return;
-
-    const script = iframe.contentDocument.createElement("script");
-    script.src = "//unpkg.com/react-grab/dist/index.global.js";
-    script.crossOrigin = "anonymous";
-
-    script.onload = () => {
-      console.log(
-        "Injected into iframe",
-        (iframe.contentWindow as any).ReactGrab
-      );
-    };
-
-    iframe.contentDocument.head.appendChild(script);
-  };
 
   const getInitialUrl = () => {
     if (typeof window !== "undefined") {
@@ -141,12 +121,10 @@ export function PreviewIframe({ collapsed, onCollapsedChange, projectId }: Previ
   return (
     <WebPreview
       defaultUrl={url}
-      onLoad={injectScript}
       className="h-full border-0 rounded-none bg-transparent"
       defaultCollapsed={collapsed}
       onCollapsedChange={onCollapsedChange}
       onUrlChange={handleUrlChange}
-      ref={iframeRef}
     >
       <WebPreviewNavigation>
         <WebPreviewNavigationButton
