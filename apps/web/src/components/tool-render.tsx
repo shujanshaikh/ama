@@ -18,7 +18,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
-import { useState } from "react";
+import { memo, useMemo, useState } from "react";
 
 // Minimal streaming indicator
 export const StreamingDots = () => (
@@ -139,7 +139,15 @@ export const ToolRenderer = ({
 
       return (
         <div className="mb-1">
-          <PierreDiff oldFile={oldString} newFile={newString} />
+          <DiffResult
+            toolCallId={toolCallId}
+            label={output?.isNewFile ? "Created" : "Edited"}
+            fileName={fileName}
+            oldString={oldString.contents}
+            newString={newString.contents}
+            linesAdded={output?.linesAdded}
+            linesRemoved={output?.linesRemoved}
+          />
         </div>
       );
     }
@@ -339,9 +347,14 @@ export const ToolRenderer = ({
 
       return (
         <div key={toolCallId} className="mb-1">
-          <PierreDiff
-            oldFile={{ contents: oldString, name: fileName }}
-            newFile={{ contents: newString, name: fileName }}
+          <DiffResult
+            toolCallId={toolCallId}
+            label="Replaced"
+            fileName={fileName}
+            oldString={oldString}
+            newString={newString}
+            linesAdded={output?.linesAdded}
+            linesRemoved={output?.linesRemoved}
           />
         </div>
       );
@@ -694,6 +707,80 @@ export const ToolRenderer = ({
 
   return null;
 };
+
+const DiffResult = memo(function DiffResult({
+  toolCallId,
+  label,
+  fileName,
+  oldString,
+  newString,
+  linesAdded,
+  linesRemoved,
+}: {
+  toolCallId: string;
+  label: string;
+  fileName: string;
+  oldString: string;
+  newString: string;
+  linesAdded?: number;
+  linesRemoved?: number;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const oldFile = useMemo<FileContents>(
+    () => ({ contents: oldString || "", name: fileName }),
+    [oldString, fileName],
+  );
+  const newFile = useMemo<FileContents>(
+    () => ({ contents: newString || "", name: fileName }),
+    [newString, fileName],
+  );
+
+  const hasChanges = (oldString || "") !== (newString || "");
+  const stats =
+    linesAdded !== undefined || linesRemoved !== undefined
+      ? `(+${linesAdded ?? 0} -${linesRemoved ?? 0})`
+      : undefined;
+
+  if (!hasChanges) {
+    return (
+      <div key={toolCallId} className="py-0.5">
+        <span className="text-sm flex items-center gap-2">
+          {label} <span className="text-foreground/50">{fileName}</span>{" "}
+          {getFileIcon(fileName)}
+          <span className="text-muted-foreground/60 text-xs">No changes</span>
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div key={toolCallId} className="py-0.5">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group">
+          <ChevronRight
+            className={`size-3 text-muted-foreground/50 transition-transform ${isOpen ? "rotate-90" : ""}`}
+          />
+          <span className="text-sm flex items-center gap-2">
+            {label} <span className="text-foreground/50">{fileName}</span>{" "}
+            {getFileIcon(fileName)}
+            {stats && (
+              <span className="text-muted-foreground/60 text-xs">{stats}</span>
+            )}
+            <span className="text-muted-foreground/50 text-xs">
+              {isOpen ? "Hide diff" : "Show diff"}
+            </span>
+          </span>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="ml-4 mt-1">
+            <PierreDiff oldFile={oldFile} newFile={newFile} />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+});
 
 // Separate component for batch results to use hooks
 const BatchToolResult = ({

@@ -1,14 +1,14 @@
-import { memo, useMemo, lazy, Suspense, useState, useEffect } from 'react';
+import { memo, useMemo, lazy, Suspense, useState, useEffect } from "react";
 import {
   type FileDiffMetadata,
   parseDiffFromFile
-} from '@pierre/diffs';
-import type { FileContents, FileDiffProps } from '@pierre/diffs/react';
-import { Loader2 } from 'lucide-react';
+} from "@pierre/diffs";
+import type { FileContents, FileDiffProps } from "@pierre/diffs/react";
+import { Loader2 } from "lucide-react";
 
 
 const LazyFileDiff = lazy(() =>
-  import('@pierre/diffs/react').then((module) => ({ default: module.FileDiff }))
+  import("@pierre/diffs/react").then((module) => ({ default: module.FileDiff })),
 );
 
 interface PierreDiffProps {
@@ -25,6 +25,12 @@ const getDiffOptions = (splitView: boolean): FileDiffProps<undefined>['options']
   lineDiffType: "word",
 });
 
+const MAX_DIFF_CHARS = 250_000;
+
+type ParsedDiffResult =
+  | { ok: true; fileDiff: FileDiffMetadata }
+  | { ok: false; error: string };
+
 
 export const PierreDiff = memo(function PierreDiff({
   oldFile,
@@ -37,12 +43,34 @@ export const PierreDiff = memo(function PierreDiff({
     setIsMounted(true);
   }, []);
 
-  const oldContent = oldFile.contents || '';
-  const newContent = newFile.contents || '';
+  const oldContent = oldFile.contents || "";
+  const newContent = newFile.contents || "";
+  const totalChars = oldContent.length + newContent.length;
 
-  const fileDiff = useMemo<FileDiffMetadata>(() => {
-    return parseDiffFromFile(oldFile, newFile);
-  }, [oldFile, newFile]);
+  const parsed = useMemo<ParsedDiffResult>(() => {
+    if (totalChars > MAX_DIFF_CHARS) {
+      return {
+        ok: false,
+        error: `Diff too large to render (${totalChars.toLocaleString()} chars).`,
+      };
+    }
+
+    try {
+      // Important: depend on stable primitives so we don't recompute just because
+      // parent passed new object literals.
+      const fileDiff = parseDiffFromFile(
+        { name: oldFile.name, contents: oldContent },
+        { name: newFile.name, contents: newContent },
+      );
+      return { ok: true, fileDiff };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err instanceof Error ? err.message : "Unable to render diff (unknown error).",
+      };
+    }
+  }, [oldContent, newContent, oldFile.name, newFile.name, totalChars]);
 
   if (oldContent === newContent) {
     return null;
@@ -55,6 +83,18 @@ export const PierreDiff = memo(function PierreDiff({
           <div className="p-4 text-[13px] text-muted-foreground/70 flex items-center gap-2">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             Loading diff...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!parsed.ok) {
+    return (
+      <div className="mt-2">
+        <div className="overflow-hidden border border-border/30 rounded-lg">
+          <div className="p-4 text-[13px] text-muted-foreground/70">
+            {parsed.error}
           </div>
         </div>
       </div>
@@ -79,7 +119,7 @@ export const PierreDiff = memo(function PierreDiff({
                   fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, Monaco, 'Courier New', monospace",
                   fontSize: 12,
                 } as React.CSSProperties}
-                fileDiff={fileDiff}
+                fileDiff={parsed.fileDiff}
                 options={getDiffOptions(splitView)}
               />
             </Suspense>
