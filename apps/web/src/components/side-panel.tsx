@@ -1,6 +1,7 @@
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarRail,
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "./ui/scroll-area";
@@ -8,12 +9,12 @@ import { AmaLogo } from "./ama-logo";
 import { useParams, useNavigate, useSearch } from "@tanstack/react-router";
 import { useTRPC } from "@/utils/trpc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Skeleton } from "./ui/skeleton";
-import { Loader2, Plus, Search, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
+import { Button } from "./ui/button";
+import { PlusIcon, SearchIcon } from "lucide-react";
 
 interface Chat {
     id: string;
@@ -32,7 +33,7 @@ function formatRelativeTime(date: Date | null): string {
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
-    if (seconds < 60) return "just now";
+    if (seconds < 60) return "now";
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     return `${days}d`;
@@ -137,20 +138,19 @@ export function Sidepanel() {
         <button
             onClick={() => handleChatClick(chat.id)}
             className={cn(
-                "w-full text-left px-3 py-2 rounded-lg transition-colors group flex items-center gap-3",
+                "w-full text-left px-3 py-2 rounded-lg transition-all duration-150 group flex items-center gap-2",
                 isActive
-                    ? "bg-sidebar-accent text-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+                    ? "bg-primary-foreground text-foreground"
+                    : "text-foreground/80 hover:text-foreground"
             )}
         >
-            <MessageSquare className="w-4 h-4 shrink-0 opacity-50" />
             <span className={cn(
-                "flex-1 text-sm truncate",
-                isActive && "font-medium"
+                "flex-1 text-[13px] truncate",
+                isActive ? "font-medium" : "font-normal"
             )}>
                 {chat.title}
             </span>
-            <span className="text-[10px] opacity-40 tabular-nums">
+            <span className="text-[10px] text-foreground/40 tabular-nums shrink-0">
                 {formatRelativeTime(chat.updatedAt || chat.createdAt)}
             </span>
         </button>
@@ -160,56 +160,48 @@ export function Sidepanel() {
         <Sidebar
             variant="sidebar"
             side="left"
-            className="bg-sidebar border-r border-sidebar-border"
+            className="bg-background border-r"
         >
             <SidebarRail />
             <div className="flex flex-col h-full p-4">
-                {/* Header */}
                 <button
                     onClick={() => navigate({ to: '/dashboard' })}
-                    className="flex items-center gap-1 mb-6 hover:opacity-70 transition-opacity"
+                    className="flex items-center gap-1.5 mb-6 hover:opacity-70 transition-opacity"
                 >
-                    <AmaLogo size={28} />
-                    <span className="text-lg font-semibold text-foreground tracking-tight">ama</span>
+                    <AmaLogo size={24} />
+                    <span className="text-base font-semibold text-foreground tracking-tight">ama</span>
                 </button>
 
                 {projectId && (
                     <>
-                        {/* Project name */}
                         {projectData ? (
                             <div className="mb-4">
-                                <span className="inline-block px-2.5 py-1 rounded-md bg-sidebar-accent/50 border border-sidebar-border/50 text-xs font-medium text-foreground truncate max-w-full">
+                                <span className="text-[11px] font-medium text-foreground/40 uppercase tracking-wider">
                                     {projectData.name}
                                 </span>
                             </div>
                         ) : (
-                            <Skeleton className="h-6 w-24 mb-4 rounded-md" />
+                            <Skeleton className="h-4 w-20 mb-4" />
                         )}
-
-                        {/* New chat button */}
-                        <Button
-                            onClick={handleNewChat}
-                            variant="outline"
-                            className="w-full h-9 mb-3 rounded-lg text-sm font-medium"
-                            disabled={isCreatingChat}
-                        >
-                            {isCreatingChat ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <Plus className="mr-2 h-4 w-4" />
-                            )}
-                            New chat
-                        </Button>
-
-                        {/* Search */}
-                        <div className="relative mb-4">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                            <Input
-                                placeholder="Search..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-9 pl-9 rounded-lg text-sm bg-transparent border-sidebar-border"
-                            />
+                        <div className="flex items-center gap-2 mb-5">
+                            <div className="flex-1 relative">
+                                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 opacity-50 pointer-events-none" />
+                                <Input
+                                    placeholder="Search..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="h-8 w-full rounded-lg text-[13px] pl-8 pr-2.5 bg-background border border-border placeholder:text-foreground/25 focus:bg-background focus:border-primary transition-colors duration-150"
+                                />
+                            </div>
+                            <Button
+                                variant="outline"
+                                onClick={handleNewChat}
+                                disabled={isCreatingChat}
+                                size="default"
+                                className="h-8 rounded-lg px-3"
+                            >
+                                {isCreatingChat ? "..." : "New Chat"}
+                            </Button>
                         </div>
                     </>
                 )}
@@ -227,7 +219,7 @@ export function Sidepanel() {
                             <div className="space-y-4">
                                 {recentChats.length > 0 && (
                                     <div>
-                                        <div className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wide px-3 mb-1">
+                                        <div className="text-[10px] font-medium text-foreground/25 uppercase tracking-widest px-3 mb-1.5">
                                             Recent
                                         </div>
                                         <div className="space-y-0.5">
@@ -244,8 +236,8 @@ export function Sidepanel() {
 
                                 {olderChats.length > 0 && (
                                     <div>
-                                        <div className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wide px-3 mb-1">
-                                            Older
+                                        <div className="text-[10px] font-medium text-foreground/25 uppercase tracking-widest px-3 mb-1.5">
+                                            Previous
                                         </div>
                                         <div className="space-y-0.5">
                                             {olderChats.map((chat: Chat) => (
@@ -260,13 +252,15 @@ export function Sidepanel() {
                                 )}
                             </div>
                         ) : projectId ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">No chats yet</p>
+                            <div className="text-center py-12">
+                                <p className="text-[13px] text-foreground/30">No chats yet</p>
                             </div>
                         ) : null}
                     </ScrollArea>
                 </SidebarContent>
+                <SidebarFooter>
+                   
+                </SidebarFooter>
             </div>
         </Sidebar>
     )

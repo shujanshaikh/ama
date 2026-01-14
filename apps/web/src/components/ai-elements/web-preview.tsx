@@ -237,8 +237,7 @@ export const WebPreviewBody = ({
     <div className="relative flex-1 bg-white">
       <iframe
         className={cn("size-full", className)}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        allow="clipboard-read; clipboard-write"
+        allow="clipboard-read; clipboard-write; cookies; storage"
         src={(src ?? url) || undefined}
         title="Preview"
         {...props}

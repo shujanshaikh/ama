@@ -7,6 +7,8 @@ import {
 } from "@/components/ai-elements/web-preview";
 import { ArrowLeftIcon, ArrowRightIcon, RefreshCwIcon, XIcon, GlobeIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 export type PreviewIframeProps = {
   collapsed?: boolean;
@@ -77,41 +79,45 @@ export function PreviewIframe({ collapsed, onCollapsedChange, projectId }: Previ
     return (
       <div className="flex flex-col h-full bg-background">
         <div className="flex items-center justify-end px-3 py-2 border-b border-border/30">
-          <button
+          <Button
+            variant="ghost"
             onClick={handleClose}
             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
             <XIcon className="size-4" />
-          </button>
+          </Button>
         </div>
 
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-full max-w-sm px-6">
-            <form onSubmit={handleInitialUrlSubmit} className="space-y-3">
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50">
-                  <GlobeIcon className="size-4" />
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-md">
+            <form onSubmit={handleInitialUrlSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold text-foreground">Enter Preview URL</h2>
+                <p className="text-sm text-muted-foreground">
+                  Enter your local development server URL
+                </p>
+              </div>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60 group-focus-within:text-primary transition-colors">
+                  <GlobeIcon className="size-5" />
                 </div>
-                <input
+                <Input
                   type="url"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="http://localhost:3000"
-                  className="w-full h-10 pl-10 pr-4 text-sm bg-muted/30 border border-border/50 rounded-lg placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+                  className="w-full h-12 pl-12 pr-4 text-sm bg-muted/40 border border-border/40 rounded-xl placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 focus:border-primary/60 focus:bg-muted/50 transition-all"
                   autoFocus
                 />
               </div>
               <button
                 type="submit"
                 disabled={!inputValue.trim()}
-                className="w-full h-9 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full h-11 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 Load Preview
               </button>
             </form>
-            <p className="text-[11px] text-muted-foreground/50 text-center mt-3">
-              Enter your local development server URL
-            </p>
           </div>
         </div>
       </div>

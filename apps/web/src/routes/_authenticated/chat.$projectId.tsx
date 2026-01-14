@@ -319,6 +319,25 @@ function Chat() {
     setMessages,
   });
 
+  // Keyboard shortcuts: Cmd/Ctrl+E for editor, Cmd/Ctrl+A for preview
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for Cmd (Mac) or Ctrl (Windows/Linux)
+      if (event.metaKey || event.ctrlKey) {
+        if (event.key === 'e' || event.key === 'E') {
+          event.preventDefault();
+          setShowCodeEditor(prev => !prev);
+        } else if (event.key === 'a' || event.key === 'A') {
+          event.preventDefault();
+          setPreviewCollapsed(prev => !prev);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleFileSelect = useCallback((file: string) => {
     const textBeforeCursor = input.slice(0, cursorPosition);
     const lastAtIndex = textBeforeCursor.lastIndexOf('@');

@@ -320,8 +320,7 @@ export function CodeEditor({
             <iframe
               id="code-editor-iframe"
               className="size-full"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-modals"
-              allow="clipboard-read; clipboard-write"
+              allow="clipboard-read; clipboard-write; cookies; storage"
               src={currentUrl}
               title={activeTab === "editor" ? "Code Editor" : "Web Preview"}
             />
