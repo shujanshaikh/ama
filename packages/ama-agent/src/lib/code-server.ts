@@ -166,6 +166,7 @@ async function installExtensions(): Promise<void> {
     const binPath = getCodeServerBin()
     const extensions = [
         "castrogusttavo.min-theme",  
+        "sourcegraph.amp"
     ]
 
     for (const ext of extensions) {

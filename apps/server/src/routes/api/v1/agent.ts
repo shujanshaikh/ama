@@ -34,6 +34,7 @@ import { generateUUID } from "@/lib/utils";
 import { ratelimit } from "@/lib/rate-limiter";
 
 
+
 export const agentRouter = new Hono();
 
 let globalStreamContext: ResumableStreamContext | null = null;
@@ -151,7 +152,7 @@ agentRouter.post("/agent-proxy", async (c) => {
               model: createOpenCodeZenModel(model),
               system: systemPrompt,
               temperature: 0.7,
-              stopWhen: stepCountIs(10),
+              stopWhen: stepCountIs(25),
               experimental_transform: smoothStream({
                 delayInMs: 20,
                 chunking: "word",
