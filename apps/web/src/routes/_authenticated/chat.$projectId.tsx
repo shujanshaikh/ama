@@ -141,6 +141,15 @@ function Chat() {
     enabled: !!_projectId,
   });
 
+  // Register project with daemon when chat page loads
+  useEffect(() => {
+    if (projectData?.id && projectData?.cwd && userStream?.cliConnected && userStream?.rpc) {
+      userStream.rpc.registerProject(projectData.id, projectData.cwd, projectData.name).catch((err) => {
+        console.warn('Failed to register project with daemon:', err);
+      });
+    }
+  }, [projectData?.id, projectData?.cwd, projectData?.name, userStream?.cliConnected, userStream?.rpc]);
+
 
 
   const currentChatIdRef = useRef<string | undefined>(_chatId);

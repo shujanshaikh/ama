@@ -81,6 +81,41 @@ export const createSnapshot = async (token: string, projectId: string): Promise<
   })
 }
 
+export const registerProject = async (token: string, projectId: string, cwd: string, name?: string): Promise<boolean> => {
+  const wsConnection = agentStreams.get(token)
+  if (!wsConnection) {
+    console.warn("No WebSocket connection found for project registration")
+    return false
+  }
+
+  const callId = crypto.randomUUID()
+  wsConnection.send(JSON.stringify({
+    type: "rpc_call",
+    id: callId,
+    method: "daemon:register_project",
+    args: { projectId, cwd, name },
+  }))
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      pendingToolCalls.delete(callId)
+      console.warn("Project registration timed out")
+      resolve(false)
+    }, 10000)
+
+    pendingToolCalls.set(callId, {
+      resolve: (result) => {
+        clearTimeout(timeout)
+        resolve(result?.success === true)
+      },
+      reject: () => {
+        clearTimeout(timeout)
+        resolve(false)
+      },
+    })
+  })
+}
+
 export const restoreSnapshot = async (projectId: string, snapshotHash: string): Promise<boolean> => {
   const [token] = agentStreams.keys()
   if (!token) {

@@ -23,7 +23,7 @@ import { requestContext } from "@/lib/context";
 import { agentStreams } from "@/index";
 import { createOpenCodeZenModel, models } from "@/lib/model";
 import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
-import { createSnapshot } from "@/lib/executeTool";
+import { createSnapshot, registerProject } from "@/lib/executeTool";
 import {
   createResumableStreamContext,
   type ResumableStreamContext,
@@ -108,8 +108,11 @@ agentRouter.post("/agent-proxy", async (c) => {
 
     const projectInfo = await getProjectByChatId({ chatId });
 
-    if (projectInfo?.projectId && token) {
+    if (projectInfo?.projectId && projectInfo?.projectCwd && token) {
       try {
+        // Ensure project is registered with the daemon before creating snapshot
+        await registerProject(token, projectInfo.projectId, projectInfo.projectCwd, projectInfo.projectName);
+        
         const snapshotHash = await createSnapshot(token, projectInfo.projectId);
         if (snapshotHash) {
           await saveSnapshot({
