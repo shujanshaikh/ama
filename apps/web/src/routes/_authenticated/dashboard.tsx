@@ -177,7 +177,7 @@ function DashboardPage() {
                     Import project
                   </DialogTitle>
                   <DialogDescription className="text-xs">
-                    Provide the full path to your project directory to import it
+                    Run <code className="px-1 py-0.5 bg-secondary border border-border rounded text-[10px] font-mono">pwd</code> in your terminal to get the actual path
                   </DialogDescription>
                 </DialogHeader>
 

@@ -189,7 +189,7 @@ export function ChatPromptInput({
               <span>@ Context</span>
             </Button>
             <PromptInputSelect defaultValue={model} onValueChange={(value) => onSetModel(value)}>
-              <PromptInputSelectTrigger className="!rounded-xl text-xs font-medium !h-8 px-2.5 !bg-muted/50 !border !border-border/50 hover:!bg-muted/60 text-muted-foreground">
+              <PromptInputSelectTrigger className="rounded-xl text-xs font-medium px-2.5 bg-muted/50 border border-border/50 hover:bg-muted/60 text-muted-foreground">
                 <PromptInputSelectValue />
               </PromptInputSelectTrigger>
               <PromptInputSelectContent>

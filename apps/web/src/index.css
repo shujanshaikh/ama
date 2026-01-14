@@ -1,10 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Inter", "Geist", ui-sans-serif, system-ui, sans-serif,
+  --font-sans: "Mulish", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
@@ -50,7 +51,7 @@ body {
   --sidebar-accent-foreground: oklch(0.3211 0 0);
   --sidebar-border: oklch(0.8576 0 0);
   --sidebar-ring: oklch(0.4891 0 0);
-  --font-sans: Montserrat, sans-serif;
+  --font-sans: Mulish, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Fira Code, monospace;
   --radius: 0.35rem;
@@ -108,7 +109,7 @@ body {
   --sidebar-accent-foreground: oklch(0.8853 0 0);
   --sidebar-border: oklch(0.3290 0 0);
   --sidebar-ring: oklch(0.7058 0 0);
-  --font-sans: Inter, sans-serif;
+  --font-sans: Mulish, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Fira Code, monospace;
   --radius: 0.35rem;
@@ -166,7 +167,7 @@ body {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: Inter, sans-serif;
+  --font-sans: Mulish, sans-serif;
   --font-mono: Fira Code, monospace;
   --font-serif: Georgia, serif;
 
