@@ -165,8 +165,7 @@ async function setupDefaultSettings(): Promise<void> {
 async function installExtensions(): Promise<void> {
     const binPath = getCodeServerBin()
     const extensions = [
-        "castrogusttavo.min-theme",  
-        "sourcegraph.amp"
+        "castrogusttavo.min-theme"
     ]
 
     for (const ext of extensions) {

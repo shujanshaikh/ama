@@ -14,7 +14,7 @@ import { Skeleton } from "./ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { Button } from "./ui/button";
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 
 interface Chat {
     id: string;
@@ -206,7 +206,6 @@ export function Sidepanel() {
                     </>
                 )}
 
-                {/* Chat list */}
                 <SidebarContent className="flex-1 min-h-0 -mx-2">
                     <ScrollArea className="h-full px-2">
                         {isLoading && projectId ? (
