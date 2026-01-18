@@ -262,12 +262,13 @@ export const ToolRenderer = ({
   // Glob Tool
   if (part.type === "tool-glob") {
     const { toolCallId, state } = part;
+    const pattern = part.input.pattern;
 
     if (state === "input-streaming") {
       return (
         <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
-            Searching files
+            Glob {pattern}
             <StreamingDots />
           </span>
         </div>
@@ -279,12 +280,12 @@ export const ToolRenderer = ({
         | { files?: string[] | Array<{ path?: string; name?: string }> }
         | undefined;
       const fileCount = Array.isArray(output?.files) ? output.files.length : 0;
+      const content = part.output?.content;
 
       return (
         <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
-            Found <span className="text-foreground/50">{fileCount}</span> file
-            {fileCount !== 1 ? "s" : ""}
+            Glob <span className="text-foreground/50">{content}</span>
           </span>
         </div>
       );
@@ -312,11 +313,11 @@ export const ToolRenderer = ({
         | undefined;
       const matchCount =
         output?.matchCount || output?.result?.totalMatches || 0;
-
+      const content = part.output?.content;
       return (
         <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
-            Found <span className="text-foreground/50">{matchCount}</span> match
+            Grep <span className="text-foreground/50">{content}</span>
             {matchCount !== 1 ? "es" : ""}
           </span>
         </div>
@@ -815,7 +816,7 @@ const BatchToolResult = ({
             className={`size-3 text-muted-foreground/50 transition-transform ${isOpen ? "rotate-90" : ""}`}
           />
           <Layers className="size-4 text-muted-foreground/70" />
-          <span className="text-sm">Batch</span>
+          <span className="text-sm">Parallel</span>
           <span
             className={`text-xs ${allSuccess ? "text-muted-foreground/60" : "text-destructive/70"}`}
           >
@@ -846,7 +847,6 @@ const BatchToolResult = ({
                         : "text-destructive/60"
                     }
                   >
-                    {isSuccess ? "✓" : "✗"}
                   </span>
                   <span>{info.label}</span>
                   {info.detail && (

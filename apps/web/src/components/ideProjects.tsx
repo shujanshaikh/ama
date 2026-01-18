@@ -115,6 +115,7 @@ export function IdeProjects() {
 
   return (
     <section className="mb-8">
+        <hr className="border-border mt-4 pb-4" />
       <div className="mb-3">
         <h2 className="text-sm font-medium text-neutral-200 mb-0.5">
           Suggested

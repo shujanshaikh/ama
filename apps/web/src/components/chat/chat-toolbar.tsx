@@ -20,7 +20,7 @@ export function ChatToolbar({
   onTogglePreview,
 }: ChatToolbarProps) {
   return (
-    <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+    <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -28,18 +28,15 @@ export function ChatToolbar({
             size="sm"
             onClick={onShowCodeEditor}
             className={cn(
-              "h-9 rounded-lg px-2 text-xs font-medium transition-all duration-200",
-              "bg-background/80 backdrop-blur-md border border-border/60",
-              "text-muted-foreground hover:text-foreground",
-              "hover:bg-background hover:border-border hover:shadow-md",
-              "active:scale-95"
+              "h-8 rounded-md px-2.5 text-xs font-medium transition-colors",
+              "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             )}
           >
             Editor
-            <KbdGroup className="ml-1 gap-0.5">
-              <Kbd className="bg-transparent"><CommandIcon className="size-3" /></Kbd>
-              <Kbd className="bg-transparent">E</Kbd>
-            </KbdGroup>
+            <div className="ml-1.5 flex items-center gap-0.5 opacity-50">
+              <CommandIcon className="size-3" />
+              <span className="text-[10px]">E</span>
+            </div>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="flex items-center gap-2 text-xs">
@@ -59,18 +56,15 @@ export function ChatToolbar({
               size="sm"
               onClick={onTogglePreview}
               className={cn(
-                "h-9 rounded-lg px-2 text-xs font-medium transition-all duration-200",
-                "bg-background/80 backdrop-blur-md border border-border/60",
-                "text-muted-foreground hover:text-foreground",
-                "hover:bg-background hover:border-border hover:shadow-md",
-                "active:scale-95"
+                "h-8 rounded-md px-2.5 text-xs font-medium transition-colors",
+                "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
               )}
             >
               Preview
-              <KbdGroup className="ml-1 gap-0.5">
-                <Kbd className="bg-transparent"><CommandIcon className="size-3" /></Kbd>
-                <Kbd className="bg-transparent">A</Kbd>
-              </KbdGroup>
+              <div className="ml-1.5 flex items-center gap-0.5 opacity-50">
+                <CommandIcon className="size-3" />
+                <span className="text-[10px]">A</span>
+              </div>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="flex items-center gap-2 text-xs">

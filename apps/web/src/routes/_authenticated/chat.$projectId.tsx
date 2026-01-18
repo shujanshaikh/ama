@@ -454,12 +454,12 @@ function Chat() {
               {!_chatId ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
                   <div className="text-center">
-                    <h2 className="text-xl font-semibold text-foreground mb-2">Start a new conversation</h2>
+                    <h2 className="text-lg font-medium text-foreground mb-2">Start a new conversation</h2>
                   </div>
                   <Button
                     onClick={handleNewChat}
                     disabled={isCreatingChat}
-                    size="lg"
+                    size="default"
                     className="gap-2 rounded-xl"
                     variant="outline"
                   >

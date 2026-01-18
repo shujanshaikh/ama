@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AmaLogo } from "@/components/ama-logo";
-import { PromptBox } from "@/components/prompt-box";
 import { useTRPC } from "@/utils/trpc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -81,10 +80,6 @@ function DashboardPage() {
 
   const projectsList: Project[] = (projects as Project[] | undefined) ?? [];
 
-  const handleSubmit = async (message: string) => {
-    console.log("Submitted:", message);
-  };
-
   const isLoadingProjects = !projects;
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -149,84 +144,88 @@ function DashboardPage() {
   return (
     <div className="relative w-full h-full bg-background text-foreground">
       <div className="absolute top-8 right-6">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs font-medium text-muted-foreground/70 px-3 py-1.5 bg-muted/30 rounded-full border border-border/30">
           {user?.email}
         </div>
       </div>
 
-      <div className="flex flex-col justify-center min-h-[45vh] px-6 pt-24 pb-12">
-        <div className="w-full max-w-2xl mx-auto">
-          <div className="mb-12">
-            <AmaLogo size={52} />
-            <h1 className="text-xl font-medium mt-4 text-foreground/90">
-              Welcome, {user?.firstName}
-            </h1>
-          </div>
-
-          <div className="mb-4">
-            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary hover:bg-accent border border-border rounded-lg transition-colors">
-                  <Plus className="size-3.5" />
-                  <span>Import</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-sm">
-                <DialogHeader>
-                  <DialogTitle className="text-sm font-medium">
-                    Import project
-                  </DialogTitle>
-                  <DialogDescription className="text-xs">
-                    Run <code className="px-1 py-0.5 bg-secondary border border-border rounded text-[10px] font-mono">pwd</code> in your terminal to get the actual path
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-3 pt-2">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1.5 block">
-                      Project path
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="/Users/name/projects/my-app"
-                      value={manualPath}
-                      onChange={(e) => setManualPath(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && manualPath.trim()) {
-                          handleManualPathSubmit();
-                        }
-                      }}
-                      autoFocus
-                      className="w-full h-9 px-3 text-sm bg-secondary border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleManualPathSubmit}
-                      disabled={!manualPath.trim() || isCreatingManual}
-                      className="h-8 px-3 text-xs bg-foreground text-background hover:bg-foreground/90 rounded-md transition-colors disabled:opacity-50"
-                    >
-                      {isCreatingManual ? (
-                        <div className="size-3 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                      ) : (
-                        "Add project"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <PromptBox
-            onSubmit={handleSubmit}
-            placeholder="ask ama what you want to build..."
-            className="text-base rounded-lg border-border bg-card focus-within:border-border transition-colors"
-          />
-        </div>
+      <div className="absolute top-8 left-6 flex items-center gap-2">
+        <AmaLogo size={24} />
+        <span className="text-xl font-bold text-foreground">ama</span>
       </div>
 
+      <div className="flex flex-col justify-center min-h-[35vh] px-6 pt-16 pb-2">
+        <div className="w-full max-w-2xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-lg font-semibold tracking-tight text-foreground mb-4">
+              Welcome back, {user?.firstName}
+            </h1>
+
+            <div className="flex items-center gap-3">
+              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="transition-none shadow-sm bg-background hover:bg-secondary">
+                    <Plus className="size-3" />
+                    Import Project
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm font-medium">
+                      Import project
+                    </DialogTitle>
+                    <DialogDescription className="text-xs">
+                      Run <code className="px-1 py-0.5 bg-secondary border border-border rounded text-[10px] font-mono">pwd</code> in your terminal to get the actual path
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-3 pt-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1.5 block">
+                        Project path
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="/Users/name/projects/my-app"
+                        value={manualPath}
+                        onChange={(e) => setManualPath(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && manualPath.trim()) {
+                            handleManualPathSubmit();
+                          }
+                        }}
+                        autoFocus
+                        className="w-full h-9 px-3 text-sm bg-secondary border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={handleManualPathSubmit}
+                        disabled={!manualPath.trim() || isCreatingManual}
+                        className="h-8 px-3 text-xs bg-foreground text-background hover:bg-foreground/90 rounded-md transition-colors disabled:opacity-50"
+                      >
+                        {isCreatingManual ? (
+                          <div className="size-3 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                        ) : (
+                          "Add project"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <p className="text-[10px] text-muted-foreground hidden sm:block">
+                Connect your local project with ama
+              </p>
+            </div>
+          </div>
+        </div>
+       
+      </div>
+
+
       <div className="max-w-2xl mx-auto px-6 pb-20">
+      <hr className="border-border mb-4" />
         {isLoadingProjects ? (
           <section className="mb-8">
             <Skeleton className="h-4 w-20 mb-3" />
@@ -238,19 +237,19 @@ function DashboardPage() {
           </section>
         ) : projectsList.length > 0 ? (
           <section className="mb-8">
-            <div className="border border-border rounded-lg p-3 bg-secondary/30">
-              <div className="flex items-center justify-between gap-3 mb-3 px-1">
-                <h2 className="text-xs font-medium text-muted-foreground">
+            <div>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h2 className="text-xs font-medium text-foreground/70">
                   Open existing project
                 </h2>
                 <div className="relative">
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="Search projects..."
+                    placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-7 w-40 pl-7 pr-2 text-xs bg-secondary/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+                    className="h-7 w-64 pl-7 pr-2 text-xs bg-muted/30 border border-border/50 rounded-md text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border transition-all"
                   />
                 </div>
               </div>
@@ -283,17 +282,17 @@ function DashboardPage() {
                     return (
                       <div
                         key={project.id}
-                        className="group cursor-pointer bg-secondary/40 hover:bg-accent rounded-md p-2.5 transition-colors"
+                        className="group cursor-pointer border border-border/50 hover:border-border rounded-md p-2 transition-all duration-150 hover:bg-muted/20"
                         onClick={() => handleProjectClick(project)}
                       >
                         <div className="flex items-center gap-2">
                           <div
-                            className={`size-6 rounded ${avatarColor} flex items-center justify-center text-white font-medium text-xs shrink-0`}
+                            className={`size-6 rounded ${avatarColor} flex items-center justify-center text-white font-semibold text-[11px] shrink-0`}
                           >
                             {firstLetter}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-xs text-foreground truncate">
+                            <h3 className="font-medium text-sm text-foreground truncate">
                               {project.name}
                             </h3>
                             <p className="text-[10px] text-muted-foreground truncate">
@@ -306,8 +305,8 @@ function DashboardPage() {
                   })}
                 </div>
               ) : (
-                <div className="py-8 text-center">
-                  <p className="text-xs text-muted-foreground">
+                <div className="py-6 text-center">
+                  <p className="text-[11px] text-muted-foreground">
                     No projects found matching "{searchQuery}"
                   </p>
                 </div>
@@ -322,9 +321,10 @@ function DashboardPage() {
             </p>
           </div>
         )}
-
         <IdeProjects />
       </div>
+
+    
     </div>
   );
 }
