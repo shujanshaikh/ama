@@ -1,8 +1,8 @@
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarRail,
+    useSidebar,
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "./ui/scroll-area";
 import { AmaLogo } from "./ama-logo";
@@ -14,7 +14,7 @@ import { Skeleton } from "./ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { Button } from "./ui/button";
-import { SearchIcon } from "lucide-react";
+import { PanelLeftIcon, SearchIcon } from "lucide-react";
 
 interface Chat {
     id: string;
@@ -56,6 +56,7 @@ export function Sidepanel() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState("");
+    const { toggleSidebar } = useSidebar();
 
     const { data: chatsData, isLoading } = useQuery({
         ...trpc.chat.getChats.queryOptions({ projectId: projectId || "" }),
@@ -138,14 +139,14 @@ export function Sidepanel() {
         <button
             onClick={() => handleChatClick(chat.id)}
             className={cn(
-                "w-full text-left px-3 py-2 rounded-lg transition-all duration-150 group flex items-center gap-2",
+                "w-full text-left px-3 py-2 rounded-lg transition-all duration-150 group flex items-center gap-2 overflow-hidden",
                 isActive
                     ? "bg-primary-foreground text-foreground"
-                    : "text-foreground/80 hover:text-foreground"
+                    : "text-foreground/80 hover:text-foreground hover:bg-foreground/5"
             )}
         >
             <span className={cn(
-                "flex-1 text-[13px] truncate",
+                "flex-1 text-[13px] truncate min-w-0",
                 isActive ? "font-medium" : "font-normal"
             )}>
                 {chat.title}
@@ -164,13 +165,21 @@ export function Sidepanel() {
         >
             <SidebarRail />
             <div className="flex flex-col h-full p-4">
-                <button
-                    onClick={() => navigate({ to: '/dashboard' })}
-                    className="flex items-center gap-1.5 mb-6 hover:opacity-70 transition-opacity"
-                >
-                    <AmaLogo size={24} />
-                    <span className="text-base font-semibold text-foreground tracking-tight">ama</span>
-                </button>
+                <div className="flex items-center justify-between mb-6">
+                    <button
+                        onClick={() => navigate({ to: '/dashboard' })}
+                        className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
+                    >
+                        <AmaLogo size={24} />
+                        <span className="text-base font-semibold text-foreground tracking-tight">ama</span>
+                    </button>
+                    <button
+                        onClick={toggleSidebar}
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                        <PanelLeftIcon className="size-4" />
+                    </button>
+                </div>
 
                 {projectId && (
                     <>
@@ -257,9 +266,6 @@ export function Sidepanel() {
                         ) : null}
                     </ScrollArea>
                 </SidebarContent>
-                <SidebarFooter>
-                   
-                </SidebarFooter>
             </div>
         </Sidebar>
     )

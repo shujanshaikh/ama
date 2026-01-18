@@ -426,7 +426,6 @@ function Chat() {
       <SidebarProvider defaultOpen={true} className="h-svh">
         <Sidepanel />
         <SidebarInset className="relative w-full flex flex-col min-h-0">
-          <CollapsedSidebarTrigger />
           <CodeEditor
             editorUrl={editorUrl}
             webUrl="http://localhost:3003"
