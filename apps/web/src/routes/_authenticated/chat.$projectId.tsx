@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { PlusIcon } from 'lucide-react';
 import { Sidepanel } from '@/components/side-panel';
 import { PreviewIframe } from '@/components/web-view';
 import { CodeEditor } from '@/components/code-editor';
@@ -49,6 +51,7 @@ function ChatWrapper() {
 function Chat() {
   const { projectId: _projectId } = Route.useParams();
   const { chat: _chatId } = Route.useSearch();
+  const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [model, setModel] = useState(models[0].id);
   const [previewCollapsed, setPreviewCollapsed] = useState(true);
@@ -65,6 +68,31 @@ function Chat() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hasGeneratedTitleRef = useRef(false);
+
+  const { mutate: createChat, isPending: isCreatingChat } = useMutation({
+    ...trpc.chat.createChat.mutationOptions(),
+    onSuccess: (chatId) => {
+      if (chatId && _projectId) {
+        queryClient.invalidateQueries({
+          queryKey: trpc.chat.getChats.queryKey({ projectId: _projectId }),
+        });
+        navigate({
+          to: '/chat/$projectId',
+          params: { projectId: _projectId },
+          search: { chat: chatId },
+        });
+      }
+    },
+  });
+
+  const handleNewChat = useCallback(() => {
+    if (_projectId) {
+      createChat({
+        title: "New Chat",
+        projectId: _projectId,
+      });
+    }
+  }, [_projectId, createChat]);
 
   const { data: latestSnapshot, refetch: refetchSnapshot } = useQuery({
     ...trpc.chat.getLatestSnapshot.queryOptions({ chatId: _chatId || '' }),
@@ -424,58 +452,78 @@ function Chat() {
                 previewCollapsed={previewCollapsed}
                 onTogglePreview={() => setPreviewCollapsed(false)}
               />
-              <ChatMessageList
-                messages={messages}
-                isLoadingMessages={isLoadingMessages}
-                chatId={_chatId}
-                status={status}
-                onRegenerate={regenerate}
-                onPlanNameDetected={(planName) => setPlanName(planName)}
-              />
+              {!_chatId ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                  <div className="text-center">
+                    <h2 className="text-xl font-semibold text-foreground mb-2">Start a new conversation</h2>
+                  </div>
+                  <Button
+                    onClick={handleNewChat}
+                    disabled={isCreatingChat}
+                    size="lg"
+                    className="gap-2 rounded-xl"
+                    variant="outline"
+                  >
+                    <PlusIcon className="h-5 w-5" />
+                    {isCreatingChat ? "Creating..." : "New Chat"}
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <ChatMessageList
+                    messages={messages}
+                    isLoadingMessages={isLoadingMessages}
+                    chatId={_chatId}
+                    status={status}
+                    onRegenerate={regenerate}
+                    onPlanNameDetected={(planName) => setPlanName(planName)}
+                  />
 
-              <div className="bottom-4 pb-2 md:pb-3">
-                <div className="w-full px-3 md:px-4">
-                  <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-2xl mx-auto">
-                    <ChatErrorAlert
-                      error={error && !dismissedError ? error : null}
-                      onDismiss={() => setDismissedError(true)}
-                      onRetry={regenerate}
-                    />
-                    <div className="relative">
-                      <ChatStatusBar
-                        status={status}
-                        canUndo={canUndo}
-                        isUndoing={isUndoing}
-                        isAccepting={isAccepting}
-                        isReviewing={showReview}
-                        onUndo={handleUndo}
-                        onAcceptAll={handleAcceptAll}
-                        onReview={handleReview}
-                      />
-                      <ChatPromptInput
-                        input={input}
-                        model={model}
-                        mode={mode}
-                        status={status}
-                        selectedContextFiles={selectedContextFiles}
-                        showContextSelector={showContextSelector}
-                        cursorPosition={cursorPosition}
-                        projectCwd={projectData?.cwd}
-                        canUndo={canUndo}
-                        onInputChange={handleInputChange}
-                        onFileSelect={handleFileSelect}
-                        onToggleContextFile={handleToggleContextFile}
-                        onCloseContextSelector={() => setShowContextSelector(false)}
-                        onSetMode={setMode}
-                        onSetModel={setModel}
-                        onSubmit={handleSubmit}
-                        onStop={stop}
-                        onToggleContextSelector={() => setShowContextSelector(prev => !prev)}
-                      />
+                  <div className="bottom-4 pb-2 md:pb-3">
+                    <div className="w-full px-3 md:px-4">
+                      <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-2xl mx-auto">
+                        <ChatErrorAlert
+                          error={error && !dismissedError ? error : null}
+                          onDismiss={() => setDismissedError(true)}
+                          onRetry={regenerate}
+                        />
+                        <div className="relative">
+                          <ChatStatusBar
+                            status={status}
+                            canUndo={canUndo}
+                            isUndoing={isUndoing}
+                            isAccepting={isAccepting}
+                            isReviewing={showReview}
+                            onUndo={handleUndo}
+                            onAcceptAll={handleAcceptAll}
+                            onReview={handleReview}
+                          />
+                          <ChatPromptInput
+                            input={input}
+                            model={model}
+                            mode={mode}
+                            status={status}
+                            selectedContextFiles={selectedContextFiles}
+                            showContextSelector={showContextSelector}
+                            cursorPosition={cursorPosition}
+                            projectCwd={projectData?.cwd}
+                            canUndo={canUndo}
+                            onInputChange={handleInputChange}
+                            onFileSelect={handleFileSelect}
+                            onToggleContextFile={handleToggleContextFile}
+                            onCloseContextSelector={() => setShowContextSelector(false)}
+                            onSetMode={setMode}
+                            onSetModel={setModel}
+                            onSubmit={handleSubmit}
+                            onStop={stop}
+                            onToggleContextSelector={() => setShowContextSelector(prev => !prev)}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
           </ResizablePanel>
 
