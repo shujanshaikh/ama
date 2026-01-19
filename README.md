@@ -1,63 +1,93 @@
-# ama
+# Lovable, but for localhost
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Start, Convex, and more.
+An AI agent that lives in your browser and makes changes to your local codebase.
 
-## Features
+## Demo
+
+https://github.com/user-attachments/assets/1767525316123447.MP4
+
+https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/1767525316123447.MP4
+
+## Project Architecture
+
+```
+ama/
+├── apps/
+│   ├── web/         # Frontend application (React + TanStack Start)
+│   └── server/      # Backend API server (Hono)
+├── packages/
+│   └── ama-agent/   # CLI agent for local codebase operations
+```
+
+## Tech Stack
 
 - **TypeScript** - For type safety and improved developer experience
 - **TanStack Start** - SSR framework with TanStack Router
 - **TailwindCSS** - Utility-first CSS for rapid UI development
 - **shadcn/ui** - Reusable UI components
-- **Convex** - Reactive backend-as-a-service platform
 - **Turborepo** - Optimized monorepo build system
 
 ## Getting Started
 
-First, install the dependencies:
+### Prerequisites
+
+- [Bun](https://bun.sh/) installed
+
+### Installation
 
 ```bash
 bun install
 ```
 
-## Convex Setup
+### Environment Variables
 
-This project uses Convex as a backend. You'll need to set up Convex before running the app:
+Create `.env` files with the following variables:
 
-```bash
-bun run dev:setup
+**apps/web/.env**
+```env
+WORKOS_API_KEY=''
+WORKOS_CLIENT_ID=''
+WORKOS_COOKIE_PASSWORD=""
+DATABASE_URL=""
+WORKOS_REDIRECT_URI=http://localhost:3001/api/auth/callback
+UPLOADTHING_TOKEN=''
+VITE_API_URL=http://localhost:3000/api/v1
+VITE_WS_URL="ws://localhost:3000"
 ```
 
-Follow the prompts to create a new Convex project and connect it to your application.
+**apps/server/.env**
+```env
+WORKOS_CLIENT_ID=""
+DATABASE_URL=""
+UPSTASH_REDIS_REST_URL=""
+UPSTASH_REDIS_REST_TOKEN=""
+EXA_API_KEY=""
+SUPERMEMORY_API_KEY=""
+OPENCODE_API_KEY=""
+REDIS_URL=""
+```
 
-Then, run the development server:
+### Running the Development Server
 
 ```bash
 bun run dev
 ```
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-Your app will connect to the Convex cloud backend automatically.
 
+### Building the CLI Agent
 
-
-
-
-
-
-## Project Structure
-
+```bash
+cd packages/ama-agent
+bun run build
+bun link
 ```
-ama/
-├── apps/
-│   ├── web/         # Frontend application (React + TanStack Start)
-├── packages/
-│   ├── backend/     # Convex backend functions and schema
-```
+
+This will build and link the CLI globally so you can use it from any directory.
 
 ## Available Scripts
 
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:setup`: Setup and configure your Convex project
-- `bun run check-types`: Check TypeScript types across all apps
+- `bun run dev` - Start all applications in development mode
+- `bun run build` - Build all applications
+- `bun run dev:web` - Start only the web application
+- `bun run check-types` - Check TypeScript types across all apps
