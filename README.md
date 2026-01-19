@@ -4,9 +4,11 @@ An AI agent that lives in your browser and makes changes to your local codebase.
 
 ## Demo
 
-https://github.com/user-attachments/assets/1767525316123447.MP4
+<video controls width="640">
+  <source src="https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/1767525316123447.MP4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
 
-https://pub-f6f7266ff5af48c8afa45503071de743.r2.dev/ama/1767525316123447.MP4
 
 ## Project Architecture
 
@@ -17,6 +19,7 @@ ama/
 │   └── server/      # Backend API server (Hono)
 ├── packages/
 │   └── ama-agent/   # CLI agent for local codebase operations
+    ├──db/            # Database schema and queries
 ```
 
 ## Tech Stack
