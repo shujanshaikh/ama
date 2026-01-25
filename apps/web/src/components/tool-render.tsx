@@ -290,22 +290,6 @@ export const ToolRenderer = ({
     }
   }
 
-    if (state === "output-available") {
-      // const output = part.output as
-      //   | { files?: string[] | Array<{ path?: string; name?: string }> }
-      //   | undefined;
-      const content = part.output?.content ?? "";
-
-      return (
-        <div key={toolCallId} className="mb-1 py-0.5">
-          <span className="text-sm">
-            Glob <span className="text-foreground/50">{content}</span>
-          </span>
-        </div>
-      );
-    }
-  }
-
   // Grep Tool
   if (part.type === "tool-grep") {
     const { toolCallId, state } = part;
