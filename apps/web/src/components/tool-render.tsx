@@ -262,18 +262,33 @@ export const ToolRenderer = ({
   // Glob Tool
   if (part.type === "tool-glob") {
     const { toolCallId, state } = part;
-    const pattern = part.input.pattern ?? "";
 
     if (state === "input-streaming") {
       return (
         <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
-            Glob {pattern}
+            Searching files
             <StreamingDots />
           </span>
         </div>
       );
     }
+
+    if (state === "output-available") {
+      const output = part.output as
+        | { files?: string[]; content?: string }
+        | undefined;
+      const fileCount = output?.files?.length ?? 0;
+
+      return (
+        <div key={toolCallId} className="mb-1 py-0.5">
+          <span className="text-sm">
+            Found <span className="text-foreground/50">{fileCount} file{fileCount !== 1 ? "s" : ""}</span>
+          </span>
+        </div>
+      );
+    }
+  }
 
     if (state === "output-available") {
       // const output = part.output as
