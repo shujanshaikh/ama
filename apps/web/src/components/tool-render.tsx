@@ -262,7 +262,7 @@ export const ToolRenderer = ({
   // Glob Tool
   if (part.type === "tool-glob") {
     const { toolCallId, state } = part;
-    const pattern = part.input.pattern;
+    const pattern = part.input.pattern ?? "";
 
     if (state === "input-streaming") {
       return (
@@ -276,11 +276,10 @@ export const ToolRenderer = ({
     }
 
     if (state === "output-available") {
-      const output = part.output as
-        | { files?: string[] | Array<{ path?: string; name?: string }> }
-        | undefined;
-      const fileCount = Array.isArray(output?.files) ? output.files.length : 0;
-      const content = part.output?.content;
+      // const output = part.output as
+      //   | { files?: string[] | Array<{ path?: string; name?: string }> }
+      //   | undefined;
+      const content = part.output?.content ?? "";
 
       return (
         <div key={toolCallId} className="mb-1 py-0.5">
@@ -846,8 +845,7 @@ const BatchToolResult = ({
                         ? "text-muted-foreground/50"
                         : "text-destructive/60"
                     }
-                  >
-                  </span>
+                  ></span>
                   <span>{info.label}</span>
                   {info.detail && (
                     <span className="truncate max-w-[200px] opacity-60">
