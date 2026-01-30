@@ -2,6 +2,7 @@ import { router, protectedProcedure } from "../index";
 import { z } from "zod";
 import { generateText } from "ai";
 import { db, chat, eq } from "@ama/db";
+import { google } from "@ai-sdk/google";
 
 export const generateTitleRouter = router({
     generateTitle: protectedProcedure.input(z.object({
@@ -32,7 +33,7 @@ Respond only with the title.
 async function generateTitle(message: string) {
     try {
         const { text } = await generateText({
-            model: "google/gemini-2.0-flash",
+            model: google('gemini-2.0-flash'),
             system: titlePrompt,
             prompt: message,
         });
