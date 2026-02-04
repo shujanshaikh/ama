@@ -544,11 +544,12 @@ function Chat() {
         <SidebarProvider defaultOpen={true} className="h-svh">
             <Sidepanel />
             <SidebarInset className="relative w-full flex flex-col min-h-0">
-                {/* Always mounted, toggled via CSS to avoid iframe reload */}
                 <div
                     className={cn(
                         "size-full",
-                        showCodeEditor ? "block" : "hidden",
+                        showCodeEditor
+                            ? "relative z-10"
+                            : "absolute inset-0 invisible",
                     )}
                 >
                     <CodeEditor
