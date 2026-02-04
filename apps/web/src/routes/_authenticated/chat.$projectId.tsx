@@ -3,6 +3,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { Sidepanel } from "@/components/side-panel";
@@ -539,11 +540,17 @@ function Chat() {
         [selectedContextFiles],
     );
 
-    if (showCodeEditor) {
-        return (
-            <SidebarProvider defaultOpen={true} className="h-svh">
-                <Sidepanel />
-                <SidebarInset className="relative w-full flex flex-col min-h-0">
+    return (
+        <SidebarProvider defaultOpen={true} className="h-svh">
+            <Sidepanel />
+            <SidebarInset className="relative w-full flex flex-col min-h-0">
+                {/* Always mounted, toggled via CSS to avoid iframe reload */}
+                <div
+                    className={cn(
+                        "size-full",
+                        showCodeEditor ? "block" : "hidden",
+                    )}
+                >
                     <CodeEditor
                         editorUrl={editorUrl}
                         webUrl="http://localhost:3003"
@@ -551,175 +558,194 @@ function Chat() {
                         onCollapsedChange={() => setShowCodeEditor(false)}
                         projectId={_projectId}
                     />
-                </SidebarInset>
-            </SidebarProvider>
-        );
-    }
-
-    return (
-        <SidebarProvider defaultOpen={true} className="h-svh">
-            <Sidepanel />
-            <SidebarInset className="relative w-full flex flex-col min-h-0">
-                <CollapsedSidebarTrigger />
-                <ResizablePanelGroup
-                    direction="horizontal"
-                    className="h-full w-full"
+                </div>
+                <div
+                    className={cn(
+                        "size-full flex flex-col min-h-0",
+                        showCodeEditor ? "hidden" : "contents",
+                    )}
                 >
-                    <ResizablePanel
-                        defaultSize={previewCollapsed ? 100 : 40}
-                        minSize={30}
-                        className="flex flex-col min-h-0"
+                    <CollapsedSidebarTrigger />
+                    <ResizablePanelGroup
+                        direction="horizontal"
+                        className="h-full w-full"
                     >
-                        <div className="flex flex-col h-full min-h-0 w-full overflow-hidden relative">
-                            <ChatToolbar
-                                onShowCodeEditor={() => setShowCodeEditor(true)}
-                                previewCollapsed={previewCollapsed}
-                                onTogglePreview={() =>
-                                    setPreviewCollapsed(false)
-                                }
-                            />
-                            {!_chatId ? (
-                                <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                                    <div className="text-center">
-                                        <h2 className="text-lg font-medium text-foreground mb-2">
-                                            Start a new conversation
-                                        </h2>
+                        <ResizablePanel
+                            defaultSize={previewCollapsed ? 100 : 40}
+                            minSize={30}
+                            className="flex flex-col min-h-0"
+                        >
+                            <div className="flex flex-col h-full min-h-0 w-full overflow-hidden relative">
+                                <ChatToolbar
+                                    onShowCodeEditor={() =>
+                                        setShowCodeEditor(true)
+                                    }
+                                    previewCollapsed={previewCollapsed}
+                                    onTogglePreview={() =>
+                                        setPreviewCollapsed(false)
+                                    }
+                                />
+                                {!_chatId ? (
+                                    <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                                        <div className="text-center">
+                                            <h2 className="text-lg font-medium text-foreground mb-2">
+                                                Start a new conversation
+                                            </h2>
+                                        </div>
+                                        <Button
+                                            onClick={handleNewChat}
+                                            disabled={isCreatingChat}
+                                            size="default"
+                                            className="gap-2 rounded-xl"
+                                            variant="outline"
+                                        >
+                                            <PlusIcon className="h-5 w-5" />
+                                            {isCreatingChat
+                                                ? "Creating..."
+                                                : "New Chat"}
+                                        </Button>
                                     </div>
-                                    <Button
-                                        onClick={handleNewChat}
-                                        disabled={isCreatingChat}
-                                        size="default"
-                                        className="gap-2 rounded-xl"
-                                        variant="outline"
-                                    >
-                                        <PlusIcon className="h-5 w-5" />
-                                        {isCreatingChat
-                                            ? "Creating..."
-                                            : "New Chat"}
-                                    </Button>
-                                </div>
-                            ) : (
-                                <>
-                                    <ChatMessageList
-                                        messages={messages}
-                                        isLoadingMessages={isLoadingMessages}
-                                        chatId={_chatId}
-                                        status={status}
-                                        onRegenerate={regenerate}
-                                        onPlanNameDetected={(planName) =>
-                                            setPlanName(planName)
-                                        }
-                                    />
+                                ) : (
+                                    <>
+                                        <ChatMessageList
+                                            messages={messages}
+                                            isLoadingMessages={
+                                                isLoadingMessages
+                                            }
+                                            chatId={_chatId}
+                                            status={status}
+                                            onRegenerate={regenerate}
+                                            onPlanNameDetected={(planName) =>
+                                                setPlanName(planName)
+                                            }
+                                        />
 
-                                    <div className="bottom-4 pb-2 md:pb-3">
-                                        <div className="w-full px-3 md:px-4">
-                                            <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-2xl mx-auto">
-                                                <ChatErrorAlert
-                                                    error={
-                                                        error && !dismissedError
-                                                            ? error
-                                                            : null
-                                                    }
-                                                    onDismiss={() =>
-                                                        setDismissedError(true)
-                                                    }
-                                                    onRetry={() =>
-                                                        regenerate({
-                                                            body: {
-                                                                model,
-                                                            },
-                                                        })
-                                                    }
-                                                />
-                                                <div className="relative">
-                                                    <ChatStatusBar
-                                                        status={status}
-                                                        canUndo={canUndo}
-                                                        isUndoing={isUndoing}
-                                                        isAccepting={
-                                                            isAccepting
+                                        <div className="bottom-4 pb-2 md:pb-3">
+                                            <div className="w-full px-3 md:px-4">
+                                                <div className="flex-1 relative w-full max-w-[95%] sm:max-w-[88%] md:max-w-2xl mx-auto">
+                                                    <ChatErrorAlert
+                                                        error={
+                                                            error &&
+                                                            !dismissedError
+                                                                ? error
+                                                                : null
                                                         }
-                                                        isReviewing={showReview}
-                                                        onUndo={handleUndo}
-                                                        onAcceptAll={
-                                                            handleAcceptAll
-                                                        }
-                                                        onReview={handleReview}
-                                                    />
-                                                    <ChatPromptInput
-                                                        input={input}
-                                                        model={model}
-                                                        mode={mode}
-                                                        status={status}
-                                                        selectedContextFiles={
-                                                            selectedContextFiles
-                                                        }
-                                                        showContextSelector={
-                                                            showContextSelector
-                                                        }
-                                                        cursorPosition={
-                                                            cursorPosition
-                                                        }
-                                                        projectCwd={
-                                                            projectData?.cwd
-                                                        }
-                                                        canUndo={canUndo}
-                                                        onInputChange={
-                                                            handleInputChange
-                                                        }
-                                                        onFileSelect={
-                                                            handleFileSelect
-                                                        }
-                                                        onToggleContextFile={
-                                                            handleToggleContextFile
-                                                        }
-                                                        onCloseContextSelector={() =>
-                                                            setShowContextSelector(
-                                                                false,
+                                                        onDismiss={() =>
+                                                            setDismissedError(
+                                                                true,
                                                             )
                                                         }
-                                                        onSetMode={setMode}
-                                                        onSetModel={setModel}
-                                                        onSubmit={handleSubmit}
-                                                        onStop={stop}
-                                                        onToggleContextSelector={() =>
-                                                            setShowContextSelector(
-                                                                (prev) => !prev,
-                                                            )
+                                                        onRetry={() =>
+                                                            regenerate({
+                                                                body: {
+                                                                    model,
+                                                                },
+                                                            })
                                                         }
                                                     />
+                                                    <div className="relative">
+                                                        <ChatStatusBar
+                                                            status={status}
+                                                            canUndo={canUndo}
+                                                            isUndoing={
+                                                                isUndoing
+                                                            }
+                                                            isAccepting={
+                                                                isAccepting
+                                                            }
+                                                            isReviewing={
+                                                                showReview
+                                                            }
+                                                            onUndo={handleUndo}
+                                                            onAcceptAll={
+                                                                handleAcceptAll
+                                                            }
+                                                            onReview={
+                                                                handleReview
+                                                            }
+                                                        />
+                                                        <ChatPromptInput
+                                                            input={input}
+                                                            model={model}
+                                                            mode={mode}
+                                                            status={status}
+                                                            selectedContextFiles={
+                                                                selectedContextFiles
+                                                            }
+                                                            showContextSelector={
+                                                                showContextSelector
+                                                            }
+                                                            cursorPosition={
+                                                                cursorPosition
+                                                            }
+                                                            projectCwd={
+                                                                projectData?.cwd
+                                                            }
+                                                            canUndo={canUndo}
+                                                            onInputChange={
+                                                                handleInputChange
+                                                            }
+                                                            onFileSelect={
+                                                                handleFileSelect
+                                                            }
+                                                            onToggleContextFile={
+                                                                handleToggleContextFile
+                                                            }
+                                                            onCloseContextSelector={() =>
+                                                                setShowContextSelector(
+                                                                    false,
+                                                                )
+                                                            }
+                                                            onSetMode={setMode}
+                                                            onSetModel={
+                                                                setModel
+                                                            }
+                                                            onSubmit={
+                                                                handleSubmit
+                                                            }
+                                                            onStop={stop}
+                                                            onToggleContextSelector={() =>
+                                                                setShowContextSelector(
+                                                                    (prev) =>
+                                                                        !prev,
+                                                                )
+                                                            }
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </ResizablePanel>
-
-                    {!previewCollapsed && (
-                        <>
-                            <ResizableHandle />
-                            <ResizablePanel
-                                defaultSize={60}
-                                minSize={40}
-                                className="flex flex-col min-h-0"
-                            >
-                                {showReview ? (
-                                    <DiffReviewPanel
-                                        messages={messages}
-                                        onClose={() => setShowReview(false)}
-                                    />
-                                ) : (
-                                    <PreviewIframe
-                                        onCollapsedChange={setPreviewCollapsed}
-                                        projectId={_projectId}
-                                    />
+                                    </>
                                 )}
-                            </ResizablePanel>
-                        </>
-                    )}
-                </ResizablePanelGroup>
+                            </div>
+                        </ResizablePanel>
+
+                        {!previewCollapsed && (
+                            <>
+                                <ResizableHandle />
+                                <ResizablePanel
+                                    defaultSize={60}
+                                    minSize={40}
+                                    className="flex flex-col min-h-0"
+                                >
+                                    {showReview ? (
+                                        <DiffReviewPanel
+                                            messages={messages}
+                                            onClose={() => setShowReview(false)}
+                                        />
+                                    ) : (
+                                        <PreviewIframe
+                                            onCollapsedChange={
+                                                setPreviewCollapsed
+                                            }
+                                            projectId={_projectId}
+                                        />
+                                    )}
+                                </ResizablePanel>
+                            </>
+                        )}
+                    </ResizablePanelGroup>
+                </div>
             </SidebarInset>
         </SidebarProvider>
     );
