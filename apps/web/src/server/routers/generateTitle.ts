@@ -2,7 +2,7 @@ import { router, protectedProcedure } from "../index";
 import { z } from "zod";
 import { generateText } from "ai";
 import { db, chat, eq } from "@ama/db";
-import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
 
 export const generateTitleRouter = router({
     generateTitle: protectedProcedure.input(z.object({
@@ -33,12 +33,11 @@ Respond only with the title.
 async function generateTitle(message: string) {
     try {
         const { text } = await generateText({
-            model: google('gemini-2.0-flash'),
+            model: openai("gpt-4.1-mini-2025-04-14"),
             system: titlePrompt,
             prompt: message,
             maxOutputTokens : 50,
         });
-        console.log('Generated title:', text);
         return text;
     } catch (error) {
         console.error('Failed to generate title:', error);

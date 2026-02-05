@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.10",
+    "@ai-sdk/openai": "^3.0.25",
     "@ai-sdk/react": "^3.0.42",
     "@ama/db": "workspace:*",
     "@ama/server": "workspace:*",
