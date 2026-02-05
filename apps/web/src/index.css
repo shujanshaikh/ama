@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -7,6 +8,7 @@
 @theme {
   --font-sans: "Mulish", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display: "Bebas Neue", ui-sans-serif, system-ui, sans-serif;
 }
 
 html,
@@ -168,6 +170,7 @@ body {
   --color-sidebar-ring: var(--sidebar-ring);
 
   --font-sans: Mulish, sans-serif;
+  --font-display: "Bebas Neue", sans-serif;
   --font-mono: Fira Code, monospace;
   --font-serif: Georgia, serif;
 
