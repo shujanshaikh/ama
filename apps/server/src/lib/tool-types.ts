@@ -10,6 +10,7 @@ import type { InferUITool, UIMessage } from "ai"
 import z from "zod"
 import { webSearch } from "@/tools/web-search"
 import type { batchTool } from "@/tools/batch"
+import type { exploreTool } from "@/tools/sub-agent"
 
 
 export interface FileType {
@@ -72,6 +73,7 @@ type deleteFileType = InferUITool<typeof deleteFile>;
 type runTerminalCommand = InferUITool<typeof runTerminalCommand>;
 type webSearch = InferUITool<typeof webSearch>;
 type batchToolType = InferUITool<typeof batchTool>;
+type exploreToolType = InferUITool<typeof exploreTool>;
 
 export type ChatTools = {
   stringReplace: stringReplace;
@@ -84,6 +86,7 @@ export type ChatTools = {
   runTerminalCommand: runTerminalCommand;
   webSearch: webSearch;
   batch: batchToolType;
+  explore: exploreToolType;
 };
 
 export type CustomUIDataTypes = {
@@ -187,6 +190,21 @@ export interface BatchOutput {
 
 export type ToolOutput = ReadFileOutput | ListOutput | GlobOutput | GrepOutput | SuccessOutput | EditFilesOutput | DeleteFileOutput | RunTerminalCommandOutput | BatchOutput;
 
+// Sub-agent tool part types for explore tool
+export interface SubagentToolPart {
+  type: string;
+  toolCallId?: string;
+  state?: string;
+  input?: unknown;
+  output?: unknown;
+}
+
+export interface ExploreOutput {
+  messages?: Array<{
+    role: string;
+    parts: Array<SubagentToolPart | { type: 'text'; text: string }>;
+  }>;
+}
 
 export type ToolPart = {
   type: `tool-${keyof ChatTools}` | string;

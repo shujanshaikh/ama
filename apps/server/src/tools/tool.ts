@@ -9,6 +9,7 @@ import { runTerminalCommand } from "./runTerminalCommand";
 import { webSearch } from "./web-search";
 import { batchTool } from "./batch";
 import { supermemoryTools } from "@supermemory/tools/ai-sdk";
+import { exploreTool } from "./sub-agent";
 
 export const tool = {
   readFile: readFile,
@@ -21,6 +22,7 @@ export const tool = {
   runTerminalCommand: runTerminalCommand,
   webSearch: webSearch,
   batch: batchTool,
+  explore: exploreTool,
 };
 
 const supermemoryToolsConfig = process.env.SUPERMEMORY_API_KEY

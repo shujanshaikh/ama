@@ -19,7 +19,7 @@ export const generateTitleRouter = router({
         } catch (error) {
             throw new Error("Failed to save title");
         }
-        
+        return { title };
     }),
 });
 
@@ -36,7 +36,9 @@ async function generateTitle(message: string) {
             model: google('gemini-2.0-flash'),
             system: titlePrompt,
             prompt: message,
+            maxOutputTokens : 50,
         });
+        console.log('Generated title:', text);
         return text;
     } catch (error) {
         console.error('Failed to generate title:', error);
