@@ -121,8 +121,6 @@ export function CodeEditor({
     setIsFullscreen,
   };
 
-  const currentUrl = activeTab === "editor" ? editorUrl : (previewUrl || webUrl);
-
   const handlePreviewUrlSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -213,7 +211,8 @@ export function CodeEditor({
                     <button
               className="p-1 text-muted-foreground hover:text-foreground transition-colors rounded"
               onClick={() => {
-                const iframe = document.querySelector<HTMLIFrameElement>("#code-editor-iframe");
+                const iframeId = activeTab === "editor" ? "#code-editor-iframe" : "#code-preview-iframe";
+                const iframe = document.querySelector<HTMLIFrameElement>(iframeId);
                 iframe?.contentWindow?.location.reload();
               }}
             >
@@ -249,13 +248,22 @@ export function CodeEditor({
               </div>
             </div>
           ) : (
-            <iframe
-              id="code-editor-iframe"
-              className="size-full"
-              allow="clipboard-read; clipboard-write; cookies; storage"
-              src={currentUrl}
-              title={activeTab === "editor" ? "Code Editor" : "Web Preview"}
-            />
+            <>
+              <iframe
+                id="code-editor-iframe"
+                className={cn("absolute inset-0 size-full", activeTab !== "editor" && "invisible")}
+                allow="clipboard-read; clipboard-write; cookies; storage"
+                src={editorUrl}
+                title="Code Editor"
+              />
+              <iframe
+                id="code-preview-iframe"
+                className={cn("absolute inset-0 size-full", activeTab !== "web" && "invisible")}
+                allow="clipboard-read; clipboard-write; cookies; storage"
+                src={previewUrl || webUrl}
+                title="Web Preview"
+              />
+            </>
           )}
         </div>
 

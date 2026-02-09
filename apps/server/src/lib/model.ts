@@ -58,14 +58,7 @@ export const opencodeZenProvider = openaiCompatibleProvider;
 export const createMinimaxProvide = createOpenCodeZenModel;
 
 export const models = [
-  {
-    id: "kimi-k2.5-free",
-    name: "Kimi K2.5 Free",
-  },
-  {
-    id: "glm-4.7-free",
-    name: "GLM 4.7 Free",
-  },
+
   {
     id: "minimax-m2.1-free",
     name: "Minimax M2.1 Free",
@@ -77,5 +70,13 @@ export const models = [
   {
     id: "big-pickle",
     name: "Big Pickle",
+  },
+  {
+    id: "kimi-k2.5-free",
+    name: "Kimi K2.5 Free",
+  },
+  {
+    id: "glm-4.7-free",
+    name: "GLM 4.7 Free",
   },
 ];
