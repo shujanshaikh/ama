@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { SquareIcon, XIcon, ClipboardListIcon, KeyIcon, CheckIcon } from 'lucide-react';
 import {
   PromptInput,
@@ -74,13 +75,25 @@ export function ChatPromptInput({
 }: ChatPromptInputProps) {
   const freeModels = models.filter((m) => m.type === 'free');
   const gatewayModels = models.filter((m) => m.type === 'gateway');
+  const [pendingGatewayModel, setPendingGatewayModel] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (hasGatewayKey && pendingGatewayModel) {
+      onSetModel(pendingGatewayModel);
+      setPendingGatewayModel(null);
+    }
+  }, [hasGatewayKey, pendingGatewayModel, onSetModel]);
 
   const handleModelChange = (value: string) => {
     const modelInfo = models.find((m) => m.id === value);
     if (modelInfo?.type === 'gateway' && !hasGatewayKey) {
+      setPendingGatewayModel(value);
       onOpenApiKeyDialog();
       return;
     }
+    setPendingGatewayModel(null);
     onSetModel(value);
   };
   return (
@@ -204,7 +217,7 @@ export function ChatPromptInput({
             >
               <span>@ Context</span>
             </Button>
-            <PromptInputSelect defaultValue={model} onValueChange={handleModelChange}>
+            <PromptInputSelect value={model} onValueChange={handleModelChange}>
               <PromptInputSelectTrigger className="rounded-xl text-xs font-medium px-2.5 bg-muted/50 border border-border/50 hover:bg-muted/60 text-muted-foreground">
                 <PromptInputSelectValue />
               </PromptInputSelectTrigger>
@@ -269,4 +282,3 @@ export function ChatPromptInput({
     </div>
   );
 }
-

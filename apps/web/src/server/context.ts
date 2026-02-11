@@ -12,7 +12,7 @@ async function getSessionFromRequest(req: Request): Promise<UserInfo | NoUserInf
 
   // Parse cookies
   const cookies = Object.fromEntries(
-    cookieHeader.split("; ").map((cookie) => {
+    cookieHeader.split(/;\s*/).map((cookie) => {
       const [name, ...valueParts] = cookie.split("=");
       return [name, valueParts.join("=")];
     })
@@ -53,7 +53,7 @@ async function getSessionFromRequest(req: Request): Promise<UserInfo | NoUserInf
       impersonator: session.impersonator,
       accessToken: session.accessToken,
     };
-  } catch (error) {
+  } catch {
     // If decryption fails, return no user
     return { user: null };
   }
@@ -61,11 +61,10 @@ async function getSessionFromRequest(req: Request): Promise<UserInfo | NoUserInf
 
 export async function createContext({ req }: { req: Request }) {
   const session = await getSessionFromRequest(req);
-  
+
   return {
     session,
   };
 }
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
-  

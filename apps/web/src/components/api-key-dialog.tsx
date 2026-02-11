@@ -32,6 +32,9 @@ export function ApiKeyDialog({
   const { mutate: saveKey } = useMutation({
     ...trpc.apiKeys.saveKey.mutationOptions(),
     onSuccess: () => {
+      queryClient.setQueryData(trpc.apiKeys.getKeyStatus.queryKey(), {
+        hasKey: true,
+      });
       queryClient.invalidateQueries({
         queryKey: trpc.apiKeys.getKeyStatus.queryKey(),
       });
@@ -46,6 +49,9 @@ export function ApiKeyDialog({
   const { mutate: deleteKey } = useMutation({
     ...trpc.apiKeys.deleteKey.mutationOptions(),
     onSuccess: () => {
+      queryClient.setQueryData(trpc.apiKeys.getKeyStatus.queryKey(), {
+        hasKey: false,
+      });
       queryClient.invalidateQueries({
         queryKey: trpc.apiKeys.getKeyStatus.queryKey(),
       });

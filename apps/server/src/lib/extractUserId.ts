@@ -17,16 +17,17 @@ export async function extractUserIdFromCookie(
 
   const cookiePassword = process.env.WORKOS_COOKIE_PASSWORD;
   if (!cookiePassword) return null;
+  const cookieName = process.env.WORKOS_COOKIE_NAME || "wos-session";
 
-  // Parse cookies to find wos-session
+  // Parse cookies and look up the configured session cookie name.
   const cookies = Object.fromEntries(
-    cookieHeader.split("; ").map((cookie) => {
+    cookieHeader.split(/;\s*/).map((cookie) => {
       const [name, ...valueParts] = cookie.split("=");
       return [name, valueParts.join("=")];
     }),
   );
 
-  const sessionCookie = cookies["wos-session"];
+  const sessionCookie = cookies[cookieName];
   if (!sessionCookie) return null;
 
   try {
