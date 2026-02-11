@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Loader2, CheckIcon } from "lucide-react";
+import { Loader2, CheckIcon, WifiOffIcon, SearchIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useUserStreamContextOptional } from "./user-stream-provider";
 import { getFileIcon } from "./file-icons";
@@ -116,14 +116,14 @@ export function ContextSelector({
 
   const isCliDisconnected = !userStream?.cliConnected;
 
+  const panel = "w-72 rounded-xl border border-border/50 bg-popover backdrop-blur-md shadow-xl overflow-hidden";
+
   if (isCliDisconnected) {
     return (
-      <div
-        ref={containerRef}
-        className="w-64 rounded-xl border border-border/50 bg-popover/95 backdrop-blur-sm shadow-lg overflow-hidden"
-      >
-        <div className="px-3 py-4 text-center">
-          <p className="text-xs text-muted-foreground">CLI not connected</p>
+      <div ref={containerRef} className={panel}>
+        <div className="px-4 py-5 flex flex-col items-center gap-2">
+          <WifiOffIcon className="size-4 text-muted-foreground/40" />
+          <p className="text-[11px] text-muted-foreground/60 font-medium">CLI not connected</p>
         </div>
       </div>
     );
@@ -131,13 +131,10 @@ export function ContextSelector({
 
   if (isLoadingContext) {
     return (
-      <div
-        ref={containerRef}
-        className="w-64 rounded-xl border border-border/50 bg-popover/95 backdrop-blur-sm shadow-lg overflow-hidden"
-      >
+      <div ref={containerRef} className={panel}>
         <div className="px-3 py-3 flex items-center justify-center gap-2">
-          <Loader2 className="size-3 animate-spin text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Loading...</span>
+          <Loader2 className="size-3 animate-spin text-muted-foreground/50" />
+          <span className="text-[11px] text-muted-foreground/60 font-medium">Loading files...</span>
         </div>
       </div>
     );
@@ -145,13 +142,15 @@ export function ContextSelector({
 
   if (filteredFiles.length === 0) {
     return (
-      <div
-        ref={containerRef}
-        className="w-64 rounded-xl border border-border/50 bg-popover/95 backdrop-blur-sm shadow-lg overflow-hidden"
-      >
-        <div className="px-3 py-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            {query ? `No matches for "${query}"` : 'No files'}
+      <div ref={containerRef} className={panel}>
+        <div className="px-4 py-5 flex flex-col items-center gap-2">
+          <SearchIcon className="size-4 text-muted-foreground/30" />
+          <p className="text-[11px] text-muted-foreground/50 font-medium">
+            {query ? (
+              <>No matches for <span className="font-mono text-foreground/40">&quot;{query}&quot;</span></>
+            ) : (
+              'No files found'
+            )}
           </p>
         </div>
       </div>
@@ -159,11 +158,8 @@ export function ContextSelector({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="w-64 rounded-xl border border-border/50 bg-popover/95 backdrop-blur-sm shadow-lg overflow-hidden"
-    >
-      <div className="max-h-48 overflow-y-auto py-1">
+    <div ref={containerRef} className={panel}>
+      <div className="max-h-72 overflow-y-auto py-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/50">
         {filteredFiles.map((file, index) => {
           const isSelected = selectedIndex === index;
           const isInContext = selectedFiles.includes(file);
@@ -176,21 +172,33 @@ export function ContextSelector({
               ref={isSelected ? selectedItemRef : null}
               onClick={() => onFileSelect(file)}
               className={cn(
-                "px-2.5 py-1.5 mx-1 rounded-lg cursor-pointer flex items-center gap-2 text-xs transition-colors duration-150",
+                "relative mx-1 rounded-lg cursor-pointer flex items-center gap-2.5 pl-3 pr-2.5 py-1.5 text-xs",
+                "transition-colors duration-100",
                 isSelected
                   ? "bg-accent text-accent-foreground"
-                  : "text-foreground hover:bg-muted/70"
+                  : "text-foreground/80 hover:bg-muted/50"
               )}
             >
-              {getFileIcon(file)}
+              <div className={cn(
+                "absolute left-0 top-1/2 -translate-y-1/2 w-[2.5px] rounded-full transition-all duration-150",
+                isSelected ? "h-4 bg-foreground/60" : "h-0 bg-transparent"
+              )} />
+
+              <div className="shrink-0">
+                {getFileIcon(file)}
+              </div>
+
               <div className="truncate flex-1 min-w-0">
                 {directoryPath && (
-                  <div className="text-[10px] text-muted-foreground/70 truncate font-mono">
+                  <div className="text-[10px] text-muted-foreground/60 truncate font-mono leading-tight">
                     {directoryPath}
                   </div>
                 )}
-                <span className="font-mono text-[11px] truncate block">{fileName}</span>
+                <span className="font-mono text-[11px] truncate block leading-snug">
+                  {fileName}
+                </span>
               </div>
+
               {isInContext && (
                 <CheckIcon className="size-3 text-primary/70 shrink-0" />
               )}
@@ -198,10 +206,10 @@ export function ContextSelector({
           );
         })}
       </div>
-
+        
       {selectedFiles.length > 0 && (
-        <div className="px-3 py-2 border-t border-border/50 bg-muted/30">
-          <span className="text-[10px] text-muted-foreground font-medium">
+        <div className="px-3 py-1.5 border-t border-border/40 bg-muted/20">
+          <span className="text-[10px] text-muted-foreground/60 font-medium tabular-nums">
             {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
           </span>
         </div>
