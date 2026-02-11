@@ -42,6 +42,7 @@
         "drizzle-orm": "^0.45.1",
         "exa-js": "^2.0.12",
         "hono": "^4.10.7",
+        "iron-session": "^8.0.4",
         "redis": "^5.10.0",
         "resumable-stream": "^2.2.10",
         "zod": "^4.1.13"

@@ -31,6 +31,7 @@ import { ChatErrorAlert } from "@/components/chat/chat-error-alert";
 import { ChatStatusBar } from "@/components/chat/chat-status-bar";
 import { ChatPromptInput } from "@/components/chat/chat-prompt-input";
 import { CollapsedSidebarTrigger } from "@/components/chat/collapsed-sidebar-trigger";
+import { ApiKeyDialog } from "@/components/api-key-dialog";
 
 export const Route = createFileRoute("/_authenticated/chat/$projectId")({
     component: ChatWrapper,
@@ -68,9 +69,19 @@ function Chat() {
     const [isUndoing, setIsUndoing] = useState(false);
     const [isAccepting, setIsAccepting] = useState(false);
     const [showReview, setShowReview] = useState(false);
+    const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
     const trpc = useTRPC();
     const queryClient = useQueryClient();
     const hasGeneratedTitleRef = useRef(false);
+
+    const { data: keyStatusData } = useQuery({
+        ...trpc.apiKeys.getKeyStatus.queryOptions(),
+    });
+    const hasGatewayKey = keyStatusData?.hasKey ?? false;
+
+    const handleOpenApiKeyDialog = useCallback(() => {
+        setApiKeyDialogOpen(true);
+    }, []);
 
     const { mutate: createChat, isPending: isCreatingChat } = useMutation({
         ...trpc.chat.createChat.mutationOptions(),
@@ -232,6 +243,7 @@ function Chat() {
         () =>
             new DefaultChatTransport({
                 api: `${API_URL}/agent-proxy`,
+                credentials: "include",
                 prepareSendMessagesRequest({ messages, body }) {
                     const lastMessage = messages.at(-1);
                     const textPart = lastMessage?.parts?.find(
@@ -418,6 +430,7 @@ function Chat() {
             generateTitle,
             planName,
             mode,
+            model,
         ],
     );
 
@@ -683,6 +696,7 @@ function Chat() {
                                                                 projectData?.cwd
                                                             }
                                                             canUndo={canUndo}
+                                                            hasGatewayKey={hasGatewayKey}
                                                             onInputChange={
                                                                 handleInputChange
                                                             }
@@ -710,6 +724,9 @@ function Chat() {
                                                                     (prev) =>
                                                                         !prev,
                                                                 )
+                                                            }
+                                                            onOpenApiKeyDialog={
+                                                                handleOpenApiKeyDialog
                                                             }
                                                         />
                                                     </div>
@@ -748,6 +765,11 @@ function Chat() {
                     </ResizablePanelGroup>
                 </div>
             </SidebarInset>
+            <ApiKeyDialog
+                open={apiKeyDialogOpen}
+                onOpenChange={setApiKeyDialogOpen}
+                hasKey={hasGatewayKey}
+            />
         </SidebarProvider>
     );
 }

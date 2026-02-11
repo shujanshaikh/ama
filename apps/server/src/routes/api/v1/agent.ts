@@ -21,7 +21,14 @@ import {
 import { convertToUIMessages } from "@/lib/convertToUIMessage";
 import { requestContext } from "@/lib/context";
 import { agentStreams } from "@/index";
-import { createOpenCodeZenModel, models } from "@/lib/model";
+import {
+    createOpenCodeZenModel,
+    createGatewayModel,
+    isGatewayModel,
+    models,
+} from "@/lib/model";
+import { readGatewayKeyFromVault } from "@/lib/vault";
+import { extractUserIdFromCookie } from "@/lib/extractUserId";
 import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
 import { createSnapshot, registerProject } from "@/lib/executeTool";
 import {
@@ -66,6 +73,7 @@ agentRouter.post("/agent-proxy", async (c) => {
     try {
         const { message, chatId, model, planMode, executePlan, planName } =
             await c.req.json();
+            console.log("model", model);
 
         const [token] = agentStreams.keys();
         const { success } = await ratelimit.limit(token!);
@@ -134,6 +142,22 @@ agentRouter.post("/agent-proxy", async (c) => {
             }
         }
 
+        // Resolve model before streaming: free models use OpenCode Zen, gateway models use user's API key
+        let languageModel;
+        if (isGatewayModel(model)) {
+            const userId = await extractUserIdFromCookie(c.req.header("cookie") ?? null);
+            if (!userId) {
+                return c.json({ error: "Authentication required for premium models" }, 401);
+            }
+            const userKey = await readGatewayKeyFromVault(userId);
+            if (!userKey) {
+                return c.json({ error: "No AI Gateway API key configured. Please add your API key in settings." }, 400);
+            }
+            languageModel = createGatewayModel(model, userKey);
+        } else {
+            languageModel = createOpenCodeZenModel(model);
+        }
+
         const streamId = generateUUID();
         await createStreamId({ streamId, chatId: chatId });
 
@@ -156,7 +180,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 
                         const result = streamText({
                             messages: await convertToModelMessages(uiMessages),
-                            model: createOpenCodeZenModel(model),
+                            model: languageModel,
                             system: systemPrompt,
                             temperature: 1.0,
                             stopWhen: stepCountIs(25),

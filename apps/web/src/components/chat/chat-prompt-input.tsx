@@ -1,4 +1,4 @@
-import { SquareIcon, XIcon, ClipboardListIcon } from 'lucide-react';
+import { SquareIcon, XIcon, ClipboardListIcon, KeyIcon, CheckIcon } from 'lucide-react';
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -21,6 +21,7 @@ import {
   PromptInputSelectContent,
 } from '@/components/ai-elements/prompt-input';
 import { Button } from '@/components/ui/button';
+import { SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { ContextSelector } from '@/components/context-selector';
 import { getFileIcon } from '@/components/file-icons';
@@ -36,6 +37,7 @@ interface ChatPromptInputProps {
   cursorPosition: number;
   projectCwd?: string;
   canUndo: boolean;
+  hasGatewayKey: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onFileSelect: (file: string) => void;
   onToggleContextFile: (file: string) => void;
@@ -45,6 +47,7 @@ interface ChatPromptInputProps {
   onSubmit: (message: PromptInputMessage) => void;
   onStop: () => void;
   onToggleContextSelector: () => void;
+  onOpenApiKeyDialog: () => void;
 }
 
 export function ChatPromptInput({
@@ -57,6 +60,7 @@ export function ChatPromptInput({
   cursorPosition,
   projectCwd,
   canUndo,
+  hasGatewayKey,
   onInputChange,
   onFileSelect,
   onToggleContextFile,
@@ -66,7 +70,19 @@ export function ChatPromptInput({
   onSubmit,
   onStop,
   onToggleContextSelector,
+  onOpenApiKeyDialog,
 }: ChatPromptInputProps) {
+  const freeModels = models.filter((m) => m.type === 'free');
+  const gatewayModels = models.filter((m) => m.type === 'gateway');
+
+  const handleModelChange = (value: string) => {
+    const modelInfo = models.find((m) => m.id === value);
+    if (modelInfo?.type === 'gateway' && !hasGatewayKey) {
+      onOpenApiKeyDialog();
+      return;
+    }
+    onSetModel(value);
+  };
   return (
     <div className="relative">
       {showContextSelector && projectCwd && (
@@ -188,18 +204,47 @@ export function ChatPromptInput({
             >
               <span>@ Context</span>
             </Button>
-            <PromptInputSelect defaultValue={model} onValueChange={(value) => onSetModel(value)}>
+            <PromptInputSelect defaultValue={model} onValueChange={handleModelChange}>
               <PromptInputSelectTrigger className="rounded-xl text-xs font-medium px-2.5 bg-muted/50 border border-border/50 hover:bg-muted/60 text-muted-foreground">
                 <PromptInputSelectValue />
               </PromptInputSelectTrigger>
               <PromptInputSelectContent>
-                {models.map((m) => (
-                  <PromptInputSelectItem key={m.id} value={m.id}>
-                    {m.name}
-                  </PromptInputSelectItem>
-                ))}
+                <SelectGroup>
+                  <SelectLabel>Free</SelectLabel>
+                  {freeModels.map((m) => (
+                    <PromptInputSelectItem key={m.id} value={m.id}>
+                      {m.name}
+                    </PromptInputSelectItem>
+                  ))}
+                </SelectGroup>
+                <SelectSeparator />
+                <SelectGroup>
+                  <SelectLabel>Bring Your Own Key</SelectLabel>
+                  {gatewayModels.map((m) => (
+                    <PromptInputSelectItem key={m.id} value={m.id}>
+                      <span className="flex items-center gap-1.5">
+                        {m.name}
+                        {hasGatewayKey ? (
+                          <CheckIcon className="size-3 text-green-600" />
+                        ) : (
+                          <KeyIcon className="size-3 text-amber-500" />
+                        )}
+                      </span>
+                    </PromptInputSelectItem>
+                  ))}
+                </SelectGroup>
               </PromptInputSelectContent>
             </PromptInputSelect>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenApiKeyDialog()}
+              className="h-8 rounded-xl px-2 text-xs font-medium bg-muted/50 border border-border/50 hover:bg-muted/60 text-muted-foreground"
+              title="API Keys"
+            >
+              <KeyIcon className="size-3" />
+            </Button>
           </PromptInputTools>
           {(status === 'streaming' || status === 'submitted') ? (
             <Button

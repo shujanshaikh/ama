@@ -1,7 +1,14 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createGateway } from "ai";
 import type { LanguageModel } from "ai";
+
+export type ModelInfo = {
+  id: string;
+  name: string;
+  type: "free" | "gateway";
+};
 
 // Models that use /chat/completions endpoint (OpenAI-compatible)
 const OPENAI_COMPATIBLE_MODELS = ["big-pickle", "glm-4.7-free" , "kimi-k2.5-free"];
@@ -57,26 +64,26 @@ export function createOpenCodeZenModel(modelId: string): LanguageModel {
 export const opencodeZenProvider = openaiCompatibleProvider;
 export const createMinimaxProvide = createOpenCodeZenModel;
 
-export const models = [
-
-  {
-    id: "minimax-m2.1-free",
-    name: "Minimax M2.1 Free",
-  },
-  {
-    id: "gpt-5-nano",
-    name: "GPT 5 Nano",
-  },
-  {
-    id: "big-pickle",
-    name: "Big Pickle",
-  },
-  {
-    id: "kimi-k2.5-free",
-    name: "Kimi K2.5 Free",
-  },
-  {
-    id: "glm-4.7-free",
-    name: "GLM 4.7 Free",
-  },
+export const models: ModelInfo[] = [
+  // Free models (OpenCode Zen)
+  { id: "minimax-m2.1-free", name: "Minimax M2.1 Free", type: "free" },
+  { id: "gpt-5-nano", name: "GPT 5 Nano", type: "free" },
+  { id: "big-pickle", name: "Big Pickle", type: "free" },
+  { id: "kimi-k2.5-free", name: "Kimi K2.5 Free", type: "free" },
+  { id: "glm-4.7-free", name: "GLM 4.7 Free", type: "free" },
+  // Gateway models (BYOK — single AI_GATEWAY_API_KEY for all)
+  { id: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5", type: "gateway" },
+  { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", type: "gateway" },
+  { id: "openai/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "gateway" },
+  { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5", type: "gateway" },
 ];
+
+export function createGatewayModel(modelId: string, userApiKey: string): LanguageModel {
+  const gw = createGateway({ apiKey: userApiKey });
+  return gw(modelId);
+}
+
+export function isGatewayModel(modelId: string): boolean {
+  return models.find((m) => m.id === modelId)?.type === "gateway";
+}
+
