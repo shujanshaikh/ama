@@ -33,6 +33,24 @@ import { ChatPromptInput } from "@/components/chat/chat-prompt-input";
 import { CollapsedSidebarTrigger } from "@/components/chat/collapsed-sidebar-trigger";
 import { ApiKeyDialog } from "@/components/api-key-dialog";
 
+function useGatewayToken(trpc: ReturnType<typeof useTRPC>) {
+    const tokenRef = useRef<string | null>(null);
+    const expiresAtRef = useRef(0);
+
+    const { data } = useQuery({
+        ...trpc.apiKeys.getGatewayToken.queryOptions(),
+        staleTime: 50 * 60 * 1000, // 50 minutes
+        refetchInterval: 50 * 60 * 1000,
+    });
+
+    if (data?.token) {
+        tokenRef.current = data.token;
+        expiresAtRef.current = Date.now() + 55 * 60 * 1000;
+    }
+
+    return tokenRef;
+}
+
 export const Route = createFileRoute("/_authenticated/chat/$projectId")({
     component: ChatWrapper,
     validateSearch: (search: Record<string, unknown>) => {
@@ -73,6 +91,7 @@ function Chat() {
     const trpc = useTRPC();
     const queryClient = useQueryClient();
     const hasGeneratedTitleRef = useRef(false);
+    const gatewayTokenRef = useGatewayToken(trpc);
 
     const { data: keyStatusData } = useQuery({
         ...trpc.apiKeys.getKeyStatus.queryOptions(),
@@ -244,6 +263,13 @@ function Chat() {
             new DefaultChatTransport({
                 api: `${API_URL}/agent-proxy`,
                 credentials: "include",
+                headers: () => {
+                    const token = gatewayTokenRef.current;
+                    if (token) {
+                        return { Authorization: `Bearer ${token}` };
+                    }
+                    return {} as Record<string, string>;
+                },
                 prepareSendMessagesRequest({ messages, body }) {
                     const lastMessage = messages.at(-1);
                     const textPart = lastMessage?.parts?.find(

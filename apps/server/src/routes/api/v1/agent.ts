@@ -29,6 +29,7 @@ import {
 } from "@/lib/model";
 import { readGatewayKeyFromVault } from "@/lib/vault";
 import { extractUserIdFromCookie } from "@/lib/extractUserId";
+import { verifyGatewayAuthToken } from "@/lib/gatewayAuth";
 import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
 import { createSnapshot, registerProject } from "@/lib/executeTool";
 import {
@@ -145,7 +146,13 @@ agentRouter.post("/agent-proxy", async (c) => {
         // Resolve model before streaming: free models use OpenCode Zen, gateway models use user's API key
         let languageModel;
         if (isGatewayModel(model)) {
-            const userId = await extractUserIdFromCookie(c.req.header("cookie") ?? null);
+            let userId = await extractUserIdFromCookie(c.req.header("cookie") ?? null);
+            if (!userId) {
+                const authHeader = c.req.header("authorization");
+                if (authHeader?.startsWith("Bearer ")) {
+                    userId = verifyGatewayAuthToken(authHeader.slice(7));
+                }
+            }
             if (!userId) {
                 return c.json({ error: "Authentication required for premium models" }, 401);
             }

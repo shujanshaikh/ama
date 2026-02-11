@@ -5,6 +5,7 @@ import {
   deleteGatewayKey,
   hasGatewayKey,
 } from "../lib/vault";
+import { createGatewayAuthToken } from "../lib/gatewayAuth";
 
 export const apiKeysRouter = router({
   getKeyStatus: protectedProcedure.query(async ({ ctx }) => {
@@ -25,5 +26,14 @@ export const apiKeysRouter = router({
     const userId = ctx.session.user!.id;
     const deleted = await deleteGatewayKey(userId);
     return { success: deleted };
+  }),
+
+  getGatewayToken: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user!.id;
+    const token = createGatewayAuthToken(userId);
+    if (!token) {
+      throw new Error("Gateway auth secret is not configured");
+    }
+    return { token };
   }),
 });
