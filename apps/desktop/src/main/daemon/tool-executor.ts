@@ -14,7 +14,7 @@ export const toolExecutors: Record<
 > = {
   readFile: read_file,
   editFile: editFiles,
-  applyPatch: apply_patch,
+  stringReplace: apply_patch,
   deleteFile: deleteFile,
   grep: grepTool,
   glob: globTool,
