@@ -15,6 +15,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUploadthingRouteImport } from './routes/api/uploadthing'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
+import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
+import { Route as ApiAuthDesktopCallbackRouteImport } from './routes/api/auth/desktop-callback'
+import { Route as ApiAuthDesktopRouteImport } from './routes/api/auth/desktop'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as AuthenticatedChatProjectIdRouteImport } from './routes/_authenticated/chat.$projectId'
 
@@ -47,6 +50,21 @@ const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   path: '/api/trpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
+  id: '/api/auth/sign-in',
+  path: '/api/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthDesktopCallbackRoute = ApiAuthDesktopCallbackRouteImport.update({
+  id: '/api/auth/desktop-callback',
+  path: '/api/auth/desktop-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthDesktopRoute = ApiAuthDesktopRouteImport.update({
+  id: '/api/auth/desktop',
+  path: '/api/auth/desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
   id: '/api/auth/callback',
   path: '/api/auth/callback',
@@ -66,6 +84,9 @@ export interface FileRoutesByFullPath {
   '/api/uploadthing': typeof ApiUploadthingRoute
   '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/desktop': typeof ApiAuthDesktopRoute
+  '/api/auth/desktop-callback': typeof ApiAuthDesktopCallbackRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
@@ -75,6 +96,9 @@ export interface FileRoutesByTo {
   '/api/uploadthing': typeof ApiUploadthingRoute
   '/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/desktop': typeof ApiAuthDesktopRoute
+  '/api/auth/desktop-callback': typeof ApiAuthDesktopCallbackRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesById {
@@ -86,6 +110,9 @@ export interface FileRoutesById {
   '/api/uploadthing': typeof ApiUploadthingRoute
   '/_authenticated/chat/$projectId': typeof AuthenticatedChatProjectIdRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/desktop': typeof ApiAuthDesktopRoute
+  '/api/auth/desktop-callback': typeof ApiAuthDesktopCallbackRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
@@ -97,6 +124,9 @@ export interface FileRouteTypes {
     | '/api/uploadthing'
     | '/chat/$projectId'
     | '/api/auth/callback'
+    | '/api/auth/desktop'
+    | '/api/auth/desktop-callback'
+    | '/api/auth/sign-in'
     | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -106,6 +136,9 @@ export interface FileRouteTypes {
     | '/api/uploadthing'
     | '/chat/$projectId'
     | '/api/auth/callback'
+    | '/api/auth/desktop'
+    | '/api/auth/desktop-callback'
+    | '/api/auth/sign-in'
     | '/api/trpc/$'
   id:
     | '__root__'
@@ -116,6 +149,9 @@ export interface FileRouteTypes {
     | '/api/uploadthing'
     | '/_authenticated/chat/$projectId'
     | '/api/auth/callback'
+    | '/api/auth/desktop'
+    | '/api/auth/desktop-callback'
+    | '/api/auth/sign-in'
     | '/api/trpc/$'
   fileRoutesById: FileRoutesById
 }
@@ -125,6 +161,9 @@ export interface RootRouteChildren {
   InstallRoute: typeof InstallRoute
   ApiUploadthingRoute: typeof ApiUploadthingRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
+  ApiAuthDesktopRoute: typeof ApiAuthDesktopRoute
+  ApiAuthDesktopCallbackRoute: typeof ApiAuthDesktopCallbackRoute
+  ApiAuthSignInRoute: typeof ApiAuthSignInRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
@@ -172,6 +211,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/sign-in': {
+      id: '/api/auth/sign-in'
+      path: '/api/auth/sign-in'
+      fullPath: '/api/auth/sign-in'
+      preLoaderRoute: typeof ApiAuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/desktop-callback': {
+      id: '/api/auth/desktop-callback'
+      path: '/api/auth/desktop-callback'
+      fullPath: '/api/auth/desktop-callback'
+      preLoaderRoute: typeof ApiAuthDesktopCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/desktop': {
+      id: '/api/auth/desktop'
+      path: '/api/auth/desktop'
+      fullPath: '/api/auth/desktop'
+      preLoaderRoute: typeof ApiAuthDesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/callback': {
       id: '/api/auth/callback'
       path: '/api/auth/callback'
@@ -209,6 +269,9 @@ const rootRouteChildren: RootRouteChildren = {
   InstallRoute: InstallRoute,
   ApiUploadthingRoute: ApiUploadthingRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
+  ApiAuthDesktopRoute: ApiAuthDesktopRoute,
+  ApiAuthDesktopCallbackRoute: ApiAuthDesktopCallbackRoute,
+  ApiAuthSignInRoute: ApiAuthSignInRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport

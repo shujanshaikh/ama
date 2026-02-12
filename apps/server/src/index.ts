@@ -13,10 +13,11 @@ const app = new Hono();
 
 app.use(logger());
 
+const devOrigins = ["http://localhost:3001", "http://localhost:5173", "http://localhost:5174", "null"];
 app.use(
   "/*",
   cors({
-    origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV !== "production" ? "http://localhost:3001" : "*"),
+    origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV !== "production" ? devOrigins : "*"),
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,

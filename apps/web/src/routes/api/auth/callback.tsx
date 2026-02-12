@@ -10,7 +10,15 @@ export const Route = createFileRoute('/api/auth/callback')({
         const url = new URL(request.url);
         const code = url.searchParams.get('code');
         const state = url.searchParams.get('state');
-        let returnPathname = state && state !== 'null' ? JSON.parse(atob(state)).returnPathname : null;
+        let parsedState: { returnPathname?: string; desktop?: boolean; callbackPort?: number } = {};
+        try {
+          if (state && state !== 'null') {
+            parsedState = JSON.parse(atob(state));
+          }
+        } catch {
+          // ignore parse errors
+        }
+        let returnPathname = parsedState.returnPathname ?? null;
 
         if (code) {
           try {
@@ -20,6 +28,26 @@ export const Route = createFileRoute('/api/auth/callback')({
                 clientId: getConfig('clientId'),
                 code,
               });
+
+            if (!accessToken || !refreshToken) throw new Error('response is missing tokens');
+
+            // Desktop flow: redirect to the local HTTP server running in the Electron app
+            if (parsedState.desktop && parsedState.callbackPort) {
+              const authData = btoa(
+                JSON.stringify({
+                  accessToken,
+                  refreshToken,
+                  user: {
+                    id: user.id,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                  },
+                }),
+              );
+              const callbackUrl = `http://127.0.0.1:${parsedState.callbackPort}/callback?data=${encodeURIComponent(authData)}`;
+              return Response.redirect(callbackUrl, 302);
+            }
 
             // If baseURL is provided, use it instead of request.nextUrl
             // This is useful if the app is being run in a container like docker where
@@ -46,8 +74,6 @@ export const Route = createFileRoute('/api/auth/callback')({
             }
 
             const response = redirectWithFallback(url.toString());
-
-            if (!accessToken || !refreshToken) throw new Error('response is missing tokens');
 
             await saveSession({ accessToken, refreshToken, user, impersonator });
 

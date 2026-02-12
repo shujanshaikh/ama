@@ -31,9 +31,10 @@ export const userStreams = new Hono().get("/user-streams", upgradeWebSocket(asyn
 
   return {
     onOpen: (_evt, ws) => {
+      console.log(`[user-streams] ${type} connected with userId: ${userId}`);
       if (type === 'cli') {
         cliConnections.set(userId, ws);
-
+        console.log(`[user-streams] CLI registered for userId: ${userId}, total CLI connections: ${cliConnections.size}`);
 
         broadcastToUser(userId, {
           _tag: 'cli_status',
@@ -47,6 +48,7 @@ export const userStreams = new Hono().get("/user-streams", upgradeWebSocket(asyn
         userConnections.get(userId)!.add(ws);
 
         const cliConnected = cliConnections.has(userId);
+        console.log(`[user-streams] Frontend checking CLI for userId: ${userId}, found: ${cliConnected}, registered CLI userIds: [${Array.from(cliConnections.keys()).join(', ')}]`);
         ws.send(JSON.stringify({
           _tag: 'cli_status',
           status: cliConnected ? 'connected' : 'disconnected',
