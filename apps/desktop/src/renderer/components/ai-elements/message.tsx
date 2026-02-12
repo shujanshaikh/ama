@@ -18,8 +18,10 @@ export type MessageProps = HTMLAttributes<HTMLDivElement> & {
 export const Message = ({ className, from, ...props }: MessageProps) => (
     <div
         className={cn(
-            "group flex w-full max-w-[95%] flex-col gap-2",
-            from === "user" ? "is-user ml-auto justify-end" : "is-assistant",
+            "group flex w-full flex-col gap-2",
+            from === "user"
+                ? "is-user ml-auto max-w-[70%] justify-end"
+                : "is-assistant max-w-full",
             className
         )}
         {...props}
@@ -35,8 +37,8 @@ export const MessageContent = ({
 }: MessageContentProps) => (
     <div
         className={cn(
-            "mt-4 mb-2 flex w-full max-w-full min-w-0 flex-col gap-2 overflow-hidden text-sm",
-            "group-[.is-user]:ml-auto group-[.is-user]:items-center group-[.is-user]:rounded-2xl group-[.is-user]:bg-card/80 dark:group-[.is-user]:bg-card/60 group-[.is-user]:border group-[.is-user]:border-border/60 group-[.is-user]:shadow-sm group-[.is-user]:backdrop-blur-sm group-[.is-user]:transition-all group-[.is-user]:duration-200 group-[.is-user]:px-4 group-[.is-user]:pt-4 group-[.is-user]:pb-3 group-[.is-user]:text-foreground",
+            "mt-3 mb-1 flex w-full max-w-full min-w-0 flex-col gap-2 overflow-hidden text-sm",
+            "group-[.is-user]:ml-auto group-[.is-user]:w-fit group-[.is-user]:rounded-2xl group-[.is-user]:rounded-br-md group-[.is-user]:bg-secondary/60 group-[.is-user]:border group-[.is-user]:border-border/40 group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground/90",
             "group-[.is-assistant]:text-foreground",
             className
         )}
@@ -120,7 +122,7 @@ export const MessageToolbar = ({
 }: MessageToolbarProps) => (
     <div
         className={cn(
-            "mt-4 flex w-full items-center justify-between gap-4",
+            "mt-2 flex w-full items-center gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100",
             className
         )}
         {...props}

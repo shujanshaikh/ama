@@ -34,7 +34,7 @@
         "@trpc/server": "^11.5.0",
         "@upstash/ratelimit": "^2.0.7",
         "@upstash/redis": "^1.36.0",
-        "@workos-inc/node": "^7.77.0",
+        "@workos-inc/node": "^8.0.0",
         "ai": "^6.0.40",
         "better-auth": "^1.0.0",
         "date-fns": "^4.1.0",

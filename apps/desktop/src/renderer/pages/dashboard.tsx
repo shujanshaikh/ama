@@ -158,10 +158,8 @@ export function DashboardPage() {
 
   return (
     <div className="relative flex h-screen w-full flex-col bg-background text-foreground">
-      {/* Title bar drag region */}
       <div className="drag-region h-8 flex-shrink-0" />
 
-      {/* Top bar */}
       <div className="no-drag absolute left-6 top-8 flex items-center gap-2">
         <AmaLogo size={24} />
         <span className="text-xl font-bold tracking-tight text-foreground">
@@ -183,10 +181,8 @@ export function DashboardPage() {
         </Button>
       </div>
 
-      {/* Main content */}
       <div className="flex flex-1 flex-col justify-start px-6 pt-12 pb-2">
         <div className="mx-auto w-full max-w-2xl">
-          {/* Welcome + Actions */}
           <div className="mb-8">
             <h1 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
               Welcome back{user?.firstName ? `, ${user.firstName}` : ""}
@@ -215,7 +211,6 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Projects section */}
       <div className="no-drag mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-6 pb-20">
         <hr className="mb-4 border-border" />
 
@@ -291,8 +286,7 @@ export function DashboardPage() {
             </p>
           </div>
         )}
-
-        {/* Discovered IDE Projects */}
+  
         {filteredDiscovered.length > 0 && (
           <section>
             <h2 className="mb-3 text-xs font-medium text-foreground/70">

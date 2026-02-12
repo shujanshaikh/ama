@@ -24,7 +24,6 @@ import {
 } from "@/components/ai-elements/reasoning";
 import { ToolRenderer } from "@/components/tool-render";
 import { TextParts } from "@/components/ai-elements/text-parts";
-import { LoadingDots } from "@/components/ai-elements/loading-dots";
 import { Loader } from "@/components/ai-elements/loader";
 import { AmaLogo } from "@/components/ama-logo";
 import { ApiKeyDialog } from "@/components/api-key-dialog";
@@ -57,13 +56,13 @@ export function ChatPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [hasOpenedEditor, setHasOpenedEditor] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const modelRef = useRef(model);
   modelRef.current = model;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  // Fetch project info
   useEffect(() => {
     if (!projectId) return;
     api
@@ -131,12 +130,14 @@ export function ChatPage() {
   // Load existing messages when chat is selected
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const hasInitializedRef = useRef(false);
+  const hasGeneratedTitleRef = useRef(false);
   const currentChatIdRef = useRef<string | undefined>(chatId ?? undefined);
 
   useEffect(() => {
     if (chatId !== currentChatIdRef.current) {
       currentChatIdRef.current = chatId ?? undefined;
       hasInitializedRef.current = false;
+      hasGeneratedTitleRef.current = false;
       setMessages([]);
     }
   }, [chatId, setMessages]);
@@ -177,7 +178,6 @@ export function ChatPage() {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Scroll detection
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -189,7 +189,6 @@ export function ChatPage() {
     return () => container.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Keyboard shortcuts: Cmd+E for editor
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey) {
@@ -203,7 +202,6 @@ export function ChatPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Lazily mount editor on first open to avoid booting VS Code while hidden.
   useEffect(() => {
     if (showEditor && !hasOpenedEditor) {
       setHasOpenedEditor(true);
@@ -230,7 +228,6 @@ export function ChatPage() {
   const isLoading = status === "streaming" || status === "submitted";
   const isStreaming = status === "streaming";
 
-  // Copy message text
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const copyMessage = useCallback(async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
@@ -240,18 +237,16 @@ export function ChatPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Side Panel */}
       <SidePanel
         projectName={project?.name || "Project"}
         onNewChat={handleNewChat}
         isCreatingChat={isCreatingChat}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((p) => !p)}
+        refreshKey={sidebarRefreshKey}
       />
 
-      {/* Main area */}
       <div className="relative flex flex-1 flex-col min-w-0">
-        {/* Drag region + floating controls */}
         <div
           className={cn(
             "drag-region absolute inset-x-0 top-0 z-20 h-8",
@@ -280,49 +275,48 @@ export function ChatPage() {
           )}
         </div>
 
-        {/* Content area */}
         <div className="relative flex-1 min-h-0">
-          {/* Chat panel — hidden when editor is fullscreen */}
           <div
             className={cn(
               "flex flex-col size-full",
               showEditor ? "hidden" : "",
             )}
           >
-            {/* Messages */}
             <div
               ref={scrollContainerRef}
               className="no-drag relative flex-1 overflow-y-auto"
             >
               {!chatId ? (
-                <div className="flex h-full flex-col items-center justify-center gap-4">
-                  <AmaLogo size={64} />
-                  <div className="text-center">
-                    <h2 className="mb-2 text-lg font-medium text-foreground">
-                      Start a new conversation
+                <div className="flex h-full flex-col items-center justify-center gap-6">
+                  <div className="flex flex-col items-center gap-3">
+                    <AmaLogo size={48} />
+                    <h2 className="text-base font-medium text-foreground/80">
+                      What can I help with?
                     </h2>
                   </div>
                   <Button
                     onClick={handleNewChat}
                     disabled={isCreatingChat}
-                    size="default"
-                    className="gap-2 rounded-xl"
+                    size="sm"
+                    className="gap-2 rounded-xl px-5"
                     variant="outline"
                   >
-                    <PlusIcon className="h-5 w-5" />
+                    <PlusIcon className="size-4" />
                     {isCreatingChat ? "Creating..." : "New Chat"}
                   </Button>
                 </div>
               ) : isLoadingMessages ? (
-                <div className="flex h-full flex-col items-center justify-center gap-4">
-                  <Loader className="size-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Loading chat...
+                <div className="flex h-full flex-col items-center justify-center gap-3">
+                  <Loader className="size-5 text-muted-foreground/60" />
+                  <p className="text-xs text-muted-foreground/50">
+                    Loading messages...
                   </p>
                 </div>
               ) : (
-                <div className="mx-auto max-w-3xl px-4 py-6">
+                <div className="mx-auto max-w-3xl px-4 pt-10 pb-6">
                   {messages.map((message) => {
+                    const isLastMessage =
+                      message.id === messages[messages.length - 1]?.id;
                     const textParts = (message.parts || []).filter(
                       (p: any) => p.type === "text" && p.text,
                     );
@@ -339,18 +333,30 @@ export function ChatPage() {
                       .map((p: any) => p.text)
                       .join("\n");
 
+                    const isLastAssistantEmpty =
+                      message.role === "assistant" &&
+                      isLastMessage &&
+                      isLoading &&
+                      textParts.length === 0 &&
+                      toolParts.length === 0 &&
+                      reasoningParts.length === 0;
+
                     return (
                       <Message key={message.id} from={message.role}>
                         <MessageContent>
-                          {/* Reasoning */}
+                          {isLastAssistantEmpty && (
+                            <div className="flex items-center gap-2.5 py-1">
+                              <Loader className="size-3.5 text-muted-foreground/50" />
+                              <span className="text-[13px] text-muted-foreground/60">
+                                Thinking...
+                              </span>
+                            </div>
+                          )}
+
                           {reasoningParts.map((part: any, i: number) => (
                             <Reasoning
                               key={`${message.id}-reasoning-${i}`}
-                              isStreaming={
-                                isStreaming &&
-                                message.id ===
-                                  messages[messages.length - 1]?.id
-                              }
+                              isStreaming={isStreaming && isLastMessage}
                             >
                               <ReasoningTrigger />
                               <ReasoningContent>
@@ -359,20 +365,14 @@ export function ChatPage() {
                             </Reasoning>
                           ))}
 
-                          {/* Text content */}
                           {textParts.length > 0 ? (
                             <TextParts
                               parts={textParts as any}
                               messageKey={message.id}
-                              isStreaming={
-                                isStreaming &&
-                                message.id ===
-                                  messages[messages.length - 1]?.id
-                              }
+                              isStreaming={isStreaming && isLastMessage}
                             />
                           ) : null}
 
-                          {/* Tool invocations */}
                           {toolParts.map((part: any, i: number) => (
                             <ToolRenderer
                               key={`${message.id}-tool-${i}`}
@@ -380,58 +380,43 @@ export function ChatPage() {
                             />
                           ))}
 
-                          {/* Message actions for assistant messages */}
-                          {message.role === "assistant" && messageText && (
-                            <MessageToolbar>
-                              <MessageActions>
-                                <MessageAction
-                                  tooltip="Copy"
-                                  onClick={() =>
-                                    copyMessage(messageText, message.id)
-                                  }
-                                >
-                                  {copiedId === message.id ? (
-                                    <CheckIcon className="size-3.5" />
-                                  ) : (
-                                    <CopyIcon className="size-3.5" />
-                                  )}
-                                </MessageAction>
-                              </MessageActions>
-                            </MessageToolbar>
-                          )}
+                          {message.role === "assistant" &&
+                            messageText &&
+                            !isStreaming && (
+                              <MessageToolbar>
+                                <MessageActions>
+                                  <MessageAction
+                                    tooltip="Copy"
+                                    onClick={() =>
+                                      copyMessage(messageText, message.id)
+                                    }
+                                  >
+                                    {copiedId === message.id ? (
+                                      <CheckIcon className="size-3.5" />
+                                    ) : (
+                                      <CopyIcon className="size-3.5" />
+                                    )}
+                                  </MessageAction>
+                                </MessageActions>
+                              </MessageToolbar>
+                            )}
                         </MessageContent>
                       </Message>
                     );
                   })}
 
-                  {/* Loading indicator */}
-                  {isLoading &&
-                    messages[messages.length - 1]?.role === "user" && (
-                      <div className="mb-4 flex items-center gap-3 py-4">
-                        <Loader className="text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          Thinking
-                          <LoadingDots />
-                        </span>
-                      </div>
-                    )}
-
-                  {/* Error */}
                   {error && (
-                    <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/5 p-4">
-                      <p className="mb-1 text-sm font-medium text-destructive">
-                        Error
-                      </p>
-                      <p className="text-xs text-destructive/70">
+                    <div className="mb-4 rounded-xl border border-destructive/15 bg-destructive/5 px-4 py-3">
+                      <p className="text-[13px] font-medium text-destructive/90">
                         {error.message}
                       </p>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="mt-2 text-xs text-destructive"
+                        className="mt-2 h-7 text-xs text-destructive/70 hover:text-destructive"
                         onClick={() => regenerate()}
                       >
-                        <RotateCcw className="mr-1 size-3" />
+                        <RotateCcw className="mr-1.5 size-3" />
                         Retry
                       </Button>
                     </div>
@@ -441,45 +426,55 @@ export function ChatPage() {
                 </div>
               )}
 
-              {/* Scroll to bottom */}
               {showScrollButton && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="fixed bottom-24 right-8 z-10 rounded-full shadow-lg"
+                <button
+                  className="fixed bottom-28 right-8 z-10 flex size-8 items-center justify-center rounded-full border border-border/60 bg-card/90 text-muted-foreground shadow-md backdrop-blur-sm transition-all hover:bg-card hover:text-foreground"
                   onClick={scrollToBottom}
                 >
-                  <ArrowDown className="size-4" />
-                </Button>
+                  <ArrowDown className="size-3.5" />
+                </button>
               )}
             </div>
 
-            {/* Input */}
             {chatId && (
-              <div className="no-drag pb-2 md:pb-3">
-                <div className="w-full px-3 md:px-4">
-                  <div className="relative mx-auto w-full max-w-2xl">
-                    <ChatPromptInput
-                      input={input}
-                      model={model}
-                      status={status}
-                      hasGatewayKey={hasGatewayKey}
-                      onInputChange={setInput}
-                      onSetModel={setModel}
-                      onSubmit={(text) => {
-                        sendMessage({ text });
-                        setInput("");
-                      }}
-                      onStop={stop}
-                      onOpenApiKeyDialog={() => setShowApiKeyDialog(true)}
-                    />
-                  </div>
+              <div className="no-drag pb-3">
+                <div className="mx-auto w-full max-w-2xl px-4">
+                  <ChatPromptInput
+                    input={input}
+                    model={model}
+                    status={status}
+                    hasGatewayKey={hasGatewayKey}
+                    onInputChange={setInput}
+                    onSetModel={setModel}
+                    onSubmit={(text) => {
+                      const isFirstMessage =
+                        messages.length === 0 && !isLoadingMessages;
+
+                      sendMessage({ text });
+                      setInput("");
+
+                      if (
+                        isFirstMessage &&
+                        chatId &&
+                        !hasGeneratedTitleRef.current
+                      ) {
+                        hasGeneratedTitleRef.current = true;
+                        api
+                          .generateTitle({ chatId, message: text })
+                          .then(() =>
+                            setSidebarRefreshKey((k) => k + 1),
+                          )
+                          .catch(console.error);
+                      }
+                    }}
+                    onStop={stop}
+                    onOpenApiKeyDialog={() => setShowApiKeyDialog(true)}
+                  />
                 </div>
               </div>
             )}
           </div>
 
-          {/* Editor panel — kept mounted to avoid remount flicker */}
           {hasOpenedEditor && (
             <div
               className={cn(
@@ -505,7 +500,6 @@ export function ChatPage() {
         </div>
       </div>
 
-      {/* API Key Dialog */}
       <ApiKeyDialog
         open={showApiKeyDialog}
         onOpenChange={setShowApiKeyDialog}

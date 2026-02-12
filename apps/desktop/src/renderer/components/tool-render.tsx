@@ -317,7 +317,7 @@ export const ToolRenderer = ({ part }: { part: ToolPart }) => {
     }
   }
 
-  if (part.type === "tool-stringReplace") {
+  if (part.type === "tool-applyPatch") {
     const { toolCallId, state } = part;
     const fileName = getFileName(part.input?.file_path as string);
     const inputOldString = part.input?.old_string || "";

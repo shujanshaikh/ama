@@ -1,39 +1,42 @@
 import { shell, net, session } from "electron";
 import http from "node:http";
-import Store from "electron-store";
+import { randomBytes } from "node:crypto";
 import { getWebUrl } from "./constants";
+import { setCredentials, getCredentials, clearCredentials } from "./credential-store";
+import { setCookiesFromResponse } from "./cookie-utils";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}
 
 interface StoredAuth {
   accessToken: string;
   refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    firstName: string | null;
-    lastName: string | null;
-  };
+  user: AuthUser;
 }
 
-const store = new Store<{ auth: StoredAuth | null }>({
-  defaults: { auth: null },
-});
+let onAuthChange: ((user: AuthUser | null) => void) | null = null;
 
-let onAuthChange: ((user: StoredAuth["user"] | null) => void) | null = null;
-
-export function setAuthChangeCallback(cb: (user: StoredAuth["user"] | null) => void) {
+export function setAuthChangeCallback(cb: (user: AuthUser | null) => void) {
   onAuthChange = cb;
 }
 
 export async function signIn(): Promise<void> {
   const webUrl = getWebUrl();
 
-  // Start a temporary local HTTP server to receive the auth callback.
-  // This avoids relying on deep links which don't work in dev.
   const port = await startCallbackServer();
   const state = btoa(
-    JSON.stringify({ desktop: true, callbackPort: port }),
+    JSON.stringify({
+      desktop: true,
+      callbackPort: port,
+      nonce: randomBytes(16).toString("hex"),
+      createdAt: Date.now(),
+    }),
   );
-  const signInUrl = `${webUrl}/api/auth/sign-in?state=${encodeURIComponent(state)}`;
+  const signInUrl = `${webUrl}/api/auth/desktop-start?state=${encodeURIComponent(state)}`;
   await shell.openExternal(signInUrl);
 }
 
@@ -47,9 +50,10 @@ function startCallbackServer(): Promise<number> {
         return;
       }
 
-      const data = url.searchParams.get("data");
-      if (data) {
-        const success = await handleAuthCallback(data);
+      const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state");
+      if (code && state) {
+        const success = await handleAuthCallback(code, state);
         const html = success
           ? `<html><body style="background:#09090b;color:#fff;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><p style="font-size:18px">Signed in! You can close this tab.</p></div></body></html>`
           : `<html><body style="background:#09090b;color:#fff;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><p style="font-size:18px;color:#ef4444">Sign in failed. Please try again.</p></div></body></html>`;
@@ -57,7 +61,7 @@ function startCallbackServer(): Promise<number> {
         res.end(html);
       } else {
         res.writeHead(400, { "Content-Type": "text/html" });
-        res.end("Missing auth data");
+        res.end("Missing code or state");
       }
 
       // Close server after handling the callback
@@ -78,45 +82,36 @@ function startCallbackServer(): Promise<number> {
   });
 }
 
-async function handleAuthCallback(data: string): Promise<boolean> {
+async function handleAuthCallback(code: string, state: string): Promise<boolean> {
   try {
-    const decoded = JSON.parse(atob(data)) as StoredAuth;
-    store.set("auth", decoded);
-
-    // Set session cookie via the /api/auth/desktop endpoint
     const webUrl = getWebUrl();
-    const response = await net.fetch(`${webUrl}/api/auth/desktop`, {
+    const response = await net.fetch(`${webUrl}/api/auth/desktop-exchange`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        accessToken: decoded.accessToken,
-        refreshToken: decoded.refreshToken,
-        user: decoded.user,
-      }),
+      body: JSON.stringify({ code, state }),
     });
 
-    if (response.ok) {
-      const setCookieHeader = response.headers.get("set-cookie");
-      if (setCookieHeader) {
-        const eqIdx = setCookieHeader.indexOf("=");
-        const semiIdx = setCookieHeader.indexOf(";");
-        const name = setCookieHeader.substring(0, eqIdx).trim();
-        const value = setCookieHeader.substring(
-          eqIdx + 1,
-          semiIdx > -1 ? semiIdx : undefined,
-        ).trim();
-
-        await session.defaultSession.cookies.set({
-          url: webUrl,
-          name,
-          value,
-          path: "/",
-          httpOnly: true,
-        });
-      }
+    const parsed = await response.json();
+    if (!response.ok) {
+      console.error("Auth exchange failed:", parsed?.error ?? parsed?.message ?? response.status);
+      return false;
     }
 
-    onAuthChange?.(decoded.user);
+    const { user, accessToken, refreshToken } = parsed;
+    if (!accessToken || !refreshToken || !user) {
+      console.error("Auth exchange response missing tokens or user");
+      return false;
+    }
+
+    const stored: StoredAuth = { accessToken, refreshToken, user };
+    setCredentials(stored);
+
+    const setCookieHeader = response.headers.get("set-cookie");
+    const allHeaders = response.headers.getSetCookie?.();
+    await setCookiesFromResponse(webUrl, setCookieHeader ?? null, allHeaders);
+
+    scheduleTokenRefresh();
+    onAuthChange?.(user);
     return true;
   } catch (error) {
     console.error("Auth callback failed:", error);
@@ -125,15 +120,156 @@ async function handleAuthCallback(data: string): Promise<boolean> {
 }
 
 export async function signOut(): Promise<void> {
-  store.delete("auth");
+  cancelTokenRefresh();
+  clearCredentials();
   await session.defaultSession.clearStorageData();
   onAuthChange?.(null);
 }
 
-export function getSession(): StoredAuth | null {
-  return store.get("auth");
+/** Returns session for renderer - user only, no tokens. */
+export function getSession(): { user: AuthUser } | null {
+  const creds = getCredentials();
+  if (!creds) return null;
+  return { user: creds.user };
 }
 
 export function getAccessToken(): string | null {
-  return store.get("auth")?.accessToken ?? null;
+  return getCredentials()?.accessToken ?? null;
+}
+
+/** Get access token expiry in ms, or null if unparseable. */
+function getAccessTokenExpiry(accessToken: string): number | null {
+  try {
+    const parts = accessToken.split(".");
+    if (parts.length < 2) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
+    const exp = payload?.exp;
+    return typeof exp === "number" ? exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+const REFRESH_BEFORE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+const MIN_REFRESH_INTERVAL_MS = 30 * 1000; // minimum 30s between refresh attempts
+const INITIAL_BACKOFF_MS = 5 * 1000; // 5s initial backoff on failure
+const MAX_BACKOFF_MS = 5 * 60 * 1000; // 5 min max backoff
+
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+let inflightRefresh: Promise<boolean> | null = null;
+let lastRefreshAttempt = 0;
+let consecutiveFailures = 0;
+
+function scheduleRefresh(): void {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = null;
+
+  const creds = getCredentials();
+  if (!creds) return;
+
+  const expiry = getAccessTokenExpiry(creds.accessToken);
+  if (!expiry) return;
+
+  const now = Date.now();
+  const refreshAt = expiry - REFRESH_BEFORE_EXPIRY_MS;
+
+  // Ensure we never schedule sooner than MIN_REFRESH_INTERVAL_MS from last attempt
+  const earliestNext = lastRefreshAttempt + MIN_REFRESH_INTERVAL_MS;
+  const delay = Math.max(refreshAt - now, earliestNext - now, 1000);
+
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null;
+    refreshAccessToken().catch(() => {});
+  }, delay);
+}
+
+export async function refreshAccessToken(): Promise<boolean> {
+  // Deduplicate: if a refresh is already in-flight, piggyback on it
+  if (inflightRefresh) return inflightRefresh;
+
+  // Rate-limit: don't attempt more often than MIN_REFRESH_INTERVAL_MS
+  const now = Date.now();
+  if (now - lastRefreshAttempt < MIN_REFRESH_INTERVAL_MS) {
+    scheduleRefresh();
+    return false;
+  }
+
+  inflightRefresh = doRefresh();
+  try {
+    return await inflightRefresh;
+  } finally {
+    inflightRefresh = null;
+  }
+}
+
+async function doRefresh(): Promise<boolean> {
+  const creds = getCredentials();
+  if (!creds?.refreshToken) return false;
+
+  lastRefreshAttempt = Date.now();
+
+  try {
+    const webUrl = getWebUrl();
+    const response = await net.fetch(`${webUrl}/api/auth/desktop-refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken: creds.refreshToken }),
+    });
+
+    const parsed = await response.json();
+    if (!response.ok) {
+      console.error("Token refresh failed:", parsed?.error ?? response.status);
+      consecutiveFailures++;
+      scheduleRetryWithBackoff();
+      return false;
+    }
+
+    const { accessToken, refreshToken, user } = parsed;
+    if (!accessToken || !refreshToken || !user) {
+      consecutiveFailures++;
+      return false;
+    }
+
+    consecutiveFailures = 0;
+    setCredentials({ accessToken, refreshToken, user });
+
+    const setCookieHeader = response.headers.get("set-cookie");
+    const allHeaders = response.headers.getSetCookie?.();
+    await setCookiesFromResponse(webUrl, setCookieHeader ?? null, allHeaders);
+
+    scheduleRefresh();
+    return true;
+  } catch (error) {
+    console.error("Token refresh error:", error);
+    consecutiveFailures++;
+    scheduleRetryWithBackoff();
+    return false;
+  }
+}
+
+function scheduleRetryWithBackoff(): void {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  const backoff = Math.min(
+    INITIAL_BACKOFF_MS * Math.pow(2, consecutiveFailures - 1),
+    MAX_BACKOFF_MS,
+  );
+  const jitter = backoff * 0.25 * Math.random();
+  const delay = Math.floor(backoff + jitter);
+  console.log(`[auth] Scheduling refresh retry in ${Math.round(delay / 1000)}s (failure #${consecutiveFailures})`);
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null;
+    refreshAccessToken().catch(() => {});
+  }, delay);
+}
+
+export function scheduleTokenRefresh(): void {
+  consecutiveFailures = 0;
+  scheduleRefresh();
+}
+
+export function cancelTokenRefresh(): void {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
 }

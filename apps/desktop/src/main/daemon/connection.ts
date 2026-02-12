@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { getWsUrl } from "../constants";
-import { getAccessToken } from "../auth";
+import { getAccessToken, refreshAccessToken } from "../auth";
 import { toolExecutors } from "./tool-executor";
 import { rpcHandlers } from "./rpc-handlers";
 
@@ -131,17 +131,37 @@ function connect(): void {
     }
   });
 
-  ws.on("close", () => {
+  ws.on("close", (code, reason) => {
     ws = null;
     if (shouldReconnect) {
-      const delay = getReconnectDelay();
-      reconnectAttempts++;
-      console.log(
-        `[daemon] Disconnected, reconnecting in ${Math.round(delay / 1000)}s...`,
-      );
-      setTimeout(connect, delay);
+      const isAuthFailure = code === 1008;
+      const tryRefresh = isAuthFailure && getAccessToken();
+
+      if (tryRefresh) {
+        refreshAccessToken()
+          .then((ok) => {
+            if (ok) {
+              reconnectAttempts = 0;
+              connect();
+            } else {
+              scheduleReconnect();
+            }
+          })
+          .catch(() => scheduleReconnect());
+      } else {
+        scheduleReconnect();
+      }
     }
   });
+
+  function scheduleReconnect() {
+    const delay = getReconnectDelay();
+    reconnectAttempts++;
+    console.log(
+      `[daemon] Disconnected, reconnecting in ${Math.round(delay / 1000)}s...`,
+    );
+    setTimeout(connect, delay);
+  }
 
   ws.on("error", (error) => {
     console.error("[daemon] Connection error:", error.message);

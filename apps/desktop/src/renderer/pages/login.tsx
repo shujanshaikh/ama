@@ -24,11 +24,9 @@ export function LoginPage() {
 
   return (
     <div className="flex h-screen flex-col items-center justify-center bg-background">
-      {/* Drag region */}
       <div className="drag-region fixed inset-x-0 top-0 h-8" />
 
       <div className="flex flex-col items-center gap-8">
-        {/* Logo */}
         <div className="flex flex-col items-center gap-4">
           <AmaLogo size={72} />
           <div className="text-center">
@@ -38,8 +36,7 @@ export function LoginPage() {
             </p>
           </div>
         </div>
-
-        {/* Sign in */}
+      
         <div className="flex flex-col items-center gap-3">
           <Button
             size="lg"

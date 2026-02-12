@@ -22,7 +22,13 @@ export const Route = createFileRoute('/api/auth/callback')({
 
         if (code) {
           try {
-            // Use the code returned to us by AuthKit and authenticate the user with WorkOS
+            // Desktop PKCE flow: redirect code+state to localhost; desktop will exchange via /api/auth/desktop-exchange
+            if (parsedState.desktop && typeof parsedState.callbackPort === 'number') {
+              const callbackUrl = `http://127.0.0.1:${parsedState.callbackPort}/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}`;
+              return Response.redirect(callbackUrl, 302);
+            }
+
+            // Web flow: exchange code for tokens and save session
             const { accessToken, refreshToken, user, impersonator } =
               await getWorkOS().userManagement.authenticateWithCode({
                 clientId: getConfig('clientId'),
@@ -30,24 +36,6 @@ export const Route = createFileRoute('/api/auth/callback')({
               });
 
             if (!accessToken || !refreshToken) throw new Error('response is missing tokens');
-
-            // Desktop flow: redirect to the local HTTP server running in the Electron app
-            if (parsedState.desktop && parsedState.callbackPort) {
-              const authData = btoa(
-                JSON.stringify({
-                  accessToken,
-                  refreshToken,
-                  user: {
-                    id: user.id,
-                    email: user.email,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                  },
-                }),
-              );
-              const callbackUrl = `http://127.0.0.1:${parsedState.callbackPort}/callback?data=${encodeURIComponent(authData)}`;
-              return Response.redirect(callbackUrl, 302);
-            }
 
             // If baseURL is provided, use it instead of request.nextUrl
             // This is useful if the app is being run in a container like docker where

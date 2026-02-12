@@ -1,24 +1,24 @@
-import { executeReadFile } from "./tools/read-file";
-import { executeEditFile } from "./tools/edit-file";
-import { executeStringReplace } from "./tools/string-replace";
-import { executeDeleteFile } from "./tools/delete-file";
-import { executeGrep } from "./tools/grep";
-import { executeGlob } from "./tools/glob";
-import { executeListDirectory } from "./tools/list-directory";
-import { executeRunTerminalCommand } from "./tools/run-terminal-command";
-import { executeBatch } from "./tools/batch";
+import { read_file } from "./tools/read-file";
+import { editFiles } from "./tools/edit-file";
+import { apply_patch } from "./tools/apply-patch";
+import { deleteFile } from "./tools/delete-file";
+import { grepTool } from "./tools/grep";
+import { globTool } from "./tools/glob";
+import { list } from "./tools/ls-dir";
+import { runTerminalCommand } from "./tools/runTerminalCommand";
+import { batchTool } from "./tools/batch";
 
 export const toolExecutors: Record<
   string,
   (args: any, projectCwd?: string) => Promise<any>
 > = {
-  readFile: executeReadFile,
-  editFile: executeEditFile,
-  stringReplace: executeStringReplace,
-  deleteFile: executeDeleteFile,
-  grep: executeGrep,
-  glob: executeGlob,
-  listDirectory: executeListDirectory,
-  runTerminalCommand: executeRunTerminalCommand,
-  batch: executeBatch,
+  readFile: read_file,
+  editFile: editFiles,
+  applyPatch: apply_patch,
+  deleteFile: deleteFile,
+  grep: grepTool,
+  glob: globTool,
+  listDirectory: list,
+  runTerminalCommand: runTerminalCommand,
+  batch: batchTool,
 };

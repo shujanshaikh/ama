@@ -61,12 +61,15 @@ export const api = {
   },
 
   async generateTitle(input: { chatId: string; message: string }) {
-    const res = await fetch(`${TRPC_URL}/api/trpc/chat.generateTitle`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
+    const res = await fetch(
+      `${TRPC_URL}/api/trpc/generateTitle.generateTitle`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+    );
     const data = await res.json();
     return data?.result?.data as any;
   },

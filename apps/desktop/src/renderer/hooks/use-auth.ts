@@ -8,8 +8,6 @@ interface User {
 }
 
 interface AuthSession {
-  accessToken: string;
-  refreshToken: string;
   user: User;
 }
 

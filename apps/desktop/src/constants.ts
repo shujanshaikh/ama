@@ -7,7 +7,7 @@ export const ALLOWED_PATH_PREFIXES = [
   "/dashboard",
   "/chat/",
   "/api/auth/callback",
-  "/api/auth/desktop",
+  "/api/auth/desktop-start",
   "/api/trpc",
 ];
 

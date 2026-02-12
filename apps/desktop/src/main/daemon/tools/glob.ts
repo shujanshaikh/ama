@@ -1,60 +1,124 @@
-import fg from "fast-glob";
-import { existsSync, statSync } from "node:fs";
+import { z } from "zod";
 import path from "node:path";
+import { existsSync, statSync } from "node:fs";
+import fg from "fast-glob";
 import { validatePath, resolveProjectPath } from "../sandbox";
 
-export async function executeGlob(
-  input: { pattern: string; path?: string },
-  projectCwd?: string,
-) {
-  const { pattern, path: inputPath } = input;
-  if (!pattern) {
-    return { success: false, message: "Missing required parameter: pattern", error: "MISSING_PATTERN" };
-  }
+const globSchema = z.object({
+    pattern: z.string().describe('Glob pattern to match files (e.g., "**/*.js", "src/**/*.ts", "*.json"). Supports standard glob syntax with *, **, and ? wildcards'),
+    path: z.string().optional().describe('Optional relative directory path within the project to limit the search scope. If not provided, searches from the project root'),
+});
 
-  const basePath = projectCwd || process.cwd();
-  const searchPath = inputPath ? resolveProjectPath(inputPath, basePath) : basePath;
+const RESULT_LIMIT = 100;
+const MTIME_BATCH_SIZE = 50;
 
-  if (!existsSync(searchPath)) {
-    return { success: false, message: `Directory not found: ${searchPath}`, error: "DIR_NOT_FOUND" };
-  }
+interface FileWithMtime {
+    path: string;
+    mtime: number;
+}
 
-  if (projectCwd && inputPath) {
-    const validation = validatePath(inputPath, projectCwd);
-    if (!validation.valid) {
-      return { success: false, message: validation.error, error: "ACCESS_DENIED" };
+async function getMtimesBatched(files: string[]): Promise<FileWithMtime[]> {
+    const results: FileWithMtime[] = [];
+
+    for (let i = 0; i < files.length; i += MTIME_BATCH_SIZE) {
+        const batch = files.slice(i, i + MTIME_BATCH_SIZE);
+        const batchResults = await Promise.all(
+            batch.map(async (filePath) => {
+                try {
+                    const mtime = statSync(filePath).mtimeMs;
+                    return { path: filePath, mtime };
+                } catch {
+                    return { path: filePath, mtime: 0 };
+                }
+            })
+        );
+        results.push(...batchResults);
     }
-  }
 
-  try {
-    const files = await fg(pattern, {
-      cwd: searchPath,
-      absolute: true,
-      onlyFiles: true,
-      followSymbolicLinks: false,
-      ignore: ["**/node_modules/**", "**/.git/**"],
-    });
+    return results;
+}
 
-    const limited = files.slice(0, 100);
-    const truncated = files.length > 100;
+export const globTool = async function(input: z.infer<typeof globSchema>, projectCwd?: string) {
+    const { pattern, path: inputPath } = input;
 
-    // Sort by mtime
-    const withMtime = limited.map((f) => {
-      try {
-        return { path: f, mtime: statSync(f).mtimeMs };
-      } catch {
-        return { path: f, mtime: 0 };
-      }
-    });
-    withMtime.sort((a, b) => b.mtime - a.mtime);
+    if (!pattern) {
+        return {
+            success: false,
+            message: 'Missing required parameter: pattern',
+            error: 'MISSING_PATTERN',
+        };
+    }
 
-    return {
-      success: true,
-      message: `Found ${withMtime.length} matches for pattern "${pattern}"`,
-      metadata: { count: withMtime.length, truncated },
-      content: withMtime.map((f) => f.path).join("\n"),
-    };
-  } catch (error: any) {
-    return { success: false, message: `Failed to find files: ${error.message}`, error: "GLOB_ERROR" };
-  }
+    try {
+        const basePath = projectCwd || process.cwd();
+        const searchPath = inputPath ? resolveProjectPath(inputPath, basePath) : basePath;
+
+        // Check if searchPath exists
+        if (!existsSync(searchPath)) {
+            return {
+                success: false,
+                message: `Directory not found: ${searchPath}`,
+                error: 'DIR_NOT_FOUND',
+            };
+        }
+
+        if (projectCwd && inputPath) {
+            const validation = validatePath(inputPath, projectCwd);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    message: validation.error || 'Path validation failed',
+                    error: 'ACCESS_DENIED',
+                };
+            }
+        }
+
+        const allFiles = await fg(pattern, {
+            cwd: searchPath,
+            absolute: true,
+            onlyFiles: true,
+            followSymbolicLinks: false,
+            ignore: ["**/node_modules/**", "**/.git/**"],
+        });
+
+        // Filter and limit
+        const files = allFiles.slice(0, RESULT_LIMIT);
+        const truncated = allFiles.length > RESULT_LIMIT;
+
+        const filesWithMtime = await getMtimesBatched(files);
+
+        filesWithMtime.sort((a, b) => b.mtime - a.mtime);
+
+        const output: string[] = [];
+        if (filesWithMtime.length === 0) {
+            output.push('No files found');
+        } else {
+            output.push(...filesWithMtime.map((f) => f.path));
+            if (truncated) {
+                output.push('');
+                output.push('(Results are truncated. Consider using a more specific path or pattern.)');
+            }
+        }
+
+        const searchLocation = inputPath ? ` in "${inputPath}"` : ' in current directory';
+        const message = `Found ${filesWithMtime.length} matches for pattern "${pattern}"${searchLocation}`;
+
+        return {
+            success: true,
+            message,
+            metadata: {
+                count: filesWithMtime.length,
+                truncated,
+            },
+            content: output.join('\n'),
+        };
+
+    } catch (error) {
+        console.error('[glob] error:', error);
+        return {
+            success: false,
+            message: `Failed to find files matching pattern: ${pattern}`,
+            error: 'GLOB_ERROR',
+        };
+    }
 }

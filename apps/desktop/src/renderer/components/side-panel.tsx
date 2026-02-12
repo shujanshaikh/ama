@@ -24,6 +24,7 @@ interface SidePanelProps {
   isCreatingChat?: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  refreshKey?: number;
 }
 
 function formatRelativeTime(date: string | null): string {
@@ -56,6 +57,7 @@ export function SidePanel({
   isCreatingChat,
   collapsed,
   onToggleCollapse,
+  refreshKey,
 }: SidePanelProps) {
   const { projectId } = useParams<{ projectId: string }>();
   const [searchParams] = useSearchParams();
@@ -76,7 +78,7 @@ export function SidePanel({
 
   useEffect(() => {
     fetchChats();
-  }, [fetchChats, activeChatId]);
+  }, [fetchChats, activeChatId, refreshKey]);
 
   const handleChatClick = (chatId: string) => {
     navigate(`/chat/${projectId}?chat=${chatId}`);

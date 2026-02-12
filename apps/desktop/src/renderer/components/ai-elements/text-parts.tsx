@@ -15,7 +15,7 @@ export function TextParts({ parts, messageKey }: TextPartsProps) {
     return (
         <>
             {parts.map((part, i) => (
-                <div key={`${messageKey}-text-${i}`} className="leading-relaxed text-base text-foreground/90">
+                <div key={`${messageKey}-text-${i}`} className="text-[14.5px] leading-[1.7] text-foreground/85">
                     {part.text && (
                         <MessageResponse>{part.text}</MessageResponse>
                     )}

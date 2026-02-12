@@ -39,11 +39,14 @@
     "react-dom": "19.1.2",
     "react-router": "^7.6.1",
     "react-router-dom": "^7.6.1",
+    "set-cookie-parser": "^3.0.1",
     "shiki": "^3.20.0",
     "streamdown": "^1.6.10",
     "tailwind-merge": "^3.3.1",
     "throttleit": "^2.1.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "zod": "^4.1.13",
+    "diff": "^8.0.2"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.6.0",
@@ -53,6 +56,7 @@
     "@tailwindcss/vite": "^4.1.8",
     "@types/react": "~19.1.10",
     "@types/react-dom": "^19.0.4",
+    "@types/set-cookie-parser": "^2.4.10",
     "@types/ws": "^8.18.0",
     "@vitejs/plugin-react": "^5.0.4",
     "electron": "^33.0.0",

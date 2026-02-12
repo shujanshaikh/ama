@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { net, session } from "electron";
+import { net } from "electron";
+import { setCookiesFromResponse } from "./main/cookie-utils";
 
 interface CLICredentials {
   user: Record<string, unknown>;
@@ -27,38 +28,18 @@ export async function authenticateFromCLI(appUrl: string): Promise<boolean> {
   }
 
   try {
-    const response = await net.fetch(`${appUrl}/api/auth/desktop`, {
+    const response = await net.fetch(`${appUrl}/api/auth/desktop-refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        accessToken: credentials.access_token,
         refreshToken: credentials.refresh_token,
-        user: credentials.user,
       }),
     });
 
     if (response.ok) {
-      // net.fetch may not automatically store Set-Cookie headers in the
-      // BrowserWindow cookie store. Explicitly extract and set the session
-      // cookie so the web UI can read it when the page loads.
       const setCookieHeader = response.headers.get("set-cookie");
-      if (setCookieHeader) {
-        const eqIdx = setCookieHeader.indexOf("=");
-        const semiIdx = setCookieHeader.indexOf(";");
-        const name = setCookieHeader.substring(0, eqIdx).trim();
-        const value = setCookieHeader.substring(
-          eqIdx + 1,
-          semiIdx > -1 ? semiIdx : undefined,
-        ).trim();
-
-        await session.defaultSession.cookies.set({
-          url: appUrl,
-          name,
-          value,
-          path: "/",
-          httpOnly: true,
-        });
-      }
+      const allHeaders = response.headers.getSetCookie?.();
+      await setCookiesFromResponse(appUrl, setCookieHeader ?? null, allHeaders);
 
       console.log("Desktop auth successful via ~/.amai credentials");
       return true;

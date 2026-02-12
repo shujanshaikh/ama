@@ -1,104 +1,299 @@
+import { z } from "zod";
+import path from "node:path";
+import { existsSync, statSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { validatePath } from "../sandbox";
 
 const execFileAsync = promisify(execFile);
 
-export async function executeGrep(
-  input: {
-    query: string;
-    options?: {
-      includePattern?: string;
-      excludePattern?: string;
-      caseSensitive?: boolean;
-      path?: string;
-    };
-  },
-  projectCwd?: string,
-) {
-  const { query, options } = input;
-  if (!query?.trim()) {
-    return { success: false, message: "Missing required parameter: query", error: "MISSING_QUERY" };
-  }
+export const GREP_LIMITS = {
+    DEFAULT_MAX_MATCHES: 200,
+    MAX_LINE_LENGTH: 500,
+    MAX_TOTAL_OUTPUT_SIZE: 1 * 1024 * 1024,
+    TRUNCATION_MESSAGE:
+        '\n[Results truncated due to size limits. Use more specific patterns or file filters to narrow your search.]',
+};
 
-  let searchDir = projectCwd || process.cwd();
-  const { includePattern, excludePattern, caseSensitive, path: subPath } = options || {};
+const grepSchema = z.object({
+    query: z.string().describe('The regex pattern to search for'),
+    options: z.object({
+        includePattern: z.string().optional().describe('Glob pattern for files to include (e.g., "*.ts")'),
+        excludePattern: z.string().optional().describe('Glob pattern for files to exclude'),
+        caseSensitive: z.boolean().optional().describe('Whether the search should be case sensitive'),
+        path: z.string().optional().describe('Subdirectory to search in'),
+    }).optional(),
+});
 
-  if (subPath) {
-    searchDir = path.isAbsolute(subPath) ? subPath : path.resolve(searchDir, subPath);
-    if (projectCwd) {
-      const validation = validatePath(subPath, projectCwd);
-      if (!validation.valid) {
-        return { success: false, message: validation.error, error: "ACCESS_DENIED" };
-      }
+interface GrepMatch {
+    file: string;
+    lineNumber: number;
+    content: string;
+    mtime: number;
+}
+
+async function getRipgrepPath(): Promise<string> {
+    // Check common ripgrep locations
+    const paths = [
+        '/opt/homebrew/bin/rg',
+        '/usr/local/bin/rg',
+        '/usr/bin/rg',
+        'rg', // Fallback to PATH
+    ];
+
+    for (const rgPath of paths) {
+        try {
+            await execFileAsync('which', [rgPath]);
+            return rgPath;
+        } catch {
+            continue;
+        }
     }
-  }
 
-  if (!existsSync(searchDir)) {
-    return { success: false, message: `Directory not found: ${searchDir}`, error: "DIR_NOT_FOUND" };
-  }
+    return 'rg'; // Default fallback
+}
 
-  const args: string[] = [
-    "-n", "--with-filename", "--no-heading", "--color=never",
-    "--max-count=100", "--max-columns=1000",
-  ];
+async function getMtimesBatched(files: string[]): Promise<Map<string, number>> {
+    const mtimeMap = new Map<string, number>();
+    const BATCH_SIZE = 50;
 
-  if (!caseSensitive) args.push("-i");
-  if (includePattern) args.push("--glob", includePattern);
-  if (excludePattern) args.push("--glob", `!${excludePattern}`);
-  args.push("--glob", "!node_modules/**", "--glob", "!.git/**", "--glob", "!dist/**");
-  args.push("--regexp", query, searchDir);
+    for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        const batch = files.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(
+            batch.map(async (filePath) => {
+                try {
+                    const mtime = statSync(filePath).mtimeMs;
+                    return { path: filePath, mtime };
+                } catch {
+                    return { path: filePath, mtime: 0 };
+                }
+            })
+        );
+        results.forEach(({ path, mtime }) => mtimeMap.set(path, mtime));
+    }
 
-  try {
-    const { stdout } = await execFileAsync("rg", args);
-    const lines = stdout.trim().split("\n").filter((l) => l.length > 0);
-    const matches = lines.slice(0, 200).map((line) => {
-      const first = line.indexOf(":");
-      const second = line.indexOf(":", first + 1);
-      if (first > 0 && second > first) {
+    return mtimeMap;
+}
+
+export const grepTool = async function(input: z.infer<typeof grepSchema>, projectCwd?: string) {
+    const { query, options } = input;
+
+    if (!query || query.trim() === '') {
         return {
-          file: line.substring(0, first),
-          lineNumber: parseInt(line.substring(first + 1, second), 10),
-          content: line.substring(second + 1).trim().slice(0, 500),
+            success: false,
+            message: 'Missing required parameter: query',
+            error: 'MISSING_QUERY',
         };
-      }
-      return null;
-    }).filter(Boolean);
+    }
 
-    return {
-      success: true,
-      matches: matches.map((m: any) => `${m.file}:${m.lineNumber}:${m.content}`),
-      detailedMatches: matches,
-      query,
-      matchCount: matches.length,
-      message: `Found ${matches.length} matches for pattern: ${query}`,
-    };
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
-      // ripgrep not found, fall back to grep
-      try {
-        const grepArgs = ["-rn"];
-        if (!caseSensitive) grepArgs.push("-i");
-        grepArgs.push("--include=*", "--exclude-dir=node_modules", "--exclude-dir=.git", query, searchDir);
-        const { stdout } = await execFileAsync("grep", grepArgs);
-        const lines = stdout.trim().split("\n").filter(Boolean).slice(0, 200);
+    try {
+        const { includePattern, excludePattern, caseSensitive, path: subPath } = options || {};
+
+        let searchDir = projectCwd || process.cwd();
+
+        // Handle subdirectory path
+        if (subPath) {
+            searchDir = path.isAbsolute(subPath) ? subPath : path.resolve(searchDir, subPath);
+
+            if (projectCwd) {
+                const validation = validatePath(subPath, projectCwd);
+                if (!validation.valid) {
+                    return {
+                        success: false,
+                        message: validation.error || 'Path validation failed',
+                        error: 'ACCESS_DENIED',
+                    };
+                }
+            }
+        }
+
+        // Verify directory exists
+        if (!existsSync(searchDir)) {
+            return {
+                success: false,
+                message: `Directory not found: ${searchDir}`,
+                error: 'DIR_NOT_FOUND',
+            };
+        }
+
+        const rgPath = await getRipgrepPath();
+
+        // Build ripgrep arguments
+        const args: string[] = [
+            '-n',                    // Line numbers
+            '--with-filename',       // Always show filename
+            '--no-heading',          // Don't group by file
+            '--color=never',         // No ANSI colors
+            '--max-count=100',       // Max matches per file
+            '--max-columns=1000',    // Truncate long lines
+        ];
+
+        // Case sensitivity (default: case insensitive)
+        if (!caseSensitive) {
+            args.push('-i');
+        }
+
+        // Include pattern (e.g., "*.ts", "*.{js,jsx}")
+        if (includePattern) {
+            args.push('--glob', includePattern);
+        }
+
+        // Exclude pattern
+        if (excludePattern) {
+            args.push('--glob', `!${excludePattern}`);
+        }
+
+        // Always exclude common directories
+        args.push('--glob', '!node_modules/**');
+        args.push('--glob', '!.git/**');
+        args.push('--glob', '!dist/**');
+        args.push('--glob', '!build/**');
+        args.push('--glob', '!*.min.js');
+        args.push('--glob', '!*.min.css');
+        args.push('--glob', '!package-lock.json');
+        args.push('--glob', '!yarn.lock');
+        args.push('--glob', '!bun.lockb');
+
+        // Add the pattern and search directory
+        args.push('--regexp', query);
+        args.push(searchDir);
+
+        let stdout: string;
+        let stderr: string;
+        let exitCode: number;
+
+        try {
+            const result = await execFileAsync(rgPath, args);
+            stdout = result.stdout;
+            stderr = result.stderr;
+            exitCode = 0;
+        } catch (error: any) {
+            // exit code 1 means no matches (not an error)
+            if (error.code === 1 || error.status === 1) {
+                return {
+                    success: true,
+                    matches: [],
+                    detailedMatches: [],
+                    query,
+                    matchCount: 0,
+                    message: `No matches found for pattern: ${query}`,
+                };
+            }
+
+            // Other non-zero exit codes are errors
+            stdout = error.stdout || '';
+            stderr = error.stderr || '';
+            exitCode = error.code || error.status || 2;
+
+            if (exitCode !== 0 && !stdout) {
+                return {
+                    success: false,
+                    message: `Ripgrep error: ${stderr || 'Unknown error'}`,
+                    error: 'GREP_EXEC_ERROR',
+                };
+            }
+        }
+
+        // Parse ripgrep output
+        const lines = stdout.trim().split('\n').filter(line => line.length > 0);
+        const rawMatches: GrepMatch[] = [];
+        const uniqueFiles = new Set<string>();
+
+        for (const line of lines) {
+            // Format: filepath:linenum:content
+            const firstColon = line.indexOf(':');
+            const secondColon = line.indexOf(':', firstColon + 1);
+
+            if (firstColon > 0 && secondColon > firstColon) {
+                const file = line.substring(0, firstColon);
+                const lineNumber = parseInt(line.substring(firstColon + 1, secondColon), 10);
+                let content = line.substring(secondColon + 1);
+
+                // Truncate long content
+                if (content.length > GREP_LIMITS.MAX_LINE_LENGTH) {
+                    content = content.substring(0, GREP_LIMITS.MAX_LINE_LENGTH) + '...';
+                }
+
+                rawMatches.push({
+                    file,
+                    lineNumber,
+                    content: content.trim(),
+                    mtime: 0,
+                });
+                uniqueFiles.add(file);
+            }
+        }
+
+        // Get mtimes for sorting by recency
+        const mtimeMap = await getMtimesBatched(Array.from(uniqueFiles));
+
+        // Add mtimes to matches
+        for (const match of rawMatches) {
+            match.mtime = mtimeMap.get(match.file) || 0;
+        }
+
+        // Sort by mtime (most recent first), then by file path
+        rawMatches.sort((a, b) => {
+            if (b.mtime !== a.mtime) {
+                return b.mtime - a.mtime;
+            }
+            return a.file.localeCompare(b.file);
+        });
+
+        // Apply limits
+        const truncated = rawMatches.length > GREP_LIMITS.DEFAULT_MAX_MATCHES;
+        const finalMatches = truncated
+            ? rawMatches.slice(0, GREP_LIMITS.DEFAULT_MAX_MATCHES)
+            : rawMatches;
+
+        // Build output
+        const detailedMatches = finalMatches.map(m => ({
+            file: m.file,
+            lineNumber: m.lineNumber,
+            content: m.content,
+        }));
+
+        const matches = finalMatches.map(m =>
+            `${m.file}:${m.lineNumber}:${m.content}`
+        );
+
+        // Group matches by file for formatted output
+        const groupedOutput: string[] = [`Found ${finalMatches.length} matches`];
+        let currentFile = '';
+
+        for (const match of finalMatches) {
+            if (currentFile !== match.file) {
+                if (currentFile !== '') {
+                    groupedOutput.push('');
+                }
+                currentFile = match.file;
+                groupedOutput.push(`${match.file}:`);
+            }
+            groupedOutput.push(`  Line ${match.lineNumber}: ${match.content}`);
+        }
+
+        if (truncated) {
+            groupedOutput.push('');
+            groupedOutput.push(GREP_LIMITS.TRUNCATION_MESSAGE);
+        }
+
         return {
-          success: true,
-          matches: lines,
-          query,
-          matchCount: lines.length,
-          message: `Found ${lines.length} matches for pattern: ${query}`,
+            success: true,
+            matches,
+            detailedMatches,
+            query,
+            matchCount: finalMatches.length,
+            truncated,
+            message: `Found ${finalMatches.length} matches for pattern: ${query}`,
+            content: groupedOutput.join('\n'),
         };
-      } catch {
-        return { success: true, matches: [], query, matchCount: 0, message: `No matches found for pattern: ${query}` };
-      }
+
+    } catch (error: any) {
+        console.error('[grep] error:', error);
+        return {
+            success: false,
+            message: error?.message || String(error),
+            error: 'GREP_EXEC_ERROR',
+        };
     }
-    // exit code 1 = no matches
-    if (error.status === 1) {
-      return { success: true, matches: [], query, matchCount: 0, message: `No matches found for pattern: ${query}` };
-    }
-    return { success: false, message: `Grep error: ${error.message}`, error: "GREP_EXEC_ERROR" };
-  }
 }

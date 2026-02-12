@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { getWindowState, trackWindowState } from "./window-state";
 import { setupMenu } from "./menu";
 import { registerIpcHandlers } from "./ipc-handlers";
-import { setAuthChangeCallback, getSession } from "./auth";
+import { setAuthChangeCallback, getSession, scheduleTokenRefresh } from "./auth";
 import { connectDaemon, disconnectDaemon } from "./daemon/connection";
 import { ensureCodeServerRunning, stopCodeServer } from "./daemon/code-server";
 
@@ -83,6 +83,7 @@ app.whenReady().then(() => {
   // Connect daemon and start code-server if already authenticated
   const session = getSession();
   if (session) {
+    scheduleTokenRefresh();
     connectDaemon();
     ensureCodeServerRunning().catch(console.error);
   }
