@@ -5,6 +5,8 @@ import { DefaultChatTransport } from "ai";
 import { SidePanel } from "../components/side-panel";
 import { CodeEditor } from "../components/code-editor";
 import { ChatPromptInput } from "../components/chat-prompt-input";
+import { ChatStatusBar } from "../components/chat-status-bar";
+import { DiffReviewPanel } from "../components/diff-review-panel";
 import { API_URL } from "../lib/constants";
 import { api } from "../lib/trpc";
 import { models } from "../lib/models";
@@ -62,6 +64,18 @@ export function ChatPage() {
   modelRef.current = model;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [latestSnapshot, setLatestSnapshot] = useState<{
+    projectId: string;
+    hash: string;
+  } | null>(null);
+  const [isUndoing, setIsUndoing] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [showContextSelector, setShowContextSelector] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [selectedContextFiles, setSelectedContextFiles] = useState<string[]>(
+    [],
+  );
 
   useEffect(() => {
     if (!projectId) return;
@@ -139,6 +153,8 @@ export function ChatPage() {
       hasInitializedRef.current = false;
       hasGeneratedTitleRef.current = false;
       setMessages([]);
+      setLatestSnapshot(null);
+      setShowReview(false);
     }
   }, [chatId, setMessages]);
 
@@ -169,6 +185,156 @@ export function ChatPage() {
       cancelled = true;
     };
   }, [chatId, status, setMessages]);
+
+  // Fetch latest snapshot for undo/accept
+  const fetchSnapshot = useCallback(() => {
+    if (!chatId) return;
+    api
+      .getLatestSnapshot(chatId)
+      .then((snap) => setLatestSnapshot(snap ?? null))
+      .catch(() => setLatestSnapshot(null));
+  }, [chatId]);
+
+  useEffect(() => {
+    fetchSnapshot();
+  }, [fetchSnapshot]);
+
+  // Refetch snapshot when AI finishes streaming
+  const previousStatusRef = useRef(status);
+  useEffect(() => {
+    const prevStatus = previousStatusRef.current;
+    previousStatusRef.current = status;
+
+    if (
+      (prevStatus === "streaming" || prevStatus === "submitted") &&
+      status === "ready"
+    ) {
+      fetchSnapshot();
+    }
+  }, [status, fetchSnapshot]);
+
+  const canUndo =
+    !!latestSnapshot &&
+    status !== "streaming" &&
+    status !== "submitted" &&
+    !isUndoing;
+
+  const handleUndo = useCallback(async () => {
+    if (!chatId || !latestSnapshot) return;
+    setIsUndoing(true);
+    try {
+      const result = await api.undo(chatId);
+      if (result.success) {
+        fetchSnapshot();
+      } else {
+        console.error("[undo] Failed:", result.error);
+      }
+    } catch (error) {
+      console.error("[undo] Error:", error);
+    } finally {
+      setIsUndoing(false);
+    }
+  }, [chatId, latestSnapshot, fetchSnapshot]);
+
+  const handleAcceptAll = useCallback(async () => {
+    if (!chatId || !latestSnapshot) return;
+    setIsAccepting(true);
+    try {
+      const result = await api.undo(chatId, true);
+      if (result.success) {
+        fetchSnapshot();
+      }
+    } catch (error) {
+      console.error("[accept] Error:", error);
+    } finally {
+      setIsAccepting(false);
+    }
+  }, [chatId, latestSnapshot, fetchSnapshot]);
+
+  const handleReview = useCallback(() => {
+    setShowReview((prev) => !prev);
+  }, []);
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const value = e.target.value;
+      const cursorPos = e.target.selectionStart || 0;
+      setInput(value);
+      setCursorPosition(cursorPos);
+
+      const textBeforeCursor = value.slice(0, cursorPos);
+      const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
+      if (lastAtIndex !== -1) {
+        const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
+        const hasSpace = textAfterAt.includes(" ");
+        if (!hasSpace) {
+          setShowContextSelector(true);
+        } else {
+          setShowContextSelector(false);
+        }
+      } else {
+        setShowContextSelector(false);
+      }
+    },
+    [],
+  );
+
+  const handleFileSelect = useCallback(
+    (file: string) => {
+      const textBeforeCursor = input.slice(0, cursorPosition);
+      const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+      const textAfterCursor = input.slice(cursorPosition);
+
+      if (lastAtIndex !== -1) {
+        const newInput =
+          input.slice(0, lastAtIndex) + "@" + file + " " + textAfterCursor;
+        setInput(newInput);
+      } else {
+        const newInput =
+          input.slice(0, cursorPosition) +
+          "@" +
+          file +
+          " " +
+          textAfterCursor;
+        setInput(newInput);
+      }
+
+      if (!selectedContextFiles.includes(file)) {
+        setSelectedContextFiles((prev) => [...prev, file]);
+      }
+
+      setShowContextSelector(false);
+
+      setTimeout(() => {
+        const textarea = document.querySelector("textarea") as HTMLTextAreaElement;
+        textarea?.focus();
+      }, 0);
+    },
+    [input, cursorPosition, selectedContextFiles],
+  );
+
+  const handleToggleContextFile = useCallback(
+    (file: string) => {
+      const isRemoving = selectedContextFiles.includes(file);
+
+      setSelectedContextFiles((prev) =>
+        prev.includes(file)
+          ? prev.filter((f) => f !== file)
+          : [...prev, file],
+      );
+
+      if (isRemoving) {
+        const fileName = file.split("/").pop() || file;
+        const regex = new RegExp(
+          `@${fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*`,
+          "g",
+        );
+        setInput((prev) => prev.replace(regex, ""));
+      }
+    },
+    [selectedContextFiles],
+  );
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -246,7 +412,7 @@ export function ChatPage() {
         refreshKey={sidebarRefreshKey}
       />
 
-      <div className="relative flex flex-1 flex-col min-w-0">
+      <div className={cn("relative flex flex-col min-w-0", showReview ? "flex-1 min-w-0 w-0" : "flex-1")}>
         <div
           className={cn(
             "drag-region absolute inset-x-0 top-0 z-20 h-8",
@@ -439,12 +605,31 @@ export function ChatPage() {
             {chatId && (
               <div className="no-drag pb-3">
                 <div className="mx-auto w-full max-w-2xl px-4">
+                  <ChatStatusBar
+                    status={status}
+                    canUndo={canUndo}
+                    isUndoing={isUndoing}
+                    isAccepting={isAccepting}
+                    isReviewing={showReview}
+                    onUndo={handleUndo}
+                    onAcceptAll={handleAcceptAll}
+                    onReview={handleReview}
+                  />
                   <ChatPromptInput
                     input={input}
                     model={model}
                     status={status}
                     hasGatewayKey={hasGatewayKey}
-                    onInputChange={setInput}
+                    selectedContextFiles={selectedContextFiles}
+                    showContextSelector={showContextSelector}
+                    cursorPosition={cursorPosition}
+                    projectCwd={project?.cwd}
+                    onInputChange={handleInputChange}
+                    onFileSelect={handleFileSelect}
+                    onToggleContextFile={handleToggleContextFile}
+                    onCloseContextSelector={() =>
+                      setShowContextSelector(false)
+                    }
                     onSetModel={setModel}
                     onSubmit={(text) => {
                       const isFirstMessage =
@@ -452,6 +637,7 @@ export function ChatPage() {
 
                       sendMessage({ text });
                       setInput("");
+                      setSelectedContextFiles([]);
 
                       if (
                         isFirstMessage &&
@@ -468,6 +654,9 @@ export function ChatPage() {
                       }
                     }}
                     onStop={stop}
+                    onToggleContextSelector={() =>
+                      setShowContextSelector((prev) => !prev)
+                    }
                     onOpenApiKeyDialog={() => setShowApiKeyDialog(true)}
                   />
                 </div>
@@ -499,6 +688,15 @@ export function ChatPage() {
           )}
         </div>
       </div>
+
+      {showReview && (
+        <div className="w-[480px] min-w-[380px] border-l border-border/40">
+          <DiffReviewPanel
+            messages={messages}
+            onClose={() => setShowReview(false)}
+          />
+        </div>
+      )}
 
       <ApiKeyDialog
         open={showApiKeyDialog}

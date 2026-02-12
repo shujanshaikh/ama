@@ -1,4 +1,4 @@
-import { TRPC_URL } from "./constants";
+import { TRPC_URL, API_URL } from "./constants";
 
 // Simple fetch-based API helpers. Avoids tRPC client type coupling with the server.
 // tRPC is served by the web app at /api/trpc, not the API server.
@@ -109,5 +109,26 @@ export const api = {
     });
     const data = await res.json();
     return data?.result?.data as any;
+  },
+
+  async getLatestSnapshot(chatId: string) {
+    const res = await fetch(
+      `${TRPC_URL}/api/trpc/chat.getLatestSnapshot?input=${encodeURIComponent(JSON.stringify({ chatId }))}`,
+      { credentials: "include" },
+    );
+    const data = await res.json();
+    return data?.result?.data as
+      | { projectId: string; hash: string }
+      | null
+      | undefined;
+  },
+
+  async undo(chatId: string, deleteOnly?: boolean) {
+    const res = await fetch(`${API_URL}/api/v1/undo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatId, deleteOnly: deleteOnly ?? false }),
+    });
+    return res.json() as Promise<{ success: boolean; error?: string }>;
   },
 };
