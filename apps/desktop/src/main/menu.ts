@@ -1,19 +1,31 @@
 import { app, Menu, type BrowserWindow } from "electron";
 
 export function setupMenu(getWindow: () => BrowserWindow | null): void {
+  const isMac = process.platform === "darwin";
+
   const template: Electron.MenuItemConstructorOptions[] = [
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: "about" as const },
+              { type: "separator" as const },
+              { role: "services" as const },
+              { type: "separator" as const },
+              { role: "hide" as const },
+              { role: "hideOthers" as const },
+              { role: "unhide" as const },
+              { type: "separator" as const },
+              { role: "quit" as const },
+            ],
+          },
+        ]
+      : []),
     {
-      label: app.name,
+      label: "File",
       submenu: [
-        { role: "about" },
-        { type: "separator" },
-        { role: "services" },
-        { type: "separator" },
-        { role: "hide" },
-        { role: "hideOthers" },
-        { role: "unhide" },
-        { type: "separator" },
-        { role: "quit" },
+        ...(isMac ? [{ role: "close" as const }] : [{ role: "quit" as const }]),
       ],
     },
     {
@@ -61,9 +73,9 @@ export function setupMenu(getWindow: () => BrowserWindow | null): void {
       label: "Window",
       submenu: [
         { role: "minimize" },
-        { role: "zoom" },
+        ...(isMac ? [{ role: "zoom" as const }] : []),
         { type: "separator" },
-        { role: "front" },
+        ...(isMac ? [{ role: "front" as const }] : []),
       ],
     },
   ];

@@ -18,6 +18,8 @@ let mainWindow: BrowserWindow | null = null;
 function createWindow(): void {
   const state = getWindowState();
 
+  const isMac = process.platform === "darwin";
+
   mainWindow = new BrowserWindow({
     width: state.width,
     height: state.height,
@@ -26,8 +28,8 @@ function createWindow(): void {
     minWidth: 800,
     minHeight: 600,
     show: false,
-    titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 16, y: 16 },
+    titleBarStyle: isMac ? "hiddenInset" : "hidden",
+    ...(isMac ? { trafficLightPosition: { x: 16, y: 16 } } : {}),
     backgroundColor: "#09090b",
     webPreferences: {
       preload: path.resolve(__dirname, "preload.js"),

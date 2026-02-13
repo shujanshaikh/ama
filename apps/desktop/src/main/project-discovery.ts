@@ -19,15 +19,10 @@ function tryParseJSON(filePath: string): any {
 
 function scanVSCodeLike(ide: "vscode" | "cursor"): DiscoveredProject[] {
   const appName = ide === "vscode" ? "Code" : "Cursor";
-  const storagePath = join(
-    homedir(),
-    "Library",
-    "Application Support",
-    appName,
-    "User",
-    "globalStorage",
-    "storage.json",
-  );
+  const storagePath =
+    process.platform === "linux"
+      ? join(homedir(), ".config", appName, "User", "globalStorage", "storage.json")
+      : join(homedir(), "Library", "Application Support", appName, "User", "globalStorage", "storage.json");
 
   const data = tryParseJSON(storagePath);
   if (!data) return [];
@@ -55,7 +50,10 @@ function scanVSCodeLike(ide: "vscode" | "cursor"): DiscoveredProject[] {
 }
 
 function scanWebStorm(): DiscoveredProject[] {
-  const jetbrainsDir = join(homedir(), "Library", "Application Support", "JetBrains");
+  const jetbrainsDir =
+    process.platform === "linux"
+      ? join(homedir(), ".config", "JetBrains")
+      : join(homedir(), "Library", "Application Support", "JetBrains");
   const projects: DiscoveredProject[] = [];
 
   try {

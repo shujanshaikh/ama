@@ -28,6 +28,26 @@ const config: ForgeConfig = {
       name: "@electron-forge/maker-zip",
       platforms: ["darwin"],
     },
+    {
+      name: "@electron-forge/maker-deb",
+      config: {
+        options: {
+          name: "ama",
+          productName: "AMA",
+          icon: "./assets/icon.png",
+        },
+      },
+    },
+    {
+      name: "@electron-forge/maker-rpm",
+      config: {
+        options: {
+          name: "ama",
+          productName: "AMA",
+          icon: "./assets/icon.png",
+        },
+      },
+    },
   ],
   plugins: [
     new VitePlugin({
