@@ -1,5 +1,4 @@
 import { motion } from "motion/react";
-import { Badge } from "@/components/ui/badge";
 import {
   CheckCircle2,
   XCircle,
@@ -8,8 +7,6 @@ import {
   Layers,
   ChevronRight,
 } from "lucide-react";
-import { PierreDiff } from "./pierre-diff";
-import type { FileContents } from "@pierre/diffs/react";
 import { getFileIcon } from "./file-icons";
 import { MarkdownEditor } from "./markdown-editor";
 import {
@@ -17,7 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { memo, useMemo, useState } from "react";
+import { useState } from "react";
 
 type ToolPart = {
   type: string;
@@ -124,26 +121,21 @@ export const ToolRenderer = ({ part }: { part: ToolPart }) => {
         );
       }
 
-      const oldString: FileContents = {
-        contents: output?.old_string || "",
-        name: fileName,
-      };
-      const newString: FileContents = {
-        contents: output?.new_string || "",
-        name: fileName,
-      };
+      const stats =
+        output?.linesAdded !== undefined || output?.linesRemoved !== undefined
+          ? `(+${output?.linesAdded ?? 0} -${output?.linesRemoved ?? 0})`
+          : undefined;
 
       return (
-        <div className="mb-1">
-          <DiffResult
-            toolCallId={toolCallId!}
-            label={output?.isNewFile ? "Created" : "Edited"}
-            fileName={fileName}
-            oldString={oldString.contents}
-            newString={newString.contents}
-            linesAdded={output?.linesAdded}
-            linesRemoved={output?.linesRemoved}
-          />
+        <div key={toolCallId} className="mb-1 py-0.5">
+          <span className="text-sm flex items-center gap-2">
+            {output?.isNewFile ? "Created" : "Edited"}{" "}
+            <span className="text-foreground/50">{fileName}</span>{" "}
+            {getFileIcon(fileName)}
+            {stats && (
+              <span className="text-muted-foreground/60 text-xs">{stats}</span>
+            )}
+          </span>
         </div>
       );
     }
@@ -328,24 +320,22 @@ export const ToolRenderer = ({ part }: { part: ToolPart }) => {
         | {
             linesAdded?: number;
             linesRemoved?: number;
-            old_string?: string;
-            new_string?: string;
           }
         | undefined;
-      const oldString = output?.old_string || inputOldString;
-      const newString = output?.new_string || inputNewString;
+      const stats =
+        output?.linesAdded !== undefined || output?.linesRemoved !== undefined
+          ? `(+${output?.linesAdded ?? 0} -${output?.linesRemoved ?? 0})`
+          : undefined;
 
       return (
-        <div key={toolCallId} className="mb-1">
-          <DiffResult
-            toolCallId={toolCallId!}
-            label="Replaced"
-            fileName={fileName}
-            oldString={oldString as string}
-            newString={newString as string}
-            linesAdded={output?.linesAdded}
-            linesRemoved={output?.linesRemoved}
-          />
+        <div key={toolCallId} className="mb-1 py-0.5">
+          <span className="text-sm flex items-center gap-2">
+            Replaced <span className="text-foreground/50">{fileName}</span>{" "}
+            {getFileIcon(fileName)}
+            {stats && (
+              <span className="text-muted-foreground/60 text-xs">{stats}</span>
+            )}
+          </span>
         </div>
       );
     }
@@ -376,10 +366,6 @@ export const ToolRenderer = ({ part }: { part: ToolPart }) => {
       const output = part.output as
         | {
             success?: boolean;
-            message?: string;
-            error?: string;
-            stdout?: string;
-            stderr?: string;
             exitCode?: number;
           }
         | undefined;
@@ -389,65 +375,18 @@ export const ToolRenderer = ({ part }: { part: ToolPart }) => {
 
       return (
         <div key={toolCallId} className="mb-1 py-0.5">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Terminal className="size-4 text-muted-foreground/70" />
-              <span className="text-sm">
-                Ran{" "}
-                <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">
-                  {command ?? ""}
-                </span>
+          <div className="flex items-center gap-2">
+            <Terminal className="size-4 text-muted-foreground/70" />
+            <span className="text-sm">
+              Ran{" "}
+              <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">
+                {command ?? ""}
               </span>
-              <Badge
-                variant={isSuccess ? "default" : "destructive"}
-                className="gap-1 text-xs"
-              >
-                {isSuccess ? (
-                  <>
-                    <CheckCircle2 className="size-3" />
-                    Success
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="size-3" />
-                    Failed
-                  </>
-                )}
-              </Badge>
-              {output?.exitCode !== undefined && output.exitCode !== 0 && (
-                <span className="text-xs text-muted-foreground/60">
-                  Exit code: {output.exitCode}
-                </span>
-              )}
-            </div>
-            {(output?.stdout || output?.stderr || output?.message) && (
-              <div className="ml-6 space-y-1">
-                {output?.message && (
-                  <div className="text-xs text-muted-foreground/70">
-                    {output.message}
-                  </div>
-                )}
-                {output?.stdout && (
-                  <div className="text-xs font-mono bg-muted/30 px-2 py-1 rounded border border-border/50">
-                    <div className="text-muted-foreground/60 text-[10px] mb-0.5">
-                      STDOUT:
-                    </div>
-                    <div className="text-foreground/80 whitespace-pre-wrap wrap-break-word">
-                      {output.stdout}
-                    </div>
-                  </div>
-                )}
-                {output?.stderr && (
-                  <div className="text-xs font-mono bg-destructive/10 px-2 py-1 rounded border border-destructive/20">
-                    <div className="text-destructive/70 text-[10px] mb-0.5">
-                      STDERR:
-                    </div>
-                    <div className="text-destructive/90 whitespace-pre-wrap wrap-break-word">
-                      {output.stderr}
-                    </div>
-                  </div>
-                )}
-              </div>
+            </span>
+            {isSuccess ? (
+              <CheckCircle2 className="size-3.5 text-emerald-500" />
+            ) : (
+              <XCircle className="size-3.5 text-destructive" />
             )}
           </div>
         </div>
@@ -735,80 +674,6 @@ export const ToolRenderer = ({ part }: { part: ToolPart }) => {
 
   return null;
 };
-
-const DiffResult = memo(function DiffResult({
-  toolCallId,
-  label,
-  fileName,
-  oldString,
-  newString,
-  linesAdded,
-  linesRemoved,
-}: {
-  toolCallId: string;
-  label: string;
-  fileName: string;
-  oldString: string;
-  newString: string;
-  linesAdded?: number;
-  linesRemoved?: number;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const oldFile = useMemo<FileContents>(
-    () => ({ contents: oldString || "", name: fileName }),
-    [oldString, fileName]
-  );
-  const newFile = useMemo<FileContents>(
-    () => ({ contents: newString || "", name: fileName }),
-    [newString, fileName]
-  );
-
-  const hasChanges = (oldString || "") !== (newString || "");
-  const stats =
-    linesAdded !== undefined || linesRemoved !== undefined
-      ? `(+${linesAdded ?? 0} -${linesRemoved ?? 0})`
-      : undefined;
-
-  if (!hasChanges) {
-    return (
-      <div key={toolCallId} className="py-0.5">
-        <span className="text-sm flex items-center gap-2">
-          {label} <span className="text-foreground/50">{fileName}</span>{" "}
-          {getFileIcon(fileName)}
-          <span className="text-muted-foreground/60 text-xs">No changes</span>
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div key={toolCallId} className="py-0.5">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group">
-          <ChevronRight
-            className={`size-3 text-muted-foreground/50 transition-transform ${isOpen ? "rotate-90" : ""}`}
-          />
-          <span className="text-sm flex items-center gap-2">
-            {label} <span className="text-foreground/50">{fileName}</span>{" "}
-            {getFileIcon(fileName)}
-            {stats && (
-              <span className="text-muted-foreground/60 text-xs">{stats}</span>
-            )}
-            <span className="text-muted-foreground/50 text-xs">
-              {isOpen ? "Hide diff" : "Show diff"}
-            </span>
-          </span>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="ml-4 mt-1">
-            <PierreDiff oldFile={oldFile} newFile={newFile} />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-    </div>
-  );
-});
 
 const BatchToolResult = ({
   toolCallId,

@@ -479,7 +479,7 @@ export function ChatPage() {
                   </p>
                 </div>
               ) : (
-                <div className="mx-auto max-w-3xl px-4 pt-10 pb-6">
+                <div className="mx-auto max-w-2xl px-4 pt-10 pb-6">
                   {messages.map((message) => {
                     const isLastMessage =
                       message.id === messages[messages.length - 1]?.id;

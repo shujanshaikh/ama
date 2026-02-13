@@ -18,10 +18,8 @@ export type MessageProps = HTMLAttributes<HTMLDivElement> & {
 export const Message = ({ className, from, ...props }: MessageProps) => (
     <div
         className={cn(
-            "group flex w-full flex-col gap-2",
-            from === "user"
-                ? "is-user ml-auto max-w-[70%] justify-end"
-                : "is-assistant max-w-full",
+            "group flex w-full flex-col",
+            from === "user" ? "is-user items-end" : "is-assistant",
             className
         )}
         {...props}
@@ -37,9 +35,9 @@ export const MessageContent = ({
 }: MessageContentProps) => (
     <div
         className={cn(
-            "mt-3 mb-1 flex w-full max-w-full min-w-0 flex-col gap-2 overflow-hidden text-sm",
-            "group-[.is-user]:ml-auto group-[.is-user]:w-fit group-[.is-user]:rounded-2xl group-[.is-user]:rounded-br-md group-[.is-user]:bg-secondary/60 group-[.is-user]:border group-[.is-user]:border-border/40 group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground/90",
-            "group-[.is-assistant]:text-foreground",
+            "mt-3 mb-1 flex min-w-0 flex-col gap-2 overflow-hidden text-sm",
+            "group-[.is-user]:w-full group-[.is-user]:max-w-full group-[.is-user]:rounded-2xl group-[.is-user]:bg-secondary/50 group-[.is-user]:px-4 group-[.is-user]:py-2.5 group-[.is-user]:text-foreground/90",
+            "group-[.is-assistant]:w-full group-[.is-assistant]:max-w-full group-[.is-assistant]:text-foreground",
             className
         )}
         {...props}

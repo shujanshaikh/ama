@@ -113,7 +113,7 @@ export function SidePanel({
   if (collapsed) return null;
 
   return (
-    <div className="flex h-full w-60 flex-col border-r border-border bg-background">
+    <div className="flex h-full w-80 flex-col border-r border-border bg-background">
       {/* Header with drag region */}
       <div className="flex flex-col p-4 pb-0">
         <div className="drag-region flex items-center justify-between mb-5">
@@ -143,27 +143,25 @@ export function SidePanel({
           </span>
         </div>
 
-        {/* Search + New Chat */}
-        <div className="no-drag flex items-center gap-2 mb-4">
-          <div className="relative flex-1">
-            <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 opacity-40" />
-            <Input
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-2.5 text-[13px] placeholder:text-foreground/25 focus:border-ring/50 transition-colors"
-            />
-          </div>
-          <Button
-            variant="outline"
-            onClick={onNewChat}
-            disabled={isCreatingChat}
-            size="sm"
-            className="h-8 shrink-0 rounded-lg px-3"
-          >
-            {isCreatingChat ? "..." : "New"}
-          </Button>
+        {/* Search */}
+        <div className="no-drag relative mb-3">
+          <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 opacity-40" />
+          <Input
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-2.5 text-[13px] placeholder:text-foreground/25 focus:border-ring/50 transition-colors"
+          />
         </div>
+
+        {/* New Chat */}
+        <Button
+          onClick={onNewChat}
+          disabled={isCreatingChat}
+          className="no-drag mb-4 h-8 w-full rounded-lg bg-white text-black hover:bg-white/90"
+        >
+          {isCreatingChat ? "Creating..." : "New Chat"}
+        </Button>
       </div>
 
       {/* Chat list */}
