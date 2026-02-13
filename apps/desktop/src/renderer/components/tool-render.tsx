@@ -1,7 +1,5 @@
 import { motion } from "motion/react";
 import {
-  CheckCircle2,
-  XCircle,
   Terminal,
   Search,
   Layers,
@@ -347,14 +345,11 @@ export const ToolRenderer = ({ part }: { part: ToolPart }) => {
 
     if (state === "input-streaming") {
       return (
-        <div key={toolCallId} className="mb-1 py-0.5">
-          <div className="flex items-center gap-2">
-            <Terminal className="size-4 text-muted-foreground/60" />
-            <span className="text-sm">
-              Running{" "}
-              <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">
-                {command ?? ""}
-              </span>
+        <div key={toolCallId} className="mb-1.5">
+          <div className="flex items-center gap-2 rounded-lg bg-muted/40 border border-border/50 px-3 py-2">
+            <Terminal className="size-3.5 text-muted-foreground/60 shrink-0" />
+            <span className="font-mono text-xs text-foreground/70 truncate">
+              {command ?? ""}
             </span>
             <StreamingDots />
           </div>
@@ -363,31 +358,13 @@ export const ToolRenderer = ({ part }: { part: ToolPart }) => {
     }
 
     if (state === "output-available") {
-      const output = part.output as
-        | {
-            success?: boolean;
-            exitCode?: number;
-          }
-        | undefined;
-      const isSuccess =
-        output?.success !== false &&
-        (!output?.exitCode || output.exitCode === 0);
-
       return (
-        <div key={toolCallId} className="mb-1 py-0.5">
-          <div className="flex items-center gap-2">
-            <Terminal className="size-4 text-muted-foreground/70" />
-            <span className="text-sm">
-              Ran{" "}
-              <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">
-                {command ?? ""}
-              </span>
+        <div key={toolCallId} className="mb-1.5">
+          <div className="flex items-center gap-2 rounded-lg bg-muted/40 border border-border/50 px-3 py-2">
+            <Terminal className="size-3.5 text-muted-foreground/60 shrink-0" />
+            <span className="font-mono text-xs text-foreground/70 truncate">
+              {command ?? ""}
             </span>
-            {isSuccess ? (
-              <CheckCircle2 className="size-3.5 text-emerald-500" />
-            ) : (
-              <XCircle className="size-3.5 text-destructive" />
-            )}
           </div>
         </div>
       );
