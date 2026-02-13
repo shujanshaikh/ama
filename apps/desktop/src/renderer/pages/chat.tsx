@@ -59,6 +59,7 @@ export function ChatPage() {
   const [hasOpenedEditor, setHasOpenedEditor] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
+  const [threadTitle, setThreadTitle] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const modelRef = useRef(model);
   modelRef.current = model;
@@ -84,6 +85,33 @@ export function ChatPage() {
       .then((p) => p && setProject(p))
       .catch(console.error);
   }, [projectId]);
+
+  useEffect(() => {
+    if (!projectId || !chatId) {
+      setThreadTitle(null);
+      return;
+    }
+
+    let cancelled = false;
+    api
+      .getChats(projectId)
+      .then((chatList) => {
+        if (cancelled) return;
+        const activeChat = Array.isArray(chatList)
+          ? chatList.find((chat: any) => chat?.id === chatId)
+          : null;
+        const title =
+          typeof activeChat?.title === "string" ? activeChat.title.trim() : "";
+        setThreadTitle(title || null);
+      })
+      .catch(() => {
+        if (!cancelled) setThreadTitle(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, chatId, sidebarRefreshKey]);
 
   // Check gateway key
   useEffect(() => {
@@ -401,6 +429,29 @@ export function ChatPage() {
     setTimeout(() => setCopiedId(null), 2000);
   }, []);
 
+  const conversationLabel = useMemo(() => {
+    if (threadTitle) return threadTitle;
+
+    const firstUserMessage = messages.find((message) => message.role === "user");
+    const firstTextPart = firstUserMessage?.parts?.find(
+      (part: any) =>
+        part?.type === "text" &&
+        typeof part.text === "string" &&
+        part.text.trim().length > 0,
+    );
+    const firstText = (firstTextPart as { text?: string } | undefined)?.text?.trim();
+
+    if (firstText) {
+      return firstText.length > 48
+        ? `${firstText.slice(0, 48).trimEnd()}...`
+        : firstText;
+    }
+
+    if (isLoadingMessages) return "Loading conversation...";
+    if (!chatId) return "Start a new chat";
+    return "Waiting for your first message";
+  }, [threadTitle, messages, isLoadingMessages, chatId]);
+
   return (
     <div className="flex h-screen bg-background">
       <SidePanel
@@ -415,30 +466,53 @@ export function ChatPage() {
       <div className={cn("relative flex flex-col min-w-0", showReview ? "flex-1 min-w-0 w-0" : "flex-1")}>
         <div
           className={cn(
-            "drag-region absolute inset-x-0 top-0 z-20 h-8",
+            "drag-region absolute inset-x-0 top-0 z-20 h-16 px-4 pt-3 transition-opacity duration-200",
             showEditor && "pointer-events-none opacity-0",
           )}
         >
-          {sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(false)}
-              className="no-drag absolute left-3 top-1.5 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          <div className="mx-auto flex h-10 w-full max-w-5xl items-center gap-2 rounded-2xl border border-border/40 bg-background/65 px-2.5 backdrop-blur-sm">
+            {sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                className="no-drag inline-flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                title="Open sidebar"
+              >
+                <PanelLeftIcon className="size-3.5" />
+              </button>
+            )}
+
+            <div className="flex min-w-0 flex-1 items-center rounded-full px-3 py-1">
+              <span className="truncate text-xs font-medium text-foreground/85">
+                {conversationLabel}
+              </span>
+            </div>
+
+            {!showEditor && (
+              <Button
+                onClick={() => setShowEditor((p) => !p)}
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "no-drag h-7 rounded-full border-border/45 bg-background/40 px-4 text-xs font-medium text-foreground/85",
+                  "hover:bg-accent/60 hover:text-foreground",
+                )}
+              >
+                <CodeIcon className="size-3.5" />
+                <span>Editor</span>
+              </Button>
+            )}
+
+            <Button
+              onClick={handleNewChat}
+              variant="outline"
+              size="icon"
+              disabled={isCreatingChat}
+              className="no-drag size-7 rounded-full border-border/45 bg-background/40 text-foreground/85 hover:bg-accent/60 hover:text-foreground"
+              title="New chat"
             >
-              <PanelLeftIcon className="size-4" />
-            </button>
-          )}
-          {!showEditor && (
-            <button
-              onClick={() => setShowEditor((p) => !p)}
-              className={cn(
-                "no-drag absolute right-3 top-1.5 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                "text-muted-foreground hover:text-foreground hover:bg-muted",
-              )}
-            >
-              <CodeIcon className="size-3.5" />
-              <span>Editor</span>
-            </button>
-          )}
+              <PlusIcon className="size-3.5" />
+            </Button>
+          </div>
         </div>
 
         <div className="relative flex-1 min-h-0">
@@ -479,7 +553,7 @@ export function ChatPage() {
                   </p>
                 </div>
               ) : (
-                <div className="mx-auto max-w-2xl px-4 pt-10 pb-6">
+                <div className="mx-auto max-w-2xl px-4 pt-16 pb-6">
                   {messages.map((message) => {
                     const isLastMessage =
                       message.id === messages[messages.length - 1]?.id;
