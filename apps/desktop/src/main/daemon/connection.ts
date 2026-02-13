@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { getWsUrl } from "../constants";
-import { getAccessToken, refreshAccessToken } from "../auth";
+import { getAccessToken, refreshAccessToken } from "../auth/index";
 import { toolExecutors } from "./tool-executor";
 import { rpcHandlers } from "./rpc-handlers";
 

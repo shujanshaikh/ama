@@ -1,26 +1,10 @@
 import { ipcMain } from "electron";
-import { signIn, signOut, getSession } from "./auth";
 import { discoverProjects, selectFolder } from "./project-discovery";
 import { getContext } from "./daemon/get-files";
 import { getDaemonStatus } from "./daemon/connection";
 import { isCodeServerRunning } from "./daemon/code-server";
 
 export function registerIpcHandlers(): void {
-  // Auth
-  ipcMain.handle("auth:sign-in", async () => {
-    await signIn();
-    return { success: true };
-  });
-
-  ipcMain.handle("auth:sign-out", async () => {
-    await signOut();
-    return { success: true };
-  });
-
-  ipcMain.handle("auth:get-session", () => {
-    return getSession();
-  });
-
   // Projects
   ipcMain.handle("projects:discover", async () => {
     return discoverProjects();

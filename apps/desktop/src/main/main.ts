@@ -6,7 +6,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { getWindowState, trackWindowState } from "./window-state";
 import { setupMenu } from "./menu";
 import { registerIpcHandlers } from "./ipc-handlers";
-import { setAuthChangeCallback, getSession, scheduleTokenRefresh } from "./auth";
+import {
+  registerProtocol,
+  extractCallbackCode,
+  setupAuthIpcHandlers,
+  notifyAuthChange,
+  handleCallback,
+  getUser,
+} from "./auth";
 import { connectDaemon, disconnectDaemon } from "./daemon/connection";
 import { ensureCodeServerRunning, stopCodeServer } from "./daemon/code-server";
 
@@ -14,13 +21,73 @@ declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
 let mainWindow: BrowserWindow | null = null;
+let pendingDeepLinkUrl: string | null = null;
 
-function createWindow(): void {
+const APP_PROTOCOL_PREFIX = "ama://";
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+
+// Register protocol before app is ready
+registerProtocol();
+
+// Must register open-url at module level — macOS fires it before app.whenReady()
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  if (url.startsWith(APP_PROTOCOL_PREFIX)) {
+    if (mainWindow) {
+      void processDeepLink(url);
+    } else {
+      pendingDeepLinkUrl = url;
+    }
+  }
+});
+
+// Windows/Linux: second instance passes URL via argv
+app.on("second-instance", (_event, argv) => {
+  const deepLinkUrl = argv.find((arg) => arg.startsWith(APP_PROTOCOL_PREFIX));
+  if (deepLinkUrl) {
+    if (mainWindow) {
+      void processDeepLink(deepLinkUrl);
+    } else {
+      pendingDeepLinkUrl = deepLinkUrl;
+    }
+  }
+
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
+async function processDeepLink(url: string): Promise<void> {
+  const code = extractCallbackCode(url);
+  if (!code) {
+    console.warn("[auth] Ignored deep link:", url);
+    return;
+  }
+
+  try {
+    const user = await handleCallback(code);
+    if (mainWindow) {
+      notifyAuthChange(mainWindow, user);
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+    connectDaemon();
+    ensureCodeServerRunning().catch(console.error);
+  } catch (error) {
+    console.error("[auth] Callback failed:", error);
+  }
+}
+
+function createWindow(): BrowserWindow {
   const state = getWindowState();
-
   const isMac = process.platform === "darwin";
 
-  mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     width: state.width,
     height: state.height,
     x: state.x,
@@ -40,59 +107,63 @@ function createWindow(): void {
   });
 
   if (state.isMaximized) {
-    mainWindow.maximize();
+    win.maximize();
   }
 
-  trackWindowState(mainWindow);
+  trackWindowState(win);
 
-  mainWindow.once("ready-to-show", () => {
-    mainWindow?.show();
+  win.once("ready-to-show", () => {
+    win.show();
   });
 
-  // Load renderer
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(
+    win.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
 
-  mainWindow.on("closed", () => {
+  win.on("closed", () => {
     mainWindow = null;
   });
+
+  return win;
 }
 
-// Notify renderer of auth changes and reconnect daemon
-setAuthChangeCallback((user) => {
-  if (mainWindow) {
-    mainWindow.webContents.send("auth:state-changed", user ? getSession() : null);
-  }
-  if (user) {
-    connectDaemon();
-    ensureCodeServerRunning().catch(console.error);
-  } else {
-    disconnectDaemon();
-    stopCodeServer();
-  }
-});
+app.whenReady().then(async () => {
+  mainWindow = createWindow();
 
-app.whenReady().then(() => {
+  setupAuthIpcHandlers(mainWindow);
   registerIpcHandlers();
   setupMenu(() => mainWindow);
-  createWindow();
 
-  // Connect daemon and start code-server if already authenticated
-  const session = getSession();
-  if (session) {
-    scheduleTokenRefresh();
-    connectDaemon();
-    ensureCodeServerRunning().catch(console.error);
+  // Process any deep link that arrived before the window was created
+  if (pendingDeepLinkUrl) {
+    const url = pendingDeepLinkUrl;
+    pendingDeepLinkUrl = null;
+    void processDeepLink(url);
+  }
+
+  // Restore session if already authenticated
+  try {
+    const user = await getUser();
+    if (user) {
+      mainWindow.webContents.once("did-finish-load", () => {
+        if (mainWindow) {
+          notifyAuthChange(mainWindow, user);
+        }
+      });
+      connectDaemon();
+      ensureCodeServerRunning().catch(console.error);
+    }
+  } catch (error) {
+    console.error("Failed to get initial auth state:", error);
   }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      mainWindow = createWindow();
     }
   });
 });

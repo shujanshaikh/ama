@@ -5,10 +5,10 @@ interface User {
   email: string;
   firstName: string | null;
   lastName: string | null;
-}
-
-interface AuthSession {
-  user: User;
+  emailVerified: boolean;
+  profilePictureUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface AuthState {
@@ -30,18 +30,17 @@ export function useAuth(): AuthState {
       return;
     }
 
-    // Get initial session
-    api.auth.getSession().then((session: AuthSession | null) => {
-      setUser(session?.user ?? null);
+    // Get initial user (auto-refreshes expired tokens)
+    api.auth.getUser().then((u: User | null) => {
+      setUser(u);
       setIsLoading(false);
     });
 
-    // Listen for auth state changes
-    const cleanup = api.auth.onAuthStateChange(
-      (_event: any, session: AuthSession | null) => {
-        setUser(session?.user ?? null);
-      },
-    );
+    // Subscribe to auth state changes pushed from main process
+    const cleanup = api.auth.onAuthChange(({ user: u }: { user: User | null }) => {
+      setUser(u);
+      setIsLoading(false);
+    });
 
     return cleanup;
   }, []);

@@ -27,10 +27,12 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@shikijs/engine-javascript": "^3.20.0",
     "@shikijs/engine-oniguruma": "^3.20.0",
+    "@workos-inc/node": "^8.3.1",
     "ai": "^6.0.40",
     "amai": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "diff": "^8.0.2",
     "electron-store": "^10.0.0",
     "fast-glob": "^3.3.3",
     "lucide-react": "^0.560.0",
@@ -45,8 +47,7 @@
     "tailwind-merge": "^3.3.1",
     "throttleit": "^2.1.0",
     "ws": "^8.18.0",
-    "zod": "^4.1.13",
-    "diff": "^8.0.2"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.6.0",

@@ -1,31 +1,7 @@
 import { useEffect } from "react";
 import { AppRouter } from "./router";
 
-// Declare the electronAPI type
-declare global {
-  interface Window {
-    electronAPI: {
-      auth: {
-        signIn: () => Promise<{ success: boolean }>;
-        signOut: () => Promise<{ success: boolean }>;
-        getSession: () => Promise<any>;
-        onAuthStateChange: (cb: (event: any, data: any) => void) => () => void;
-      };
-      projects: {
-        discover: () => Promise<
-          Array<{ name: string; path: string; ide: string }>
-        >;
-        selectFolder: () => Promise<string | null>;
-        getContext: (cwd: string) => Promise<string[]>;
-      };
-      daemon: {
-        getStatus: () => Promise<{ connected: boolean; reconnectAttempts: number }>;
-        onStatusChange: (cb: (event: any, data: any) => void) => () => void;
-      };
-      platform: string;
-    };
-  }
-}
+// ElectronAPI type is declared in electron.d.ts
 
 export function App() {
   // Listen for navigation events from main process (menu shortcuts)

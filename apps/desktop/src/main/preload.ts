@@ -4,10 +4,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   auth: {
     signIn: () => ipcRenderer.invoke("auth:sign-in"),
     signOut: () => ipcRenderer.invoke("auth:sign-out"),
-    getSession: () => ipcRenderer.invoke("auth:get-session"),
-    onAuthStateChange: (cb: (_event: any, data: any) => void) => {
-      ipcRenderer.on("auth:state-changed", cb);
-      return () => ipcRenderer.removeListener("auth:state-changed", cb);
+    getUser: () => ipcRenderer.invoke("auth:get-user"),
+    getAccessToken: () => ipcRenderer.invoke("auth:get-access-token"),
+    onAuthChange: (callback: (data: { user: any }) => void) => {
+      const listener = (_event: any, data: { user: any }) => callback(data);
+      ipcRenderer.on("auth:on-auth-change", listener);
+      return () => ipcRenderer.removeListener("auth:on-auth-change", listener);
     },
   },
   projects: {
