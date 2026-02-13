@@ -14,6 +14,10 @@ import {
   LogOut,
   Monitor,
   Loader2,
+  Download,
+  LayoutGrid,
+  List,
+  MessageSquare,
 } from "lucide-react";
 
 interface Project {
@@ -67,17 +71,38 @@ export function DashboardPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectChats, setProjectChats] = useState<
+    Record<string, { title: string; createdAt: string }[]>
+  >({});
   const [discoveredProjects, setDiscoveredProjects] = useState<
     DiscoveredProject[]
   >([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const fetchProjects = useCallback(async () => {
     try {
       const result = await api.getProjects();
-      setProjects(Array.isArray(result) ? result : []);
+      const projectList = Array.isArray(result) ? result : [];
+      setProjects(projectList);
+
+      const chatResults: Record<string, { title: string; createdAt: string }[]> = {};
+      await Promise.all(
+        projectList.map(async (p: Project) => {
+          try {
+            const chats = await api.getChats(p.id);
+            if (chats?.length > 0) {
+              chatResults[p.id] = chats.map((c: any) => ({
+                title: c.title || c.name || "Untitled",
+                createdAt: c.createdAt,
+              }));
+            }
+          } catch {}
+        }),
+      );
+      setProjectChats(chatResults);
     } catch (error) {
       console.error("Failed to fetch projects:", error);
     } finally {
@@ -145,9 +170,10 @@ export function DashboardPage() {
     }
   };
 
-  const filteredProjects = projects.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.cwd.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredProjects = projects.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.cwd.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredDiscovered = discoveredProjects.filter(
@@ -156,10 +182,21 @@ export function DashboardPage() {
       !projects.some((p) => p.cwd === dp.path),
   );
 
+  function timeAgo(dateStr: string) {
+    const now = Date.now();
+    const then = new Date(dateStr).getTime();
+    const diff = Math.floor((now - then) / 1000);
+    if (diff < 60) return "just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+  }
+
   return (
     <div className="relative flex h-screen w-full flex-col bg-background text-foreground">
       <div className="drag-region h-8 flex-shrink-0" />
 
+      {/* Top bar */}
       <div className="no-drag absolute left-6 top-8 flex items-center gap-2">
         <AmaLogo size={24} />
         <span className="text-xl font-bold tracking-tight text-foreground">
@@ -181,153 +218,248 @@ export function DashboardPage() {
         </Button>
       </div>
 
-      <div className="flex flex-1 flex-col justify-start px-6 pt-12 pb-2">
-        <div className="mx-auto w-full max-w-2xl">
-          <div className="mb-8">
-            <h1 className="mb-4 text-lg font-semibold tracking-tight text-foreground">
-              Welcome back{user?.firstName ? `, ${user.firstName}` : ""}
-            </h1>
+      {/* Main content */}
+      <div className="no-drag flex flex-1 flex-col overflow-y-auto pt-12 pb-12">
+        <div className="mx-auto w-full max-w-[600px] px-6">
+          {/* Welcome */}
+          <h1 className="mb-3 text-[13px] font-semibold tracking-tight text-foreground">
+            Welcome back{user?.firstName ? `, ${user.firstName}` : ""}
+          </h1>
 
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleOpenFolder}
-                disabled={isCreating}
-                className="bg-background shadow-sm transition-none hover:bg-secondary"
-              >
-                {isCreating ? (
-                  <Loader2 className="size-3 animate-spin" />
-                ) : (
-                  <FolderOpen className="size-3" />
+          {/* Action cards */}
+          <div className="mb-6 flex gap-2.5">
+            <button
+              onClick={handleOpenFolder}
+              disabled={isCreating}
+              className="flex w-36 cursor-pointer flex-col gap-3 rounded-md border border-border/50 bg-card px-3 pb-2.5 pt-3 text-left transition-colors hover:bg-muted/30 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isCreating ? (
+                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+              ) : (
+                <FolderOpen className="size-4 text-muted-foreground" />
+              )}
+              <span className="text-xs font-medium text-foreground">
+                Open folder
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                const el = document.getElementById("discovered-section");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="flex w-36 cursor-pointer flex-col gap-3 rounded-md border border-border/50 bg-card px-3 pb-2.5 pt-3 text-left transition-colors hover:bg-muted/30"
+            >
+              <Download className="size-4 text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">
+                Import from suggested
+              </span>
+            </button>
+          </div>
+
+          {/* Open existing project heading */}
+          <h2 className="mb-2 text-xs font-medium text-foreground/70">
+            Open existing project
+          </h2>
+
+          {/* Search bar + view toggle */}
+          <div className="mb-3 flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground/50" />
+              <input
+                type="text"
+                placeholder="Search projects"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-7 w-full rounded-md border border-border/50 bg-muted/30 pl-7 pr-2 text-[11px] text-foreground placeholder:text-muted-foreground/50 transition-colors focus:border-ring focus:outline-none"
+              />
+            </div>
+            <div className="flex items-center overflow-hidden rounded-md border border-border/50">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={cn(
+                  "flex size-7 items-center justify-center transition-colors",
+                  viewMode === "grid"
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
-                Open Folder
-              </Button>
-              <p className="text-[10px] text-muted-foreground">
-                Connect your local project with ama
-              </p>
+              >
+                <LayoutGrid className="size-3" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "flex size-7 items-center justify-center border-l border-border/50 transition-colors",
+                  viewMode === "list"
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <List className="size-3" />
+              </button>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="no-drag mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-6 pb-20">
-        <hr className="mb-4 border-border" />
-
-        {isLoading ? (
-          <section className="mb-8">
-            <Skeleton className="mb-3 h-4 w-20" />
+          {/* Project cards */}
+          {isLoading ? (
             <div className="grid grid-cols-2 gap-2">
               {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-16 rounded-md" />
+                <Skeleton key={i} className="h-[76px] rounded-md" />
               ))}
             </div>
-          </section>
-        ) : projects.length > 0 ? (
-          <section className="mb-8">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-xs font-medium text-foreground/70">
-                Open existing project
-              </h2>
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-7 w-64 rounded-md border border-border/50 bg-muted/30 pl-7 pr-2 text-xs text-foreground placeholder:text-muted-foreground/60 transition-all focus:border-border focus:outline-none focus:ring-1 focus:ring-ring/50"
-                />
-              </div>
-            </div>
-
-            {filteredProjects.length > 0 ? (
+          ) : filteredProjects.length > 0 ? (
+            viewMode === "grid" ? (
               <div className="grid grid-cols-2 gap-2">
-                {filteredProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="group cursor-pointer rounded-md border border-border/50 p-2 transition-all duration-150 hover:border-border hover:bg-muted/20"
-                    onClick={() => handleProjectClick(project)}
-                  >
-                    <div className="flex items-center gap-2">
+                {filteredProjects.map((project) => {
+                  const chats = projectChats[project.id];
+                  const latestChat = chats?.[0];
+                  return (
+                    <div
+                      key={project.id}
+                      className="group cursor-pointer rounded-md border border-border/50 bg-card p-2.5 transition-colors hover:bg-muted/20"
+                      onClick={() => handleProjectClick(project)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            "flex size-6 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white",
+                            getAvatarColor(project.name),
+                          )}
+                        >
+                          {project.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-xs font-semibold text-foreground">
+                            {project.name}
+                          </h3>
+                          <p className="truncate text-[10px] text-muted-foreground">
+                            {project.cwd.split("/").slice(-2).join("/")}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-2 border-t border-border/30 pt-1.5">
+                        {latestChat ? (
+                          <div className="flex items-center justify-between gap-1.5">
+                            <div className="flex min-w-0 items-center gap-1">
+                              <MessageSquare className="size-2.5 shrink-0 text-muted-foreground/40" />
+                              <span className="truncate text-[10px] text-muted-foreground/70">
+                                {latestChat.title}
+                              </span>
+                            </div>
+                            <span className="shrink-0 text-[10px] text-muted-foreground/40">
+                              {timeAgo(latestChat.createdAt)}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-muted-foreground/40">
+                            No chats yet
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {filteredProjects.map((project) => {
+                  const chats = projectChats[project.id];
+                  const latestChat = chats?.[0];
+                  return (
+                    <div
+                      key={project.id}
+                      className="group flex cursor-pointer items-center gap-2 rounded-md border border-border/50 bg-card px-2.5 py-2 transition-colors hover:bg-muted/20"
+                      onClick={() => handleProjectClick(project)}
+                    >
                       <div
                         className={cn(
-                          "flex size-6 shrink-0 items-center justify-center rounded text-[11px] font-semibold text-white",
+                          "flex size-6 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white",
                           getAvatarColor(project.name),
                         )}
                       >
                         {project.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-medium text-foreground">
+                        <h3 className="truncate text-xs font-semibold text-foreground">
                           {project.name}
                         </h3>
                         <p className="truncate text-[10px] text-muted-foreground">
                           {project.cwd.split("/").slice(-2).join("/")}
                         </p>
                       </div>
+                      <div className="shrink-0 text-right">
+                        {latestChat ? (
+                          <span className="text-[10px] text-muted-foreground/40">
+                            {timeAgo(latestChat.createdAt)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground/40">
+                            No chats yet
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          ) : projects.length > 0 ? (
+            <div className="py-6 text-center">
+              <p className="text-[11px] text-muted-foreground">
+                No projects found matching "{searchQuery}"
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-xs text-muted-foreground">No projects yet</p>
+              <p className="mt-1 text-[10px] text-muted-foreground/60">
+                Open a project folder to get started
+              </p>
+            </div>
+          )}
+
+          {/* Discovered from IDEs */}
+          {filteredDiscovered.length > 0 && (
+            <section id="discovered-section" className="mt-6">
+              <h2 className="mb-2 text-xs font-medium text-foreground/70">
+                Discovered from IDEs
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {filteredDiscovered.map((dp) => (
+                  <div
+                    key={dp.path}
+                    className="group cursor-pointer rounded-md border border-dashed border-border/50 bg-card/60 p-2.5 transition-colors hover:bg-muted/20"
+                    onClick={() =>
+                      !isCreating && handleDiscoveredProjectClick(dp)
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex size-6 shrink-0 items-center justify-center rounded bg-secondary">
+                        <Monitor className="size-3.5 text-muted-foreground" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="truncate text-xs font-medium text-foreground/80">
+                            {dp.name}
+                          </h3>
+                          <Badge
+                            variant="secondary"
+                            className="px-1 py-0 text-[8px]"
+                          >
+                            {IDE_LABELS[dp.ide] || dp.ide}
+                          </Badge>
+                        </div>
+                        <p className="truncate text-[10px] text-muted-foreground/60">
+                          {dp.path}
+                        </p>
+                      </div>
+                      <Plus className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="py-6 text-center">
-                <p className="text-[11px] text-muted-foreground">
-                  No projects found matching "{searchQuery}"
-                </p>
-              </div>
-            )}
-          </section>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-sm text-muted-foreground">No projects yet</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Open a project folder to get started
-            </p>
-          </div>
-        )}
-  
-        {filteredDiscovered.length > 0 && (
-          <section>
-            <h2 className="mb-3 text-xs font-medium text-foreground/70">
-              Discovered from IDEs
-            </h2>
-            <div className="grid grid-cols-2 gap-2">
-              {filteredDiscovered.map((dp) => (
-                <div
-                  key={dp.path}
-                  className="group cursor-pointer rounded-md border border-dashed border-border/50 p-2 transition-all duration-150 hover:border-border hover:bg-muted/20"
-                  onClick={() =>
-                    !isCreating && handleDiscoveredProjectClick(dp)
-                  }
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="flex size-6 shrink-0 items-center justify-center rounded bg-secondary">
-                      <Monitor className="size-3.5 text-muted-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="truncate text-sm font-medium text-foreground/80">
-                          {dp.name}
-                        </h3>
-                        <Badge
-                          variant="secondary"
-                          className="px-1.5 py-0 text-[9px]"
-                        >
-                          {IDE_LABELS[dp.ide] || dp.ide}
-                        </Badge>
-                      </div>
-                      <p className="truncate text-[10px] text-muted-foreground/60">
-                        {dp.path}
-                      </p>
-                    </div>
-                    <Plus className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+            </section>
+          )}
+        </div>
       </div>
     </div>
   );
