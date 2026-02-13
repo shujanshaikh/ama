@@ -257,6 +257,7 @@ export function DashboardPage() {
           </div>
 
           {/* Open existing project heading */}
+          <hr className="mb-5 border-border/50" />
           <h2 className="mb-2 text-xs font-medium text-foreground/70">
             Open existing project
           </h2>
