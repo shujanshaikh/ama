@@ -14,7 +14,6 @@ import {
   LogOut,
   Monitor,
   Loader2,
-  Download,
   LayoutGrid,
   List,
   MessageSquare,
@@ -240,18 +239,6 @@ export function DashboardPage() {
               )}
               <span className="text-xs font-medium text-foreground">
                 Open folder
-              </span>
-            </button>
-            <button
-              onClick={() => {
-                const el = document.getElementById("discovered-section");
-                el?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="flex w-36 cursor-pointer flex-col gap-3 rounded-md border border-border/50 bg-card px-3 pb-2.5 pt-3 text-left transition-colors hover:bg-muted/30"
-            >
-              <Download className="size-4 text-muted-foreground" />
-              <span className="text-xs font-medium text-foreground">
-                Import from suggested
               </span>
             </button>
           </div>
