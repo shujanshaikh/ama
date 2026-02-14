@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, X, FileCode2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PierreDiff } from "@/components/pierre-diff";
 import { getFileIcon } from "@/components/file-icons";
+import { getPathBasename, getPathDirectory } from "@/lib/utils";
 
 interface DiffReviewPanelProps {
   messages: any[];
@@ -11,14 +12,11 @@ interface DiffReviewPanelProps {
 
 const getFileName = (path?: string) => {
   if (!path) return "file";
-  const parts = path.split("/");
-  return parts[parts.length - 1] || path;
+  return getPathBasename(path) || path;
 };
 
 const getFileDirectory = (filePath: string) => {
-  const parts = filePath.split("/");
-  parts.pop();
-  const dir = parts.join("/");
+  const dir = getPathDirectory(filePath);
   return dir.length > 50 ? "..." + dir.slice(-47) : dir;
 };
 

@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { cn } from "@/lib/utils";
+import { cn, getPathBasename } from "@/lib/utils";
 
 interface MarkdownEditorProps {
   fileName?: string;
@@ -39,7 +39,7 @@ export const MarkdownEditor = memo(
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
-    const displayName = fileName?.split("/").pop() || "file.md";
+    const displayName = getPathBasename(fileName) || "file.md";
 
     const ContentView = () =>
       content ? (

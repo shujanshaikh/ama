@@ -1,5 +1,21 @@
 import path from "node:path";
 
+function normalizeForComparison(inputPath: string): string {
+  const normalized = path.normalize(inputPath);
+  return process.platform === "win32" ? normalized.toLowerCase() : normalized;
+}
+
+function isWithinProjectPath(resolvedPath: string, projectCwd: string): boolean {
+  const normalized = normalizeForComparison(resolvedPath);
+  const normalizedCwd = normalizeForComparison(projectCwd);
+  const relative = path.relative(normalizedCwd, normalized);
+
+  return (
+    relative === "" ||
+    (!relative.startsWith("..") && !path.isAbsolute(relative))
+  );
+}
+
 export function validatePath(
   filePath: string,
   projectCwd: string,
@@ -10,10 +26,7 @@ export function validatePath(
 
   try {
     const resolvedPath = path.resolve(projectCwd, filePath);
-    const normalized = path.normalize(resolvedPath);
-    const normalizedCwd = path.normalize(projectCwd);
-
-    if (!normalized.startsWith(normalizedCwd)) {
+    if (!isWithinProjectPath(resolvedPath, projectCwd)) {
       return {
         valid: false,
         error: `ACCESS_DENIED: Path "${filePath}" is outside project directory "${projectCwd}"`,
@@ -39,9 +52,7 @@ export function isPathWithinProject(
 ): boolean {
   try {
     const resolved = path.resolve(projectCwd, filePath);
-    const normalized = path.normalize(resolved);
-    const normalizedCwd = path.normalize(projectCwd);
-    return normalized.startsWith(normalizedCwd);
+    return isWithinProjectPath(resolved, projectCwd);
   } catch {
     return false;
   }

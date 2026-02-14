@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/use-auth";
 import { api } from "../lib/trpc";
-import { cn } from "../lib/utils";
+import { cn, getPathBasename, getPathTail } from "../lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -152,7 +152,7 @@ export function DashboardPage() {
 
     setIsCreating(true);
     try {
-      const name = folderPath.split("/").pop() || "Project";
+      const name = getPathBasename(folderPath) || "Project";
       const existing = projects.find((p) => p.cwd === folderPath);
       if (existing) {
         navigate(`/chat/${existing.id}`);
@@ -195,7 +195,6 @@ export function DashboardPage() {
     <div className="relative flex h-screen w-full flex-col bg-background text-foreground">
       <div className="drag-region h-8 flex-shrink-0" />
 
-      {/* Top bar */}
       <div className="no-drag absolute left-6 top-8 flex items-center gap-2">
         <AmaLogo size={24} />
         <span className="text-xl font-bold tracking-tight text-foreground">
@@ -217,15 +216,12 @@ export function DashboardPage() {
         </Button>
       </div>
 
-      {/* Main content */}
       <div className="no-drag flex flex-1 flex-col overflow-y-auto pt-12 pb-12">
         <div className="mx-auto w-full max-w-[600px] px-6">
-          {/* Welcome */}
           <h1 className="mb-3 text-[13px] font-semibold tracking-tight text-foreground">
             Welcome back{user?.firstName ? `, ${user.firstName}` : ""}
           </h1>
 
-          {/* Action cards */}
           <div className="mb-6 flex gap-2.5">
             <button
               onClick={handleOpenFolder}
@@ -243,13 +239,11 @@ export function DashboardPage() {
             </button>
           </div>
 
-          {/* Open existing project heading */}
           <hr className="mb-5 border-border/50" />
           <h2 className="mb-2 text-xs font-medium text-foreground/70">
             Open existing project
           </h2>
 
-          {/* Search bar + view toggle */}
           <div className="mb-3 flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground/50" />
@@ -287,7 +281,6 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* Project cards */}
           {isLoading ? (
             <div className="grid grid-cols-2 gap-2">
               {[1, 2, 3, 4].map((i) => (
@@ -320,7 +313,7 @@ export function DashboardPage() {
                             {project.name}
                           </h3>
                           <p className="truncate text-[10px] text-muted-foreground">
-                            {project.cwd.split("/").slice(-2).join("/")}
+                            {getPathTail(project.cwd)}
                           </p>
                         </div>
                       </div>
@@ -371,7 +364,7 @@ export function DashboardPage() {
                           {project.name}
                         </h3>
                         <p className="truncate text-[10px] text-muted-foreground">
-                          {project.cwd.split("/").slice(-2).join("/")}
+                          {getPathTail(project.cwd)}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
@@ -405,7 +398,6 @@ export function DashboardPage() {
             </div>
           )}
 
-          {/* Discovered from IDEs */}
           {filteredDiscovered.length > 0 && (
             <section id="discovered-section" className="mt-6">
               <h2 className="mb-2 text-xs font-medium text-foreground/70">

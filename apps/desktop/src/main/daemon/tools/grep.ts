@@ -33,7 +33,23 @@ interface GrepMatch {
 }
 
 async function getRipgrepPath(): Promise<string> {
-    // Check common ripgrep locations
+    if (process.platform === 'win32') {
+        try {
+            const { stdout } = await execFileAsync('where', ['rg']);
+            const firstPath = stdout
+                .split(/\r?\n/)
+                .map(line => line.trim())
+                .find(Boolean);
+            if (firstPath) {
+                return firstPath;
+            }
+        } catch {
+            // Fallback to PATH lookup below.
+        }
+        return 'rg';
+    }
+
+    // Check common ripgrep locations on Unix-like systems.
     const paths = [
         '/opt/homebrew/bin/rg',
         '/usr/local/bin/rg',
@@ -42,6 +58,13 @@ async function getRipgrepPath(): Promise<string> {
     ];
 
     for (const rgPath of paths) {
+        if (path.isAbsolute(rgPath)) {
+            if (existsSync(rgPath)) {
+                return rgPath;
+            }
+            continue;
+        }
+
         try {
             await execFileAsync('which', [rgPath]);
             return rgPath;
@@ -199,29 +222,35 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
         const rawMatches: GrepMatch[] = [];
         const uniqueFiles = new Set<string>();
 
+        const rgLinePattern = /^(.*?):(\d+):(.*)$/;
         for (const line of lines) {
             // Format: filepath:linenum:content
-            const firstColon = line.indexOf(':');
-            const secondColon = line.indexOf(':', firstColon + 1);
-
-            if (firstColon > 0 && secondColon > firstColon) {
-                const file = line.substring(0, firstColon);
-                const lineNumber = parseInt(line.substring(firstColon + 1, secondColon), 10);
-                let content = line.substring(secondColon + 1);
-
-                // Truncate long content
-                if (content.length > GREP_LIMITS.MAX_LINE_LENGTH) {
-                    content = content.substring(0, GREP_LIMITS.MAX_LINE_LENGTH) + '...';
-                }
-
-                rawMatches.push({
-                    file,
-                    lineNumber,
-                    content: content.trim(),
-                    mtime: 0,
-                });
-                uniqueFiles.add(file);
+            // The non-greedy file capture works for Windows drive letters (e.g. C:\...:12:...).
+            const match = line.match(rgLinePattern);
+            if (!match) {
+                continue;
             }
+
+            const file = match[1];
+            const lineNumber = parseInt(match[2], 10);
+            let content = match[3];
+
+            if (Number.isNaN(lineNumber)) {
+                continue;
+            }
+
+            // Truncate long content
+            if (content.length > GREP_LIMITS.MAX_LINE_LENGTH) {
+                content = content.substring(0, GREP_LIMITS.MAX_LINE_LENGTH) + '...';
+            }
+
+            rawMatches.push({
+                file,
+                lineNumber,
+                content: content.trim(),
+                mtime: 0,
+            });
+            uniqueFiles.add(file);
         }
 
         // Get mtimes for sorting by recency

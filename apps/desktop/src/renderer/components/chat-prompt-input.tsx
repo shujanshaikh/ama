@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { cn } from "@/lib/utils";
+import { cn, getPathBasename } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -349,7 +349,7 @@ export function ChatPromptInput({
               >
                 <div className="flex flex-wrap items-center gap-1.5 px-3 py-2">
                   {selectedContextFiles.map((file) => {
-                    const fileName = file.split("/").pop() || file;
+                    const fileName = getPathBasename(file) || file;
                     return (
                       <motion.div
                         key={file}

@@ -116,10 +116,15 @@ export const runTerminalCommand = async (
         };
       }
 
-      const proc = spawn("sh", ["-c", input.command], {
+      const shell = process.platform === "win32" ? "cmd.exe" : "sh";
+      const shellArgs =
+        process.platform === "win32" ? ["/c", input.command] : ["-c", input.command];
+
+      const proc = spawn(shell, shellArgs, {
         cwd: projectCwd || process.cwd(),
         detached: true,
         stdio: "ignore",
+        windowsHide: true,
       });
 
       proc.unref();

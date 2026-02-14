@@ -13,6 +13,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useState } from "react";
+import { getPathBasename } from "@/lib/utils";
 
 type ToolPart = {
   type: string;
@@ -42,8 +43,7 @@ export const StreamingDots = () => (
 
 const getFileName = (path?: string) => {
   if (!path) return "file";
-  const parts = path.split("/");
-  return parts[parts.length - 1] || path;
+  return getPathBasename(path) || path;
 };
 
 const getToolDisplayInfo = (

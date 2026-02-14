@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { cn, getPathBasename, getPathDirectory } from "@/lib/utils";
 import { Loader2, CheckIcon, SearchIcon } from "lucide-react";
 import { getFileIcon } from "./file-icons";
 
@@ -163,10 +163,8 @@ export function ContextSelector({
         {filteredFiles.map((file, index) => {
           const isSelected = selectedIndex === index;
           const isInContext = selectedFiles.includes(file);
-          const fileName = file.split("/").pop() || file;
-          const directoryPath = file.includes("/")
-            ? file.substring(0, file.lastIndexOf("/"))
-            : "";
+          const fileName = getPathBasename(file) || file;
+          const directoryPath = getPathDirectory(file);
 
           return (
             <div

@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { getPathBasename } from "@/lib/utils";
 
 export function useContextInput() {
   const [input, setInput] = useState("");
@@ -80,7 +81,7 @@ export function useContextInput() {
       );
 
       if (isRemoving) {
-        const fileName = file.split("/").pop() || file;
+        const fileName = getPathBasename(file) || file;
         const regex = new RegExp(
           `@${fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*`,
           "g",
