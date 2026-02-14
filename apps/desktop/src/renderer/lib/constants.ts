@@ -1,10 +1,8 @@
-const isDev = window.location.protocol === "file:"
-  ? true
-  : window.location.hostname === "localhost";
+const isDev = window.location.hostname === "localhost";
 
 export const API_URL = isDev
   ? "http://localhost:3000"
-  : "https://server.ama.shujan.xyz";
+  : "https://bridge.ama.shujan.xyz";
 
 export const WEB_URL = isDev
   ? "http://localhost:3001"

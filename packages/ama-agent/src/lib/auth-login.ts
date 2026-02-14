@@ -205,9 +205,36 @@ export const getUserId = () => {
       return
     }
     const raw = fs.readFileSync(CREDENTIALS_PATH, 'utf8')
-    const data = JSON.parse(raw)
+    const data = JSON.parse(raw) as {
+      user?: { id?: string };
+      access_token?: string;
+      sub?: string;
+      user_id?: string;
+    }
+
+    // Support both desktop-synced credentials (tokens only) and legacy shape with user.id
+    const fromUserObject = data.user?.id
+    const fromTopLevel = data.sub ?? data.user_id
+
+    let fromToken: string | undefined
+    if (data.access_token) {
+      try {
+        const payload = JSON.parse(
+          Buffer.from(data.access_token.split('.')[1], 'base64').toString('utf8'),
+        ) as { sub?: string; user_id?: string }
+        fromToken = payload.sub ?? payload.user_id
+      } catch {
+        // Ignore token parse errors and fall back to other sources.
+      }
+    }
+
+    const userId = fromUserObject ?? fromTopLevel ?? fromToken
+    if (!userId) {
+      throw new Error('User ID not found in credentials')
+    }
+
     return {
-      userId: data.user.id
+      userId
     }
   } catch {
     throw new Error("Error while getting userId")

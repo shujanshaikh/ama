@@ -1,8 +1,7 @@
 import { ipcMain } from "electron";
 import { discoverProjects, selectFolder } from "./project-discovery";
-import { getContext } from "./daemon/get-files";
-import { getDaemonStatus } from "./daemon/connection";
-import { isCodeServerRunning } from "./daemon/code-server";
+import { getContext } from "./get-files";
+import { isCLIDaemonRunning } from "./cli-manager";
 
 export function registerIpcHandlers(): void {
   // Projects
@@ -20,11 +19,9 @@ export function registerIpcHandlers(): void {
 
   // Daemon
   ipcMain.handle("daemon:status", () => {
-    return getDaemonStatus();
-  });
-
-  // Code server
-  ipcMain.handle("code-server:status", () => {
-    return { running: isCodeServerRunning() };
+    return {
+      connected: isCLIDaemonRunning(),
+      reconnectAttempts: 0,
+    };
   });
 }

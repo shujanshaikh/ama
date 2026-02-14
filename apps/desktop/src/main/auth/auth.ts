@@ -59,6 +59,16 @@ export async function handleCallback(code: string): Promise<User> {
   return auth.user;
 }
 
+/** Get tokens for CLI credential sync */
+export function getTokensForCLI(): { access_token: string; refresh_token: string } | null {
+  const session = store.get("session");
+  if (!session?.accessToken) return null;
+  return {
+    access_token: session.accessToken,
+    refresh_token: session.refreshToken,
+  };
+}
+
 function parseJwtPayload(token: string): Record<string, unknown> {
   return JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
 }

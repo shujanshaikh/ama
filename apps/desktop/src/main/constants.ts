@@ -7,7 +7,9 @@ export const PRODUCTION_SERVER_URL = "https://bridge.ama.shujan.xyz";
 export const DEV_WS_URL = "ws://localhost:3000";
 export const PRODUCTION_WS_URL = "wss://bridge.ama.shujan.xyz";
 
-const isDev = process.env.NODE_ENV !== "production";
+import { app } from "electron";
+
+const isDev = !app.isPackaged;
 
 export function getWebUrl(): string {
   return isDev ? DEV_WEB_URL : PRODUCTION_WEB_URL;
