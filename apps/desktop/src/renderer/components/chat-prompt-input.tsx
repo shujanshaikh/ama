@@ -221,10 +221,11 @@ export function ChatPromptInput({
             onInput={autoResize}
             placeholder="Ask anything... (@ to add context)"
             rows={1}
-            className="w-full resize-none border-0 bg-transparent px-4 py-2.5 text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-0"
+            className="w-full resize-none border-0 bg-transparent px-4 py-2.5 text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-0 scrollbar-none"
             style={{
               minHeight: "36px",
               maxHeight: "96px",
+              scrollbarWidth: "none",
             }}
           />
 
