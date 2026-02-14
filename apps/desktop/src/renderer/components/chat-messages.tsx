@@ -56,6 +56,9 @@ export function ChatMessages({
         const reasoningParts = (message.parts || []).filter(
           (p: any) => p.type === "reasoning",
         );
+        const fileParts = (message.parts || []).filter(
+          (p: any) => p.type === "file" && p.url,
+        );
         const messageText = textParts.map((p: any) => p.text).join("\n");
 
         const isLastAssistantEmpty =
@@ -69,6 +72,28 @@ export function ChatMessages({
         return (
           <Message key={message.id} from={message.role}>
             <MessageContent>
+              {/* Image attachments for user messages */}
+              {fileParts.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {fileParts.map((part: any, i: number) => {
+                    const isImage = part.mediaType?.startsWith("image/");
+                    if (!isImage) return null;
+                    return (
+                      <div
+                        key={`${message.id}-file-${i}`}
+                        className="overflow-hidden rounded-lg border border-border/40"
+                      >
+                        <img
+                          src={part.url}
+                          alt={part.filename || "attachment"}
+                          className="max-h-64 max-w-full rounded-lg object-contain"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {isLastAssistantEmpty && (
                 <div className="flex items-center gap-2.5 py-1">
                   <Loader className="size-3.5 text-muted-foreground/50" />

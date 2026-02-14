@@ -73,7 +73,6 @@ export function CodeEditor({
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
-      {/* Toolbar */}
       <div className="drag-region flex h-10 shrink-0 items-center gap-2 px-3">
         <button
           onClick={onReturnToChat}
@@ -137,8 +136,7 @@ export function CodeEditor({
           <RefreshCwIcon className="size-3.5" />
         </button>
       </div>
-
-      {/* Content */}
+        
       <div className="relative flex-1 bg-[#1e1e1e]">
         {activeTab === "preview" && !previewUrl ? (
           <div className="flex h-full items-center justify-center bg-secondary/10 p-8">

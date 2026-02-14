@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import type { FileUIPart } from "ai";
 import { API_URL } from "../lib/constants";
 import { api } from "../lib/trpc";
 import { models } from "../lib/models";
@@ -115,11 +116,14 @@ export function useChatSession({
   }, [chatId, status, setMessages]);
 
   const handleSubmit = useCallback(
-    (text: string) => {
+    (text: string, files?: FileUIPart[]) => {
       const isFirstMessage =
         messages.length === 0 && !isLoadingMessages;
 
-      sendMessage({ text });
+      sendMessage({
+        text,
+        files: files || [],
+      });
 
       if (
         isFirstMessage &&

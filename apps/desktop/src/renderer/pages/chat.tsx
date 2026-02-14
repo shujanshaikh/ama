@@ -371,8 +371,8 @@ export function ChatPage() {
                       setShowContextSelector(false)
                     }
                     onSetModel={setModel}
-                    onSubmit={(text) => {
-                      handleSubmit(text);
+                    onSubmit={(text, files) => {
+                      handleSubmit(text, files);
                       clearInput();
                     }}
                     onStop={stop}

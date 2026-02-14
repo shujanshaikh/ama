@@ -12,6 +12,7 @@ import {
 import { models } from "../lib/models";
 import { ContextSelector } from "./context-selector";
 import { getFileIcon } from "./file-icons";
+import type { FileUIPart } from "ai";
 import {
   ArrowUpIcon,
   SquareIcon,
@@ -21,7 +22,10 @@ import {
   CheckIcon,
   AtSignIcon,
   XIcon,
+  ImageIcon,
 } from "lucide-react";
+
+export type AttachmentFile = FileUIPart & { id: string };
 
 interface ChatPromptInputProps {
   input: string;
@@ -37,10 +41,19 @@ interface ChatPromptInputProps {
   onToggleContextFile: (file: string) => void;
   onCloseContextSelector: () => void;
   onSetModel: (model: string) => void;
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string, files?: FileUIPart[]) => void;
   onStop: () => void;
   onToggleContextSelector: () => void;
   onOpenApiKeyDialog: () => void;
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 export function ChatPromptInput({
@@ -63,10 +76,38 @@ export function ChatPromptInput({
   onOpenApiKeyDialog,
 }: ChatPromptInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [mode, setMode] = useState<"agent" | "plan">("agent");
   const [pendingGatewayModel, setPendingGatewayModel] = useState<string | null>(
     null,
   );
+
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+
+  const addFiles = useCallback(async (files: File[] | FileList) => {
+    const incoming = Array.from(files);
+    if (incoming.length === 0) return;
+
+    const newAttachments = await Promise.all(
+      incoming.map(async (file) => ({
+        id: crypto.randomUUID(),
+        type: "file" as const,
+        url: await fileToDataUrl(file),
+        mediaType: file.type,
+        filename: file.name,
+      })),
+    );
+
+    setAttachments((prev) => prev.concat(newAttachments));
+  }, []);
+
+  const removeAttachment = useCallback((id: string) => {
+    setAttachments((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const clearAttachments = useCallback(() => {
+    setAttachments([]);
+  }, []);
 
   const freeModels = models.filter((m) => m.type === "free");
   const gatewayModels = models.filter((m) => m.type === "gateway");
@@ -98,25 +139,103 @@ export function ChatPromptInput({
     (e: React.FormEvent) => {
       e.preventDefault();
       const text = input.trim();
-      if (!text) return;
-      onSubmit(text);
+      if (!text && attachments.length === 0) return;
+
+      const files = attachments.map(({ id, ...item }) => item);
+      onSubmit(text, files.length > 0 ? files : undefined);
+      clearAttachments();
     },
-    [input, onSubmit],
+    [input, attachments, onSubmit, clearAttachments],
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter" && !e.shiftKey) {
-        // Don't submit if context selector is open (Enter selects a file)
         if (showContextSelector) return;
         e.preventDefault();
-        if (input.trim() && !isActive) {
-          onSubmit(input.trim());
+        if ((input.trim() || attachments.length > 0) && !isActive) {
+          // Trigger form submit
+          formRef.current?.requestSubmit();
         }
       }
+
+      // Remove last attachment when Backspace is pressed and textarea is empty
+      if (
+        e.key === "Backspace" &&
+        e.currentTarget.value === "" &&
+        attachments.length > 0
+      ) {
+        e.preventDefault();
+        const last = attachments.at(-1);
+        if (last) removeAttachment(last.id);
+      }
     },
-    [input, isActive, onSubmit, showContextSelector],
+    [input, isActive, showContextSelector, attachments, removeAttachment],
   );
+
+  // Paste handler for clipboard images
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const files: File[] = [];
+      for (const item of items) {
+        if (item.kind === "file") {
+          const file = item.getAsFile();
+          if (file) files.push(file);
+        }
+      }
+
+      if (files.length > 0) {
+        e.preventDefault();
+        addFiles(files);
+      }
+    },
+    [addFiles],
+  );
+
+  // Drag & drop on the form
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const onDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types?.includes("Files")) e.preventDefault();
+    };
+    const onDrop = (e: DragEvent) => {
+      if (e.dataTransfer?.types?.includes("Files")) e.preventDefault();
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        const imageFiles = Array.from(e.dataTransfer.files).filter((f) =>
+          f.type.startsWith("image/"),
+        );
+        if (imageFiles.length > 0) {
+          addFiles(imageFiles);
+        }
+      }
+    };
+    form.addEventListener("dragover", onDragOver);
+    form.addEventListener("drop", onDrop);
+    return () => {
+      form.removeEventListener("dragover", onDragOver);
+      form.removeEventListener("drop", onDrop);
+    };
+  }, [addFiles]);
+
+  // Upload button click handler
+  const handleUploadClick = useCallback(() => {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.multiple = true;
+    fileInput.accept = "image/*";
+    fileInput.onchange = (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files && files.length > 0) {
+        addFiles(files);
+      }
+    };
+    fileInput.click();
+  }, [addFiles]);
 
   // Auto-resize textarea
   const autoResize = useCallback(() => {
@@ -154,7 +273,7 @@ export function ChatPromptInput({
         )}
       </AnimatePresence>
 
-      <form onSubmit={handleSubmit} className="w-full">
+      <form onSubmit={handleSubmit} ref={formRef} className="w-full">
         <div
           className={cn(
             "rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-sm",
@@ -163,7 +282,62 @@ export function ChatPromptInput({
             "overflow-hidden",
           )}
         >
-          {/* Selected context files */}
+          <AnimatePresence>
+            {attachments.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-wrap items-center gap-1.5 px-3 py-2">
+                  {attachments.map((attachment) => {
+                    const isImage = attachment.mediaType?.startsWith("image/");
+                    return (
+                      <motion.div
+                        key={attachment.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.15 }}
+                        className={cn(
+                          "relative group flex items-center gap-1.5 pl-1.5 pr-1.5 py-1 rounded-lg",
+                          "bg-secondary/60 border border-border/40",
+                          "hover:bg-secondary/80 hover:border-border/60",
+                          "transition-all duration-200",
+                        )}
+                      >
+                        {isImage && attachment.url ? (
+                          <img
+                            src={attachment.url}
+                            alt={attachment.filename || "attachment"}
+                            className="size-6 rounded object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="size-4 opacity-60" />
+                        )}
+                        <span className="text-[11px] text-foreground/70 font-mono max-w-[100px] truncate">
+                          {attachment.filename || "image"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeAttachment(attachment.id);
+                          }}
+                          className="shrink-0 size-4 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-foreground/10 transition-all"
+                        >
+                          <XIcon className="size-2.5 text-muted-foreground" />
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <AnimatePresence>
             {selectedContextFiles.length > 0 && (
               <motion.div
@@ -212,12 +386,12 @@ export function ChatPromptInput({
             )}
           </AnimatePresence>
 
-          {/* Textarea */}
           <textarea
             ref={textareaRef}
             value={input}
             onChange={onInputChange}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             onInput={autoResize}
             placeholder="Ask anything... (@ to add context)"
             rows={1}
@@ -229,11 +403,8 @@ export function ChatPromptInput({
             }}
           />
 
-          {/* Footer */}
           <div className="flex items-center justify-between px-2.5 pb-2 pt-0">
-            {/* Tools */}
             <div className="flex items-center gap-1.5">
-              {/* Agent/Plan toggle */}
               <div className="flex h-7 items-center rounded-lg bg-secondary/40 p-0.5">
                 <Button
                   type="button"
@@ -277,7 +448,21 @@ export function ChatPromptInput({
                 </Button>
               </div>
 
-              {/* Context button */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleUploadClick}
+                className={cn(
+                  "h-7 rounded-lg px-2 text-[11px] font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5",
+                  "text-muted-foreground hover:text-foreground/80 hover:bg-secondary/40",
+                )}
+                title="Upload image"
+              >
+                <ImageIcon className="size-3" />
+                <span>Image</span>
+              </Button>
+
               <Button
                 type="button"
                 variant="ghost"
@@ -294,7 +479,6 @@ export function ChatPromptInput({
                 <span>Context</span>
               </Button>
 
-              {/* Model selector */}
               <Select value={model} onValueChange={handleModelChange}>
                 <SelectTrigger className="h-7 rounded-lg border-none bg-transparent px-2.5 text-[11px] font-semibold tracking-wide text-muted-foreground shadow-none transition-colors duration-200 hover:bg-secondary/40">
                   <SelectValue />
@@ -327,7 +511,6 @@ export function ChatPromptInput({
                 </SelectContent>
               </Select>
 
-              {/* API Key button */}
               <Button
                 type="button"
                 variant="ghost"
@@ -340,7 +523,6 @@ export function ChatPromptInput({
               </Button>
             </div>
 
-            {/* Submit / Stop */}
             {isActive ? (
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -361,7 +543,7 @@ export function ChatPromptInput({
             ) : (
               <Button
                 type="submit"
-                disabled={!input.trim()}
+                disabled={!input.trim() && attachments.length === 0}
                 size="icon-sm"
                 className={cn(
                   "h-7 w-7 rounded-xl transition-all duration-200",
