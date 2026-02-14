@@ -12,6 +12,7 @@ import {
   type AuthIpcResult,
   type AuthChangePayload,
 } from "./types";
+import { clearAuthTokens, stopCLIDaemon } from "../cli-manager";
 
 export function setupAuthIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(
@@ -37,6 +38,8 @@ export function setupAuthIpcHandlers(mainWindow: BrowserWindow): void {
           await shell.openExternal(getLogoutUrl(sessionId));
         }
         clearSession();
+        clearAuthTokens();
+        stopCLIDaemon();
         notifyAuthChange(mainWindow, null);
         return { success: true };
       } catch (error) {

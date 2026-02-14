@@ -15,6 +15,7 @@ const config: ForgeConfig = {
         schemes: ["ama"],
       },
     ],
+    extraResource: ["../../packages/ama-agent/dist"],
   },
   makers: [
     {
@@ -27,13 +28,6 @@ const config: ForgeConfig = {
     {
       name: "@electron-forge/maker-zip",
       platforms: ["darwin", "linux"],
-    },
-    {
-      name: "@electron-forge/maker-squirrel",
-      config: {
-        name: "ama",
-        setupExe: "AMASetup.exe",
-      },
     },
     {
       name: "@electron-forge/maker-deb",

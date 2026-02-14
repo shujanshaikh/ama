@@ -26,8 +26,8 @@ if (process.env.AMA_DAEMON === '1') {
             }
 
             await main();
-        } catch (error) {
-            console.error(pc.red('daemon error'));
+        } catch (error: any) {
+            console.error(pc.red(`daemon error: ${error?.message ?? error}`));
             process.exit(1);
         }
     })();

@@ -289,7 +289,7 @@ function Chat() {
                             model: modelRef.current,
                             planMode: mode === "plan",
                             executePlan: isExecutePlan,
-                            planName: planName,
+                            ...(planName ? { planName } : {}),
                             ...body,
                         },
                     };
@@ -427,7 +427,7 @@ function Chat() {
                         model: model,
                         planMode: mode === "plan",
                         executePlan: isExecutePlan,
-                        planName: planName,
+                        ...(planName ? { planName } : {}),
                     },
                 },
             );

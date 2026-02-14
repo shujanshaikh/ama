@@ -1,0 +1,54 @@
+name: Build Desktop App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "apps/desktop/**"
+      - "packages/ama-agent/**"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: darwin
+          - os: windows-latest
+            platform: win32
+          - os: ubuntu-latest
+            platform: linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build workspace dependencies
+        run: bun run --filter amai build
+
+      - name: Build desktop (package)
+        run: bun run --filter @ama/desktop package
+
+      - name: Build desktop (make)
+        run: bun run --filter @ama/desktop build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ama-desktop-${{ matrix.platform }}
+          path: |
+            apps/desktop/out/make/**/*.dmg
+            apps/desktop/out/make/**/*.zip
+            apps/desktop/out/make/**/*.exe
+            apps/desktop/out/make/**/*.deb
+            apps/desktop/out/make/**/*.rpm
+          if-no-files-found: warn

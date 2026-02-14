@@ -19,6 +19,8 @@ export const ALLOWED_EXTERNAL_DOMAINS = [
   "google.com",
 ];
 
+import { app } from "electron";
+
 export function getAppUrl(): string {
-  return process.env.NODE_ENV === "development" ? DEV_URL : PRODUCTION_URL;
+  return !app.isPackaged ? DEV_URL : PRODUCTION_URL;
 }

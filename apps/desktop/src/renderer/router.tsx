@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/use-auth";
 import { LoginPage } from "./pages/login";
 import { DashboardPage } from "./pages/dashboard";
@@ -44,7 +44,7 @@ export function AppRouter() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route
           path="/login"
@@ -80,6 +80,6 @@ export function AppRouter() {
           }
         />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

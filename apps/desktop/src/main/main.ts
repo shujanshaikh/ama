@@ -14,8 +14,12 @@ import {
   handleCallback,
   getUser,
 } from "./auth";
-import { connectDaemon, disconnectDaemon } from "./daemon/connection";
-import { ensureCodeServerRunning, stopCodeServer } from "./daemon/code-server";
+import {
+  syncAuthTokens,
+  clearAuthTokens,
+  startCLIDaemon,
+  stopCLIDaemon,
+} from "./cli-manager";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -45,7 +49,7 @@ app.on("open-url", (event, url) => {
   }
 });
 
-// Windows/Linux: second instance passes URL via argv
+// Linux: second instance passes URL via argv
 app.on("second-instance", (_event, argv) => {
   const deepLinkUrl = argv.find((arg) => arg.startsWith(APP_PROTOCOL_PREFIX));
   if (deepLinkUrl) {
@@ -76,8 +80,8 @@ async function processDeepLink(url: string): Promise<void> {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
     }
-    connectDaemon();
-    ensureCodeServerRunning().catch(console.error);
+    syncAuthTokens();
+    startCLIDaemon();
   } catch (error) {
     console.error("[auth] Callback failed:", error);
   }
@@ -154,8 +158,8 @@ app.whenReady().then(async () => {
           notifyAuthChange(mainWindow, user);
         }
       });
-      connectDaemon();
-      ensureCodeServerRunning().catch(console.error);
+      syncAuthTokens();
+      startCLIDaemon();
     }
   } catch (error) {
     console.error("Failed to get initial auth state:", error);
@@ -175,6 +179,5 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
-  disconnectDaemon();
-  stopCodeServer();
+  stopCLIDaemon();
 });

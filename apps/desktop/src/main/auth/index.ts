@@ -3,6 +3,7 @@ export {
   handleCallback,
   getUser,
   getAccessToken,
+  getTokensForCLI,
   refreshAccessToken,
   clearSession,
   getSessionId,

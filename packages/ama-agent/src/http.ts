@@ -10,5 +10,13 @@ export const startHttpServer = () => {
     return c.text("Hello World");
   });
 
-  serve({ fetch: app.fetch, port: 3456 });
+  const server = serve({ fetch: app.fetch, port: 3456 });
+
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`[http] Port 3456 is already in use, skipping HTTP server`);
+    } else {
+      throw err;
+    }
+  });
 };
