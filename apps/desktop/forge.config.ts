@@ -20,6 +20,7 @@ const config: ForgeConfig = {
   makers: [
     {
       name: "@electron-forge/maker-dmg",
+      platforms: ["darwin"],
       config: {
         name: "AMA",
         icon: "./assets/icon.png",
@@ -31,6 +32,7 @@ const config: ForgeConfig = {
     },
     {
       name: "@electron-forge/maker-deb",
+      platforms: ["linux"],
       config: {
         options: {
           name: "ama",
@@ -41,6 +43,7 @@ const config: ForgeConfig = {
     },
     {
       name: "@electron-forge/maker-rpm",
+      platforms: ["linux"],
       config: {
         options: {
           name: "ama",
