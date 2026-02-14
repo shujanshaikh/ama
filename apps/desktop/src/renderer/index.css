@@ -182,3 +182,11 @@
 .no-drag {
   -webkit-app-region: no-drag;
 }
+
+/* Code block visibility - ensure proper contrast for Streamdown/Shiki output */
+[data-streamdown="code-block"] {
+  --shiki-dark-bg: oklch(0.18 0 0);
+}
+[data-streamdown="code-block-body"] pre {
+  background: oklch(0.18 0 0) !important;
+}

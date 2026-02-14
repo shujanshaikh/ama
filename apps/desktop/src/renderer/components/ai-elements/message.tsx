@@ -9,7 +9,14 @@ import { cn } from "@/lib/utils";
 import type { UIMessage } from "ai";
 import type { ComponentProps, HTMLAttributes } from "react";
 import { memo } from "react";
+import type { BundledTheme } from "shiki";
 import { Streamdown } from "streamdown";
+
+/** High-contrast dark theme for code blocks - ensures all syntax tokens are readable */
+const CODE_BLOCK_THEME: [BundledTheme, BundledTheme] = [
+    "one-dark-pro",
+    "one-dark-pro",
+];
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
     from: UIMessage["role"];
@@ -103,6 +110,7 @@ export const MessageResponse = memo(
                 "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
                 className
             )}
+            shikiTheme={CODE_BLOCK_THEME}
             {...props}
         />
     ),

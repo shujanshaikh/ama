@@ -8,7 +8,14 @@ import {
   Maximize2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import type { BundledTheme } from "shiki";
 import { Streamdown } from "streamdown";
+
+/** High-contrast dark theme for code blocks */
+const CODE_BLOCK_THEME: [BundledTheme, BundledTheme] = [
+    "one-dark-pro",
+    "one-dark-pro",
+];
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -185,6 +192,7 @@ MarkdownEditor.displayName = "MarkdownEditor";
 const MarkdownPreview = memo(({ content }: { content: string }) => {
   return (
     <Streamdown
+      shikiTheme={CODE_BLOCK_THEME}
       className={cn(
         "text-sm leading-relaxed",
         "[&_h1]:text-lg [&_h1]:font-semibold [&_h1]:text-foreground [&_h1]:mb-3 [&_h1]:mt-4 [&_h1]:pb-2 [&_h1]:border-b [&_h1]:border-border",

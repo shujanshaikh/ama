@@ -7,7 +7,14 @@ import {
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { createContext, memo, useContext, useEffect, useState } from "react";
+import type { BundledTheme } from "shiki";
 import { Streamdown } from "streamdown";
+
+/** High-contrast dark theme for code blocks */
+const CODE_BLOCK_THEME: [BundledTheme, BundledTheme] = [
+    "one-dark-pro",
+    "one-dark-pro",
+];
 
 type ReasoningContextValue = {
     isStreaming: boolean;
@@ -176,7 +183,7 @@ export const ReasoningContent = memo(
             )}
             {...props}
         >
-            <Streamdown {...props}>{children}</Streamdown>
+            <Streamdown shikiTheme={CODE_BLOCK_THEME} {...props}>{children}</Streamdown>
         </CollapsibleContent>
     )
 );

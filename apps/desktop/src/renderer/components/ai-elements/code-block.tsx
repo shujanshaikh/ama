@@ -34,19 +34,20 @@ export const CodeBlock = ({
         <CodeBlockContext.Provider value={{ code }}>
             <div
                 className={cn(
-                    "group relative w-full overflow-hidden rounded-md border bg-background text-foreground",
+                    "group relative w-full overflow-hidden rounded-md border border-border",
+                    "bg-zinc-900/95 text-zinc-100",
                     className
                 )}
                 {...props}
             >
                 <div className="relative">
                     {language && (
-                        <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-1.5">
-                            <span className="text-xs text-muted-foreground font-mono">{language}</span>
+                        <div className="flex items-center justify-between border-b border-border bg-zinc-800/80 px-4 py-1.5">
+                            <span className="text-xs text-zinc-400 font-mono">{language}</span>
                         </div>
                     )}
                     <pre className="overflow-auto p-4 text-sm">
-                        <code className="font-mono text-sm whitespace-pre">{code}</code>
+                        <code className="font-mono text-sm whitespace-pre text-zinc-100">{code}</code>
                     </pre>
                     {children && (
                         <div className="absolute top-2 right-2 flex items-center gap-2">

@@ -114,7 +114,6 @@ export function SidePanel({
 
   return (
     <div className="flex h-full w-80 flex-col border-r border-border bg-background">
-      {/* Header with drag region */}
       <div className="flex flex-col p-4 pb-0">
         <div className="drag-region flex items-center justify-between mb-5">
           <button
@@ -136,14 +135,12 @@ export function SidePanel({
           )}
         </div>
 
-        {/* Project name */}
         <div className="mb-4">
           <span className="text-[11px] font-medium uppercase tracking-wider text-foreground/40">
             {projectName}
           </span>
         </div>
 
-        {/* Search */}
         <div className="no-drag relative mb-3">
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 opacity-40" />
           <Input
@@ -154,7 +151,6 @@ export function SidePanel({
           />
         </div>
 
-        {/* New Chat */}
         <Button
           onClick={onNewChat}
           disabled={isCreatingChat}
@@ -164,7 +160,6 @@ export function SidePanel({
         </Button>
       </div>
 
-      {/* Chat list */}
       <ScrollArea className="no-drag min-h-0 flex-1 overflow-hidden px-2">
         {filteredChats.length > 0 ? (
           <div className="space-y-4 pb-4">
