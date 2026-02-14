@@ -165,7 +165,7 @@ export function SidePanel({
       </div>
 
       {/* Chat list */}
-      <ScrollArea className="no-drag flex-1 px-2">
+      <ScrollArea className="no-drag min-h-0 flex-1 overflow-hidden px-2">
         {filteredChats.length > 0 ? (
           <div className="space-y-4 pb-4">
             {recentChats.length > 0 && (
