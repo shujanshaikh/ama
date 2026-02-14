@@ -1,7 +1,7 @@
 import { z } from "zod";
 import fs from "node:fs";
 import path from "node:path";
-import { stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { validatePath, resolveProjectPath } from "../sandbox";
 
 const IGNORE_PATTERNS = [
@@ -150,13 +150,22 @@ function buildTreeOutput(entries: FileEntry[], basePath: string): string {
 }
 
 export const list = async function(input: z.infer<typeof listSchema>, projectCwd?: string) {
+    const parsedInput = listSchema.safeParse(input);
+    if (!parsedInput.success) {
+        return {
+            success: false,
+            message: `Invalid listDirectory input: ${parsedInput.error.issues[0]?.message ?? "Invalid input"}`,
+            error: "INVALID_INPUT",
+        };
+    }
+
     const {
         path: relativePath,
         recursive = true,
         maxDepth = 3,
         pattern,
         showHidden = false
-    } = input;
+    } = parsedInput.data;
 
     if (maxDepth !== undefined && (!Number.isInteger(maxDepth) || maxDepth < 0)) {
         return {
@@ -194,8 +203,8 @@ export const list = async function(input: z.infer<typeof listSchema>, projectCwd
         }
 
         // Check if it's a directory
-        const stats = fs.statSync(absolutePath);
-        if (!stats.isDirectory()) {
+        const rootStats = await stat(absolutePath);
+        if (!rootStats.isDirectory()) {
             return {
                 success: false,
                 message: `Path is not a directory: ${absolutePath}`,
@@ -214,7 +223,7 @@ export const list = async function(input: z.infer<typeof listSchema>, projectCwd
 
             let entries: fs.Dirent[];
             try {
-                entries = fs.readdirSync(currentDir, { withFileTypes: true });
+                entries = await readdir(currentDir, { withFileTypes: true });
             } catch {
                 return; // Skip directories we can't read
             }

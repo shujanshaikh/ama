@@ -14,8 +14,25 @@ const editFilesSchema = z.object({
 })
 
 export const editFiles = async function(input: z.infer<typeof editFilesSchema>, projectCwd?: string) {
-    const { target_file, content, providedNewFile } = input;
+    const parsedInput = editFilesSchema.safeParse(input);
+    if (!parsedInput.success) {
+      return {
+        success: false,
+        error: "INVALID_INPUT",
+        message: `Invalid editFile input: ${parsedInput.error.issues[0]?.message ?? "Invalid input"}`,
+      };
+    }
+
+    const { target_file, content, providedNewFile } = parsedInput.data;
     try {
+      if (!target_file.trim()) {
+        return {
+          success: false,
+          error: "MISSING_TARGET_FILE",
+          message: "Missing required parameter: target_file",
+        };
+      }
+
       // Validate path if projectCwd is provided
       if (projectCwd) {
         const validation = validatePath(target_file, projectCwd);

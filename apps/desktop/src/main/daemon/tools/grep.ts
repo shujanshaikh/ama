@@ -1,11 +1,13 @@
 import { z } from "zod";
 import path from "node:path";
-import { existsSync, statSync } from "node:fs";
+import { existsSync } from "node:fs";
+import { stat } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { validatePath } from "../sandbox";
 
 const execFileAsync = promisify(execFile);
+let cachedRipgrepPath: string | null = null;
 
 export const GREP_LIMITS = {
     DEFAULT_MAX_MATCHES: 200,
@@ -33,6 +35,10 @@ interface GrepMatch {
 }
 
 async function getRipgrepPath(): Promise<string> {
+    if (cachedRipgrepPath) {
+        return cachedRipgrepPath;
+    }
+
     if (process.platform === 'win32') {
         try {
             const { stdout } = await execFileAsync('where', ['rg']);
@@ -41,12 +47,14 @@ async function getRipgrepPath(): Promise<string> {
                 .map(line => line.trim())
                 .find(Boolean);
             if (firstPath) {
+                cachedRipgrepPath = firstPath;
                 return firstPath;
             }
         } catch {
             // Fallback to PATH lookup below.
         }
-        return 'rg';
+        cachedRipgrepPath = 'rg';
+        return cachedRipgrepPath;
     }
 
     // Check common ripgrep locations on Unix-like systems.
@@ -60,6 +68,7 @@ async function getRipgrepPath(): Promise<string> {
     for (const rgPath of paths) {
         if (path.isAbsolute(rgPath)) {
             if (existsSync(rgPath)) {
+                cachedRipgrepPath = rgPath;
                 return rgPath;
             }
             continue;
@@ -67,13 +76,15 @@ async function getRipgrepPath(): Promise<string> {
 
         try {
             await execFileAsync('which', [rgPath]);
+            cachedRipgrepPath = rgPath;
             return rgPath;
         } catch {
             continue;
         }
     }
 
-    return 'rg'; // Default fallback
+    cachedRipgrepPath = 'rg'; // Default fallback
+    return cachedRipgrepPath;
 }
 
 async function getMtimesBatched(files: string[]): Promise<Map<string, number>> {
@@ -85,7 +96,8 @@ async function getMtimesBatched(files: string[]): Promise<Map<string, number>> {
         const results = await Promise.all(
             batch.map(async (filePath) => {
                 try {
-                    const mtime = statSync(filePath).mtimeMs;
+                    const fileStats = await stat(filePath);
+                    const mtime = fileStats.mtimeMs;
                     return { path: filePath, mtime };
                 } catch {
                     return { path: filePath, mtime: 0 };
@@ -99,7 +111,16 @@ async function getMtimesBatched(files: string[]): Promise<Map<string, number>> {
 }
 
 export const grepTool = async function(input: z.infer<typeof grepSchema>, projectCwd?: string) {
-    const { query, options } = input;
+    const parsedInput = grepSchema.safeParse(input);
+    if (!parsedInput.success) {
+        return {
+            success: false,
+            message: `Invalid grep input: ${parsedInput.error.issues[0]?.message ?? "Invalid input"}`,
+            error: "INVALID_INPUT",
+        };
+    }
+
+    const { query, options } = parsedInput.data;
 
     if (!query || query.trim() === '') {
         return {
@@ -186,7 +207,10 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
         let exitCode: number;
 
         try {
-            const result = await execFileAsync(rgPath, args);
+            const result = await execFileAsync(rgPath, args, {
+                timeout: 25000,
+                maxBuffer: 8 * 1024 * 1024,
+            });
             stdout = result.stdout;
             stderr = result.stderr;
             exitCode = 0;
@@ -306,6 +330,13 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             groupedOutput.push(GREP_LIMITS.TRUNCATION_MESSAGE);
         }
 
+        let content = groupedOutput.join('\n');
+        if (content.length > GREP_LIMITS.MAX_TOTAL_OUTPUT_SIZE) {
+            content =
+                content.slice(0, GREP_LIMITS.MAX_TOTAL_OUTPUT_SIZE) +
+                GREP_LIMITS.TRUNCATION_MESSAGE;
+        }
+
         return {
             success: true,
             matches,
@@ -314,7 +345,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             matchCount: finalMatches.length,
             truncated,
             message: `Found ${finalMatches.length} matches for pattern: ${query}`,
-            content: groupedOutput.join('\n'),
+            content,
         };
 
     } catch (error: any) {

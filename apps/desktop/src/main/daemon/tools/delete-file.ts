@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { readFile, unlink } from "node:fs/promises";
+import { readFile, stat, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { validatePath, resolveProjectPath } from "../sandbox";
 
@@ -10,7 +10,16 @@ const deleteFileSchema = z.object({
 
 
 export const deleteFile = async function(input: z.infer<typeof deleteFileSchema>, projectCwd?: string) {
-    const { path: realPath } = input;
+    const parsedInput = deleteFileSchema.safeParse(input);
+    if (!parsedInput.success) {
+        return {
+            success: false,
+            message: `Invalid deleteFile input: ${parsedInput.error.issues[0]?.message ?? "Invalid input"}`,
+            error: "INVALID_INPUT",
+        };
+    }
+
+    const { path: realPath } = parsedInput.data;
     if (!realPath) {
         return {
             success: false,
@@ -50,16 +59,31 @@ export const deleteFile = async function(input: z.infer<typeof deleteFileSchema>
             };
         }
 
-        // Read original content before deletion
-        let originalContent: string;
         try {
-            originalContent = await readFile(absolute_file_path, "utf-8");
+            const fileStats = await stat(absolute_file_path);
+            if (!fileStats.isFile()) {
+                return {
+                    success: false,
+                    message: `Path is not a file: ${realPath}`,
+                    error: "NOT_A_FILE",
+                };
+            }
         } catch {
             return {
                 success: false,
-                message: `Failed to read file before deletion: ${realPath}`,
-                error: 'READ_ERROR',
+                message: `Unable to stat path before deletion: ${realPath}`,
+                error: "STAT_ERROR",
             };
+        }
+
+        // Read original content before deletion
+        let originalContent: string | undefined;
+        let readWarning: string | undefined;
+        try {
+            originalContent = await readFile(absolute_file_path, "utf-8");
+        } catch {
+            // Continue with deletion even if pre-read fails (e.g. binary/encoding issues).
+            readWarning = `Unable to read file content before deletion: ${realPath}`;
         }
 
         // Delete the file
@@ -77,6 +101,7 @@ export const deleteFile = async function(input: z.infer<typeof deleteFileSchema>
             success: true,
             message: `Successfully deleted file: ${realPath}`,
             content: originalContent,
+            warning: readWarning,
         };
     } catch (error) {
         return {

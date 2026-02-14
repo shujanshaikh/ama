@@ -1,6 +1,7 @@
 import { z } from "zod";
 import path from "node:path";
-import { existsSync, statSync } from "node:fs";
+import { existsSync } from "node:fs";
+import { stat } from "node:fs/promises";
 import fg from "fast-glob";
 import { validatePath, resolveProjectPath } from "../sandbox";
 
@@ -25,7 +26,8 @@ async function getMtimesBatched(files: string[]): Promise<FileWithMtime[]> {
         const batchResults = await Promise.all(
             batch.map(async (filePath) => {
                 try {
-                    const mtime = statSync(filePath).mtimeMs;
+                    const fileStats = await stat(filePath);
+                    const mtime = fileStats.mtimeMs;
                     return { path: filePath, mtime };
                 } catch {
                     return { path: filePath, mtime: 0 };
@@ -39,7 +41,16 @@ async function getMtimesBatched(files: string[]): Promise<FileWithMtime[]> {
 }
 
 export const globTool = async function(input: z.infer<typeof globSchema>, projectCwd?: string) {
-    const { pattern, path: inputPath } = input;
+    const parsedInput = globSchema.safeParse(input);
+    if (!parsedInput.success) {
+        return {
+            success: false,
+            message: `Invalid glob input: ${parsedInput.error.issues[0]?.message ?? "Invalid input"}`,
+            error: "INVALID_INPUT",
+        };
+    }
+
+    const { pattern, path: inputPath } = parsedInput.data;
 
     if (!pattern) {
         return {
@@ -51,16 +62,7 @@ export const globTool = async function(input: z.infer<typeof globSchema>, projec
 
     try {
         const basePath = projectCwd || process.cwd();
-        const searchPath = inputPath ? resolveProjectPath(inputPath, basePath) : basePath;
-
-        // Check if searchPath exists
-        if (!existsSync(searchPath)) {
-            return {
-                success: false,
-                message: `Directory not found: ${searchPath}`,
-                error: 'DIR_NOT_FOUND',
-            };
-        }
+        let searchPath = inputPath ? resolveProjectPath(inputPath, basePath) : basePath;
 
         if (projectCwd && inputPath) {
             const validation = validatePath(inputPath, projectCwd);
@@ -71,6 +73,16 @@ export const globTool = async function(input: z.infer<typeof globSchema>, projec
                     error: 'ACCESS_DENIED',
                 };
             }
+            searchPath = validation.resolvedPath ?? searchPath;
+        }
+
+        // Check if searchPath exists
+        if (!existsSync(searchPath)) {
+            return {
+                success: false,
+                message: `Directory not found: ${searchPath}`,
+                error: 'DIR_NOT_FOUND',
+            };
         }
 
         const allFiles = await fg(pattern, {

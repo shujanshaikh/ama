@@ -1,4 +1,5 @@
 import WebSocket from "ws";
+import { z } from "zod";
 import { getWsUrl } from "../constants";
 import { getAccessToken, refreshAccessToken } from "../auth/index";
 import { toolExecutors } from "./tool-executor";
@@ -7,25 +8,78 @@ import { rpcHandlers } from "./rpc-handlers";
 const INITIAL_RECONNECT_DELAY = 1000;
 const MAX_RECONNECT_DELAY = 60000;
 const BACKOFF_MULTIPLIER = 2;
+const DEFAULT_TOOL_TIMEOUT_MS = 45000;
+const DEFAULT_RPC_TIMEOUT_MS = 30000;
+const TOOL_TIMEOUT_OVERRIDES: Record<string, number> = {
+  runTerminalCommand: 90000,
+  batch: 120000,
+};
 
 let ws: WebSocket | null = null;
 let reconnectAttempts = 0;
 let shouldReconnect = true;
+const ToolCallSchema = z.object({
+  type: z.literal("tool_call"),
+  id: z.string().min(1),
+  tool: z.string().min(1),
+  args: z.record(z.string(), z.unknown()).default({}),
+  projectId: z.string().optional(),
+  projectCwd: z.string().optional(),
+});
 
-interface ToolCall {
-  type: "tool_call";
-  id: string;
-  tool: string;
-  args: Record<string, any>;
-  projectId?: string;
-  projectCwd?: string;
+const RpcCallSchema = z.object({
+  type: z.literal("rpc_call"),
+  id: z.string().min(1),
+  method: z.string().min(1),
+  args: z.record(z.string(), z.unknown()).default({}),
+});
+
+const DaemonMessageSchema = z.discriminatedUnion("type", [
+  ToolCallSchema,
+  RpcCallSchema,
+]);
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return typeof error === "string" ? error : "Unknown error";
 }
 
-interface RpcCall {
-  type: "rpc_call";
-  id: string;
-  method: string;
-  args: Record<string, any>;
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  context: string,
+): Promise<T> {
+  let timeoutHandle: NodeJS.Timeout | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(
+        new Error(`${context} timed out after ${Math.round(timeoutMs / 1000)}s`),
+      );
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
+}
+
+function sendToolResult(
+  id: string,
+  payload: { result?: unknown; error?: string; errorCode?: string },
+): void {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    console.warn(`[daemon] Unable to send result for id=${id}; socket is closed`);
+    return;
+  }
+  ws.send(
+    JSON.stringify({
+      type: "tool_result",
+      id,
+      ...payload,
+    }),
+  );
 }
 
 function getReconnectDelay(): number {
@@ -84,50 +138,83 @@ function connect(): void {
   });
 
   ws.on("message", async (data) => {
-    const message = JSON.parse(data.toString()) as ToolCall | RpcCall;
+    let parsedJson: unknown;
+    try {
+      parsedJson = JSON.parse(data.toString());
+    } catch (error) {
+      console.error("[daemon] Invalid JSON message:", getErrorMessage(error));
+      return;
+    }
+
+    const parsedMessage = DaemonMessageSchema.safeParse(parsedJson);
+    if (!parsedMessage.success) {
+      console.error("[daemon] Invalid daemon message shape");
+      if (
+        parsedJson &&
+        typeof parsedJson === "object" &&
+        "id" in parsedJson &&
+        typeof (parsedJson as { id?: unknown }).id === "string"
+      ) {
+        sendToolResult((parsedJson as { id: string }).id, {
+          error: "Invalid message shape",
+          errorCode: "INVALID_MESSAGE",
+        });
+      }
+      return;
+    }
+
+    const message = parsedMessage.data;
 
     if (message.type === "tool_call") {
+      const startedAt = Date.now();
+      const timeoutMs =
+        TOOL_TIMEOUT_OVERRIDES[message.tool] ?? DEFAULT_TOOL_TIMEOUT_MS;
+
       console.log(`[daemon] tool_call: ${message.tool}`);
       try {
         const executor = toolExecutors[message.tool];
         if (!executor) {
           throw new Error(`Unknown tool: ${message.tool}`);
         }
-        const result = await executor(message.args, message.projectCwd);
-        ws?.send(
-          JSON.stringify({ type: "tool_result", id: message.id, result }),
+        const result = await withTimeout(
+          executor(message.args, message.projectCwd),
+          timeoutMs,
+          `Tool '${message.tool}'`,
         );
-      } catch (error: any) {
-        ws?.send(
-          JSON.stringify({
-            type: "tool_result",
-            id: message.id,
-            error: error.message,
-          }),
+        sendToolResult(message.id, { result });
+      } catch (error) {
+        const errorMessage = getErrorMessage(error);
+        sendToolResult(message.id, { error: errorMessage });
+        console.error(`[daemon] tool failed: ${message.tool}:`, errorMessage);
+      } finally {
+        console.log(
+          `[daemon] tool_call completed: ${message.tool} (${Date.now() - startedAt}ms)`,
         );
-        console.error(`[daemon] tool failed: ${message.tool}:`, error.message);
       }
-    } else if (message.type === "rpc_call") {
-      console.log(`[daemon] rpc: ${message.method}`);
-      try {
-        const handler = rpcHandlers[message.method];
-        if (!handler) {
-          throw new Error(`Unknown RPC method: ${message.method}`);
-        }
-        const result = await handler(message.args);
-        ws?.send(
-          JSON.stringify({ type: "tool_result", id: message.id, result }),
-        );
-      } catch (error: any) {
-        ws?.send(
-          JSON.stringify({
-            type: "tool_result",
-            id: message.id,
-            error: error.message,
-          }),
-        );
-        console.error(`[daemon] rpc failed: ${message.method}:`, error.message);
+      return;
+    }
+
+    const startedAt = Date.now();
+    console.log(`[daemon] rpc: ${message.method}`);
+    try {
+      const handler = rpcHandlers[message.method];
+      if (!handler) {
+        throw new Error(`Unknown RPC method: ${message.method}`);
       }
+      const result = await withTimeout(
+        handler(message.args),
+        DEFAULT_RPC_TIMEOUT_MS,
+        `RPC '${message.method}'`,
+      );
+      sendToolResult(message.id, { result });
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      sendToolResult(message.id, { error: errorMessage });
+      console.error(`[daemon] rpc failed: ${message.method}:`, errorMessage);
+    } finally {
+      console.log(
+        `[daemon] rpc completed: ${message.method} (${Date.now() - startedAt}ms)`,
+      );
     }
   });
 

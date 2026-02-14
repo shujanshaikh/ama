@@ -11,7 +11,16 @@ const apply_patchSchema = z.object({
 })
 
 export const apply_patch = async function(input: z.infer<typeof apply_patchSchema>, projectCwd?: string) {
-    const { file_path, new_string, old_string } = input;
+    const parsedInput = apply_patchSchema.safeParse(input);
+    if (!parsedInput.success) {
+        return {
+            success: false,
+            message: `Invalid stringReplace input: ${parsedInput.error.issues[0]?.message ?? "Invalid input"}`,
+            error: "INVALID_INPUT",
+        };
+    }
+
+    const { file_path, new_string, old_string } = parsedInput.data;
     try {
             if (!file_path) {
                 return {
@@ -81,7 +90,8 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
                 };
             }
 
-            if (!fileContent.includes(old_string)) {
+            const firstOccurrenceIndex = fileContent.indexOf(old_string);
+            if (firstOccurrenceIndex === -1) {
                 return {
                     success: false,
                     message: `old_string not found in file: ${file_path}`,
@@ -89,16 +99,22 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
                 };
             }
 
-            const occurrences = fileContent.split(old_string).length - 1;
-            if (occurrences > 1) {
+            const secondOccurrenceIndex = fileContent.indexOf(
+                old_string,
+                firstOccurrenceIndex + old_string.length,
+            );
+            if (secondOccurrenceIndex !== -1) {
                 return {
                     success: false,
-                    message: `old_string appears ${occurrences} times in the file. It must be unique. Please include more context to make it unique.`,
+                    message: "old_string appears multiple times in the file. It must be unique. Please include more context to make it unique.",
                     error: 'STRING_NOT_UNIQUE',
                 };
             }
 
-            const newContent = fileContent.replace(old_string, new_string);
+            const newContent =
+                fileContent.slice(0, firstOccurrenceIndex) +
+                new_string +
+                fileContent.slice(firstOccurrenceIndex + old_string.length);
 
             try {
                 await writeFile(absolute_file_path, newContent, "utf-8");
