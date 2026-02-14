@@ -10,16 +10,32 @@ export const Route = createFileRoute('/api/auth/callback')({
         const url = new URL(request.url);
         const code = url.searchParams.get('code');
         const state = url.searchParams.get('state');
-        let returnPathname = state && state !== 'null' ? JSON.parse(atob(state)).returnPathname : null;
+        let parsedState: { returnPathname?: string; desktop?: boolean; callbackPort?: number } = {};
+        try {
+          if (state && state !== 'null') {
+            parsedState = JSON.parse(atob(state));
+          }
+        } catch {
+          // ignore parse errors
+        }
+        let returnPathname = parsedState.returnPathname ?? null;
 
         if (code) {
           try {
-            // Use the code returned to us by AuthKit and authenticate the user with WorkOS
+            // Desktop PKCE flow: redirect code+state to localhost; desktop will exchange via /api/auth/desktop-exchange
+            if (parsedState.desktop && typeof parsedState.callbackPort === 'number') {
+              const callbackUrl = `http://127.0.0.1:${parsedState.callbackPort}/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}`;
+              return Response.redirect(callbackUrl, 302);
+            }
+
+            // Web flow: exchange code for tokens and save session
             const { accessToken, refreshToken, user, impersonator } =
               await getWorkOS().userManagement.authenticateWithCode({
                 clientId: getConfig('clientId'),
                 code,
               });
+
+            if (!accessToken || !refreshToken) throw new Error('response is missing tokens');
 
             // If baseURL is provided, use it instead of request.nextUrl
             // This is useful if the app is being run in a container like docker where
@@ -46,8 +62,6 @@ export const Route = createFileRoute('/api/auth/callback')({
             }
 
             const response = redirectWithFallback(url.toString());
-
-            if (!accessToken || !refreshToken) throw new Error('response is missing tokens');
 
             await saveSession({ accessToken, refreshToken, user, impersonator });
 

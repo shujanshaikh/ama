@@ -45,7 +45,7 @@ const generateRequestId = () =>
 //     return apiUrl.replace(/^http/, 'wss').replace(/\/api\/v1$/, '');
 // };
 
-export function useUserStream(userId: string | undefined) {
+export function useUserStream(userId: string | undefined, token: string | undefined) {
     const wsRef = useRef<WebSocket | null>(null);
     const pendingCalls = useRef<Map<string, PendingCall>>(new Map());
     const [status, setStatus] = useState<ConnectionStatus>('disconnected');
@@ -54,7 +54,7 @@ export function useUserStream(userId: string | undefined) {
     const isUnmountedRef = useRef(false);
 
     useEffect(() => {
-        if (!userId) {
+        if (!userId || !token) {
             setStatus('disconnected');
             setCliConnected(false);
             return;
@@ -65,7 +65,7 @@ export function useUserStream(userId: string | undefined) {
         const connect = () => {
             if (isUnmountedRef.current) return;
 
-            const wsUrl = `${WS_URL}/api/v1/user-streams?userId=${userId}&type=frontend`;
+            const wsUrl = `${WS_URL}/api/v1/user-streams?token=${encodeURIComponent(token)}&type=frontend`;
 
             setStatus('connecting');
             const ws = new WebSocket(wsUrl);
@@ -180,7 +180,7 @@ export function useUserStream(userId: string | undefined) {
             });
             pendingCalls.current.clear();
         };
-    }, [userId]);
+    }, [userId, token]);
 
     const call = useCallback(<T = unknown>(
         method: string,

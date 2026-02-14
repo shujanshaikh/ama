@@ -7,16 +7,19 @@ import { upgradeWebSocket, websocket } from 'hono/bun'
 import type { WSContext } from "hono/ws";
 import { logger } from "hono/logger";
 import { validateAuthToken } from "./lib/validateAuthToken";
+import { getUserIdFromToken } from "./lib/bridgeAuth";
 import { userStreams } from "./routes/api/v1/user-streams";
 
-const app = new Hono();
+type Env = { Variables: { userId: string } };
+const app = new Hono<Env>();
 
 app.use(logger());
 
+const devOrigins = ["http://localhost:3001", "http://localhost:5173", "http://localhost:5174", "null"];
 app.use(
   "/*",
   cors({
-    origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV !== "production" ? "http://localhost:3001" : "*"),
+    origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV !== "production" ? devOrigins : "*"),
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -24,9 +27,15 @@ app.use(
 );
 
 export const agentStreams = new Map<string, WSContext>();
+export const userIdToToken = new Map<string, string>();
+export const tokenToUserId = new Map<string, string>();
 
-app.route("/api/v1", agentRouter);
+export function getTokenForUserId(userId: string): string | undefined {
+  return userIdToToken.get(userId);
+}
+
 app.route("/api/v1", userStreams);
+app.route("/api/v1", agentRouter);
 app.get("/", (c) => c.text("Hello ama"));
 
 app.get(
@@ -54,15 +63,27 @@ app.get(
       }
     }
 
+    const userId = await getUserIdFromToken(token)
+    if (!userId) {
+      console.log("WebSocket connection rejected: Could not derive user from token")
+      return {
+        onOpen: (_evt, ws) => {
+          ws.close(1008, 'Invalid token: user identity required')
+        },
+      }
+    }
+
     return {
       onOpen: (_evt, ws) => {
         agentStreams.set(token, ws)
-        console.log(`CLI agent connected (token: ${token.slice(0, 8)}...)`)
+        userIdToToken.set(userId, token)
+        tokenToUserId.set(token, userId)
+        console.log(`CLI agent connected (userId: ${userId.slice(0, 8)}..., token: ${token.slice(0, 8)}...)`)
       },
       onMessage(_evt) {
-        const message = JSON.parse(_evt.data.toString())
-
-        if (message.type === 'tool_result') {
+        try {
+          const message = JSON.parse(_evt.data.toString())
+          if (message.type === 'tool_result') {
           const callId = message.callId || message.id
           const pending = pendingToolCalls.get(callId)
           if (pending) {
@@ -74,9 +95,14 @@ app.get(
             pendingToolCalls.delete(callId)
           }
         }
+        } catch {
+          console.error("[agent-streams] Invalid JSON in message")
+        }
       },
       onClose: () => {
         agentStreams.delete(token)
+        userIdToToken.delete(userId)
+        tokenToUserId.delete(token)
         console.log(`CLI agent disconnected (token: ${token.slice(0, 8)}...)`)
       },
     }

@@ -1,4 +1,4 @@
-import { db, project, eq } from "@ama/db";
+import { db, project, eq, and } from "@ama/db";
 import { protectedProcedure, router } from "../index";
 import { z } from "zod";
 
@@ -25,8 +25,11 @@ export const projectRouter = router({
 
     getProject: protectedProcedure.input(z.object({
         projectId: z.string(),
-    })).query(async ({ input }) => {
-        const projectData = await db.select().from(project).where(eq(project.id, input.projectId));
+    })).query(async ({ ctx, input }) => {
+        const userId = ctx.session.user?.id!;
+        const projectData = await db.select().from(project).where(
+            and(eq(project.id, input.projectId), eq(project.userId, userId))
+        );
         if (projectData.length === 0) {
             throw new Error("Project not found");
         }

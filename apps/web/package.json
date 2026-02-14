@@ -5,7 +5,9 @@
   "scripts": {
     "build": "vite build",
     "serve": "vite preview",
-    "dev": "vite dev"
+    "dev": "vite dev",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.10",
@@ -40,7 +42,7 @@
     "@trpc/server": "catalog:",
     "@trpc/tanstack-react-query": "^11.8.0",
     "@uploadthing/react": "^7.3.3",
-    "@workos-inc/node": "^7.77.0",
+    "@workos-inc/node": "^8.0.0",
     "@xyflow/react": "^12.10.0",
     "ai": "^6.0.40",
     "class-variance-authority": "^0.7.1",
@@ -82,6 +84,7 @@
     "jsdom": "^26.0.0",
     "typescript": "^5.7.2",
     "vite": "^7.0.2",
+    "vitest": "^4.0.18",
     "web-vitals": "^5.0.3"
   }
 }

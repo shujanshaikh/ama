@@ -1,15 +1,20 @@
 import { router, protectedProcedure } from "../index";
 import { z } from "zod";
 import { generateText } from "ai";
-import { db, chat, eq } from "@ama/db";
+import { db, chat, eq, getProjectUserIdByChatId } from "@ama/db";
 import { openai } from "@ai-sdk/openai";
 
 export const generateTitleRouter = router({
     generateTitle: protectedProcedure.input(z.object({
         message: z.string(),
         chatId: z.string(),
-    })).mutation(async ({ input }) => {
+    })).mutation(async ({ ctx, input }) => {
         const { message, chatId } = input;
+        const userId = ctx.session.user?.id!;
+        const ownerId = await getProjectUserIdByChatId({ chatId });
+        if (ownerId !== userId) {
+            throw new Error("Chat not found");
+        }
         const title = await generateTitle(message);
         if (!title) {
             throw new Error("Failed to generate title");

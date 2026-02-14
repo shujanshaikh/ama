@@ -61,6 +61,7 @@ VITE_WS_URL="ws://localhost:3000"
 **apps/server/.env**
 ```env
 WORKOS_CLIENT_ID=""
+WORKOS_API_KEY=""
 DATABASE_URL=""
 UPSTASH_REDIS_REST_URL=""
 UPSTASH_REDIS_REST_TOKEN=""
