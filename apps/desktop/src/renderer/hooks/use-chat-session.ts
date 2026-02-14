@@ -22,6 +22,7 @@ export function useChatSession({
   modelRef.current = model;
 
   const gatewayTokenRef = useRef<string | null>(null);
+  const accessTokenRef = useRef<string | null>(null);
   useEffect(() => {
     if (hasGatewayKey) {
       api.getGatewayToken().then((t) => {
@@ -31,6 +32,11 @@ export function useChatSession({
       gatewayTokenRef.current = null;
     }
   }, [hasGatewayKey]);
+  useEffect(() => {
+    window.electronAPI?.auth?.getAccessToken?.().then((t) => {
+      accessTokenRef.current = t ?? null;
+    });
+  }, []);
 
   const transport = useMemo(
     () =>
@@ -38,7 +44,7 @@ export function useChatSession({
         api: `${API_URL}/api/v1/agent-proxy`,
         credentials: "include",
         headers: () => {
-          const token = gatewayTokenRef.current;
+          const token = accessTokenRef.current ?? gatewayTokenRef.current;
           if (token) {
             return { Authorization: `Bearer ${token}` };
           }

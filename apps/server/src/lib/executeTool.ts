@@ -116,17 +116,16 @@ export const registerProject = async (token: string, projectId: string, cwd: str
   })
 }
 
-export const restoreSnapshot = async (projectId: string, snapshotHash: string): Promise<boolean> => {
-  const [token] = agentStreams.keys()
+export const restoreSnapshot = async (token: string, projectId: string, snapshotHash: string): Promise<boolean> => {
   if (!token) {
     console.error("No daemon connection available for restore")
     return false
   }
 
-  const wsConnection = agentStreams.get(token)
+  const wsConnection = agentStreams.get(token);
   if (!wsConnection) {
-    console.error("No WebSocket connection found for restore")
-    return false
+    console.error("No WebSocket connection found for restore");
+    return false;
   }
 
   const callId = crypto.randomUUID()

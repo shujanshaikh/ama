@@ -12,6 +12,7 @@ import {
     getMessagesByChatId,
     saveMessages,
     getProjectByChatId,
+    getProjectUserIdByChatId,
     type Chat,
     getChatById,
     getStreamIdsByChatId,
@@ -20,7 +21,8 @@ import {
 } from "@ama/db";
 import { convertToUIMessages } from "@/lib/convertToUIMessage";
 import { requestContext } from "@/lib/context";
-import { agentStreams } from "@/index";
+import { getTokenForUserId } from "@/index";
+import { requireAuth } from "@/lib/bridgeAuth";
 import {
     createOpenCodeZenModel,
     createGatewayModel,
@@ -28,8 +30,6 @@ import {
     models,
 } from "@/lib/model";
 import { readGatewayKeyFromVault } from "@/lib/vault";
-import { extractUserIdFromCookie } from "@/lib/extractUserId";
-import { verifyGatewayAuthToken } from "@/lib/gatewayAuth";
 import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
 import { createSnapshot, registerProject } from "@/lib/executeTool";
 import {
@@ -40,8 +40,12 @@ import type { ChatMessage } from "@/lib/tool-types";
 import { differenceInSeconds } from "date-fns";
 import { generateUUID } from "@/lib/utils";
 import { ratelimit } from "@/lib/rate-limiter";
+import { z } from "zod";
 
-export const agentRouter = new Hono();
+type Env = { Variables: { userId: string } };
+export const agentRouter = new Hono<Env>();
+
+agentRouter.use("/*", requireAuth);
 
 let globalStreamContext: ResumableStreamContext | null = null;
 export type WaitUntil = (promise: Promise<any>) => void;
@@ -70,22 +74,49 @@ export function getStreamContext() {
     return globalStreamContext;
 }
 
+const agentProxyBodySchema = z.object({
+    chatId: z.string().min(1, "chatId is required"),
+    model: z.string().min(1, "model is required"),
+    message: z.object({
+        role: z.enum(["system", "user", "assistant"]).optional(),
+        parts: z.array(z.unknown()),
+    }).passthrough(),
+    planMode: z.boolean().optional(),
+    executePlan: z.boolean().optional(),
+    planName: z.string().optional(),
+});
+
+const undoBodySchema = z.object({
+    chatId: z.string().min(1, "chatId is required"),
+    deleteOnly: z.boolean().optional(),
+});
+
 agentRouter.post("/agent-proxy", async (c) => {
     try {
-        const { message, chatId, model, planMode, executePlan, planName } =
-            await c.req.json();
-            console.log("model", model);
-
-        const [token] = agentStreams.keys();
-        const { success } = await ratelimit.limit(token!);
+        const userId = c.get("userId");
+        const token = getTokenForUserId(userId);
+        const { success } = await ratelimit.limit(userId);
         if (!success) {
             return c.json({ error: "Rate limit exceeded" }, 429);
         }
         if (!token) {
             return c.json(
-                { error: "run `amai` to make agent acess the local files." },
+                { error: "run `amai` to make agent access the local files." },
                 503,
             );
+        }
+
+        const parseResult = agentProxyBodySchema.safeParse(await c.req.json());
+        if (!parseResult.success) {
+            const msg = parseResult.error.issues.map((e: { message: string }) => e.message).join("; ") || "Invalid request body";
+            return c.json({ error: msg }, 400);
+        }
+        const { message, chatId, model, planMode, executePlan, planName } = parseResult.data;
+        console.log("model", model);
+
+        const ownerId = await getProjectUserIdByChatId({ chatId });
+        if (ownerId !== userId) {
+            return c.json({ error: "Chat not found" }, 404);
         }
 
         const modelInfo = models.find((m) => m.id === model);
@@ -109,7 +140,7 @@ agentRouter.post("/agent-proxy", async (c) => {
         });
 
         const messagesFromDb = await getMessagesByChatId({ chatId });
-        const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+        const uiMessages = [...convertToUIMessages(messagesFromDb), message] as Parameters<typeof convertToModelMessages>[0];
 
         const projectInfo = await getProjectByChatId({ chatId });
 
@@ -146,16 +177,6 @@ agentRouter.post("/agent-proxy", async (c) => {
         // Resolve model before streaming: free models use OpenCode Zen, gateway models use user's API key
         let languageModel;
         if (isGatewayModel(model)) {
-            let userId = await extractUserIdFromCookie(c.req.header("cookie") ?? null);
-            if (!userId) {
-                const authHeader = c.req.header("authorization");
-                if (authHeader?.startsWith("Bearer ")) {
-                    userId = verifyGatewayAuthToken(authHeader.slice(7));
-                }
-            }
-            if (!userId) {
-                return c.json({ error: "Authentication required for premium models" }, 401);
-            }
             const userKey = await readGatewayKeyFromVault(userId);
             if (!userKey) {
                 return c.json({ error: "No AI Gateway API key configured. Please add your API key in settings." }, 400);
@@ -267,6 +288,7 @@ agentRouter.post("/agent-proxy", async (c) => {
 });
 
 agentRouter.get("/agent-proxy/:id/stream", async (c) => {
+    const userId = c.get("userId");
     const { id: chatId } = c.req.param();
 
     const streamContext = getStreamContext();
@@ -278,6 +300,11 @@ agentRouter.get("/agent-proxy/:id/stream", async (c) => {
 
     if (!chatId) {
         return c.json({ error: "Chat ID is required" }, 400);
+    }
+
+    const ownerId = await getProjectUserIdByChatId({ chatId });
+    if (ownerId !== userId) {
+        return c.json({ error: "Chat not found" }, 404);
     }
 
     let chat: Chat | null;
@@ -363,10 +390,17 @@ agentRouter.get("/agent-proxy/:id/stream", async (c) => {
 
 agentRouter.post("/undo", async (c) => {
     try {
-        const { chatId, deleteOnly } = await c.req.json();
+        const userId = c.get("userId");
+        const parseResult = undoBodySchema.safeParse(await c.req.json());
+        if (!parseResult.success) {
+            const msg = parseResult.error.issues.map((e: { message: string }) => e.message).join("; ") || "Invalid request body";
+            return c.json({ success: false, error: msg }, 400);
+        }
+        const { chatId, deleteOnly } = parseResult.data;
 
-        if (!chatId) {
-            return c.json({ success: false, error: "chatId is required" }, 400);
+        const ownerId = await getProjectUserIdByChatId({ chatId });
+        if (ownerId !== userId) {
+            return c.json({ success: false, error: "Chat not found" }, 404);
         }
 
         const { getLatestSnapshotByChatId, deleteSnapshotsByChatId } =
@@ -383,7 +417,7 @@ agentRouter.post("/undo", async (c) => {
         if (!deleteOnly) {
             const { restoreSnapshot } = await import("@/lib/executeTool");
 
-            const [token] = agentStreams.keys();
+            const token = getTokenForUserId(userId);
             if (!token) {
                 return c.json(
                     {
@@ -401,6 +435,7 @@ agentRouter.post("/undo", async (c) => {
             });
 
             const restored = await restoreSnapshot(
+                token,
                 snapshot.projectId,
                 snapshot.hash,
             );

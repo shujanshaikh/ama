@@ -47,6 +47,24 @@ export async function getProjectByChatId({ chatId }: { chatId: string }) {
   }
 }
 
+export async function getProjectUserIdByChatId({
+  chatId,
+}: {
+  chatId: string;
+}): Promise<string | null> {
+  try {
+    const result = await db
+      .select({ userId: project.userId })
+      .from(chat)
+      .innerJoin(project, eq(chat.projectId, project.id))
+      .where(eq(chat.id, chatId))
+      .limit(1);
+    return result[0]?.userId ?? null;
+  } catch (error) {
+    throw new Error("Failed to get project user id by chat id: " + error);
+  }
+}
+
 
 export async function getChatById({ id }: { id: string }) {
   try {

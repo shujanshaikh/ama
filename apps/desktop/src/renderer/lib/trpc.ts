@@ -120,9 +120,14 @@ export const api = {
   },
 
   async undo(chatId: string, deleteOnly?: boolean) {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const token = await window.electronAPI?.auth?.getAccessToken?.();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_URL}/api/v1/undo`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ chatId, deleteOnly: deleteOnly ?? false }),
     });
     return res.json() as Promise<{ success: boolean; error?: string }>;

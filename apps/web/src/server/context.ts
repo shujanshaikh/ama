@@ -108,6 +108,7 @@ export async function createContext({ req }: { req: Request }) {
   const session = await getSessionFromRequest(req);
 
   return {
+    req,
     session,
   };
 }

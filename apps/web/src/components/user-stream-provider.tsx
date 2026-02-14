@@ -1,5 +1,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useUserStream, createRpcCaller } from '@/hooks/use-user-stream';
+import { useTRPC } from '@/utils/trpc';
 
 interface UserStreamContextValue {
     status: 'connecting' | 'connected' | 'disconnected' | 'error';
@@ -18,7 +20,13 @@ interface UserStreamProviderProps {
 }
 
 export function UserStreamProvider({ userId, children }: UserStreamProviderProps) {
-    const { status, cliConnected, call, requestCliStatus, isReady } = useUserStream(userId);
+    const trpc = useTRPC();
+    const { data: tokenData } = useQuery({
+        ...trpc.apiKeys.getAccessToken.queryOptions(),
+        enabled: !!userId,
+    });
+    const token = tokenData?.token;
+    const { status, cliConnected, call, requestCliStatus, isReady } = useUserStream(userId, token);
 
     const rpc = useMemo(() => createRpcCaller(call), [call]);
 
