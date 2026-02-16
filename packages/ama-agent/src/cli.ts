@@ -1,6 +1,7 @@
 import pc from "picocolors";
 import { main } from "./server";
 import { login, isAuthenticated, logout } from "./lib/auth-login";
+import { startCodexOAuth, getCodexStatus, codexLogout as logoutCodex } from "./lib/codex-auth";
 import { isCodeServerInstalled, installCodeServer, startCodeServer } from "./lib/code-server";
 import { startDaemon, stopDaemon, isDaemonRunning, getDaemonPid } from "./lib/daemon";
 import { projectRegistry } from "./lib/project-registry";
@@ -107,6 +108,9 @@ if (args[0] === "--help" || args[0] === "-h") {
     console.log('');
     console.log(pc.cyan('  commands'));
     console.log(pc.gray('    login           authenticate with amai'));
+    console.log(pc.gray('    codex           connect ChatGPT subscription for Codex'));
+    console.log(pc.gray('    codex status    check Codex auth status'));
+    console.log(pc.gray('    codex logout    remove Codex credentials'));
     console.log(pc.gray('    logout          remove credentials'));
     console.log(pc.gray('    start           start background daemon'));
     console.log(pc.gray('    stop            stop background daemon'));
@@ -147,6 +151,35 @@ if (args[0] === "update") {
             }
         }
         process.exit(0);
+    })();
+} else if (args[0] === "codex") {
+    (async () => {
+        try {
+            const subCommand = args[1];
+            if (subCommand === "status") {
+                const status = await getCodexStatus();
+                console.log(pc.gray(`codex auth: ${status.authenticated ? 'connected' : 'not connected'}`));
+                process.exit(0);
+            }
+
+            if (subCommand === "logout") {
+                await logoutCodex();
+                console.log(pc.cyan("codex credentials removed"));
+                process.exit(0);
+            }
+
+            console.log(pc.gray("starting codex auth..."));
+            const { authUrl, waitForCallback } = await startCodexOAuth();
+            console.log("");
+            console.log(pc.cyan(`open: ${authUrl}`));
+            console.log(pc.gray("complete authorization in your browser..."));
+            const result = await waitForCallback();
+            console.log(pc.cyan(`codex connected (account: ${result.accountId})`));
+            process.exit(0);
+        } catch (error: any) {
+            console.error(pc.red(error.message || "codex auth failed"));
+            process.exit(1);
+        }
     })();
 } else if (args[0] === "start") {
     // Handle start command

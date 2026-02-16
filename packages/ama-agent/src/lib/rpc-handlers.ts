@@ -2,6 +2,12 @@ import { projectRegistry } from './project-registry';
 import { getContext } from './get-files';
 import { scanIdeProjects } from './ide-projects';
 import { Snapshot } from '../snapshot/snapshot';
+import {
+    codexLogout,
+    getCodexStatus,
+    getCodexTokens,
+    startCodexOAuth,
+} from './codex-auth';
 
 export interface RpcError {
     _tag: string;
@@ -173,6 +179,28 @@ export const rpcHandlers: Record<string, (input: any) => Promise<any>> = {
         }
         const diff = await Snapshot.diff(projectId, hash);
         return { success: true, diff };
+    },
+
+    'daemon:codex_start_auth': async () => {
+        const { authUrl, waitForCallback } = await startCodexOAuth();
+        // Auth callback completes asynchronously after browser redirect.
+        void waitForCallback().catch((error) => {
+            console.error('[codex] OAuth callback failed:', error);
+        });
+        return { authUrl };
+    },
+
+    'daemon:codex_get_tokens': async () => {
+        return getCodexTokens();
+    },
+
+    'daemon:codex_status': async () => {
+        return getCodexStatus();
+    },
+
+    'daemon:codex_logout': async () => {
+        await codexLogout();
+        return { success: true };
     },
 };
 

@@ -8,9 +8,9 @@ import type { stringReplace } from "@/tools/stringReplace"
 import type { runTerminalCommand } from "@/tools/runTerminalCommand"
 import type { InferUITool, UIMessage } from "ai"
 import z from "zod"
-import { webSearch } from "@/tools/web-search"
+import { webSearch } from "@/tools/webSearch"
 import type { batchTool } from "@/tools/batch"
-import type { exploreTool } from "@/tools/sub-agent"
+import type { exploreTool } from "@/tools/exploreAgent"
 
 
 export interface FileType {

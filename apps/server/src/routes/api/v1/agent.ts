@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import {
     createUIMessageStream,
+    type ModelMessage,
     stepCountIs,
     streamText,
     smoothStream,
@@ -27,11 +28,13 @@ import {
     createOpenCodeZenModel,
     createGatewayModel,
     isGatewayModel,
+    isCodexModel,
     models,
 } from "@/lib/model";
 import { readGatewayKeyFromVault } from "@/lib/vault";
 import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
 import { createSnapshot, registerProject } from "@/lib/executeTool";
+import { buildCodexProviderOptions, codexRpc, createCodexModel } from "@/lib/codex";
 import {
     createResumableStreamContext,
     type ResumableStreamContext,
@@ -90,6 +93,42 @@ const undoBodySchema = z.object({
     chatId: z.string().min(1, "chatId is required"),
     deleteOnly: z.boolean().optional(),
 });
+
+function buildCodexMessages(messages: ModelMessage[], systemPrompt: string): ModelMessage[] {
+    const cleaned: ModelMessage[] = [];
+
+    for (const message of messages) {
+        if (message.role === "system" || message.role === "tool") {
+            continue;
+        }
+
+        if (message.role === "assistant" && Array.isArray(message.content)) {
+            const filteredContent = message.content.filter((part) => {
+                return part.type !== "tool-call" && part.type !== "tool-result";
+            });
+
+            if (filteredContent.length === 0) {
+                continue;
+            }
+
+            cleaned.push({
+                ...message,
+                content: filteredContent,
+            });
+            continue;
+        }
+
+        cleaned.push(message);
+    }
+
+    return [
+        {
+            role: "user",
+            content: systemPrompt,
+        },
+        ...cleaned,
+    ];
+}
 
 agentRouter.post("/agent-proxy", async (c) => {
     try {
@@ -176,7 +215,10 @@ agentRouter.post("/agent-proxy", async (c) => {
 
         // Resolve model before streaming: free models use OpenCode Zen, gateway models use user's API key
         let languageModel;
-        if (isGatewayModel(model)) {
+        if (isCodexModel(model)) {
+            const cleanModelId = model.replace(/^codex\//, "");
+            languageModel = await createCodexModel(cleanModelId, token);
+        } else if (isGatewayModel(model)) {
             const userKey = await readGatewayKeyFromVault(userId);
             if (!userKey) {
                 return c.json({ error: "No AI Gateway API key configured. Please add your API key in settings." }, 400);
@@ -206,17 +248,25 @@ agentRouter.post("/agent-proxy", async (c) => {
                             projectInfo?.projectCwd,
                         );
 
+                        const modelMessages = await convertToModelMessages(uiMessages);
+                        const codex = isCodexModel(model);
+                        const messagesForModel = codex
+                            ? buildCodexMessages(modelMessages as ModelMessage[], systemPrompt)
+                            : modelMessages;
+
                         const result = streamText({
-                            messages: await convertToModelMessages(uiMessages),
+                            messages: messagesForModel,
                             model: languageModel,
-                            system: systemPrompt,
-                            temperature: 1.0,
+                            system: codex ? undefined : systemPrompt,
+                            // Codex reasoning models do not support temperature.
+                            temperature: codex ? undefined : 1.0,
                             stopWhen: stepCountIs(25),
                             experimental_transform: smoothStream({
                                 delayInMs: 20,
                                 chunking: "word",
                             }),
                             tools: tools,
+                            providerOptions: codex ? buildCodexProviderOptions(systemPrompt) : undefined,
                         });
                         result.consumeStream();
                         dataStream.merge(
@@ -284,6 +334,57 @@ agentRouter.post("/agent-proxy", async (c) => {
     } catch (error) {
         console.error("Unhandled error in agent-proxy API:", error);
         return c.json({ error: "Internal server error" }, 500);
+    }
+});
+
+agentRouter.post("/codex/auth/start", async (c) => {
+    try {
+        const userId = c.get("userId");
+        const token = getTokenForUserId(userId);
+        if (!token) {
+            return c.json(
+                { error: "run `amai` to make agent access the local files." },
+                503,
+            );
+        }
+
+        const result = await codexRpc.startAuth(token);
+        return c.json(result);
+    } catch (error: any) {
+        return c.json({ error: error.message || "Failed to start Codex auth" }, 500);
+    }
+});
+
+agentRouter.get("/codex/auth/status", async (c) => {
+    try {
+        const userId = c.get("userId");
+        const token = getTokenForUserId(userId);
+        if (!token) {
+            return c.json({ authenticated: false });
+        }
+
+        const result = await codexRpc.status(token);
+        return c.json(result);
+    } catch {
+        return c.json({ authenticated: false });
+    }
+});
+
+agentRouter.post("/codex/auth/logout", async (c) => {
+    try {
+        const userId = c.get("userId");
+        const token = getTokenForUserId(userId);
+        if (!token) {
+            return c.json(
+                { error: "run `amai` to make agent access the local files." },
+                503,
+            );
+        }
+
+        const result = await codexRpc.logout(token);
+        return c.json(result);
+    } catch (error: any) {
+        return c.json({ error: error.message || "Failed to logout Codex auth" }, 500);
     }
 });
 

@@ -7,7 +7,7 @@ import type { LanguageModel } from "ai";
 export type ModelInfo = {
   id: string;
   name: string;
-  type: "free" | "gateway";
+  type: "free" | "gateway" | "codex";
 };
 
 // Models that use /chat/completions endpoint (OpenAI-compatible)
@@ -76,6 +76,11 @@ export const models: ModelInfo[] = [
   { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", type: "gateway" },
   { id: "openai/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "gateway" },
   { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5", type: "gateway" },
+  // ChatGPT subscription models (Codex)
+  { id: "codex/gpt-5.1-codex-max", name: "GPT 5.1 Codex Max", type: "codex" },
+  { id: "codex/gpt-5.1-codex-mini", name: "GPT 5.1 Codex Mini", type: "codex" },
+  { id: "codex/gpt-5.2", name: "GPT 5.2", type: "codex" },
+  { id: "codex/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "codex" },
 ];
 
 export function createGatewayModel(modelId: string, userApiKey: string): LanguageModel {
@@ -85,5 +90,9 @@ export function createGatewayModel(modelId: string, userApiKey: string): Languag
 
 export function isGatewayModel(modelId: string): boolean {
   return models.find((m) => m.id === modelId)?.type === "gateway";
+}
+
+export function isCodexModel(modelId: string): boolean {
+  return models.find((m) => m.id === modelId)?.type === "codex";
 }
 

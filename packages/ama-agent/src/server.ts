@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
 import { read_file } from './tools/read-file'
-import { apply_patch } from './tools/apply-patch'
+import { apply_patch } from './tools/stringReplace'
 import { DEFAULT_SERVER_URL } from './constant'
 import { editFiles } from './tools/edit-file'
 import { deleteFile } from './tools/delete-file'

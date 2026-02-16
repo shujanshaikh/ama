@@ -61,7 +61,7 @@ export function ChatPromptInput({
   showContextSelector,
   cursorPosition,
   projectCwd,
-  canUndo,
+  canUndo: _canUndo,
   hasGatewayKey,
   onInputChange,
   onFileSelect,
@@ -76,6 +76,7 @@ export function ChatPromptInput({
 }: ChatPromptInputProps) {
   const freeModels = models.filter((m) => m.type === 'free');
   const gatewayModels = models.filter((m) => m.type === 'gateway');
+  const codexModels = models.filter((m) => m.type === 'codex');
   const [pendingGatewayModel, setPendingGatewayModel] = useState<string | null>(
     null,
   );
@@ -282,6 +283,26 @@ export function ChatPromptInput({
                     </PromptInputSelectItem>
                   ))}
                 </SelectGroup>
+                {codexModels.length > 0 ? (
+                  <>
+                    <SelectSeparator />
+                    <SelectGroup>
+                      <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold">
+                        Codex
+                      </SelectLabel>
+                      {codexModels.map((m) => (
+                        <PromptInputSelectItem key={m.id} value={m.id}>
+                          <span className="flex items-center gap-1.5">
+                            <span>{m.name}</span>
+                            <span className="text-[10px] font-medium lowercase text-muted-foreground">
+                              codex
+                            </span>
+                          </span>
+                        </PromptInputSelectItem>
+                      ))}
+                    </SelectGroup>
+                  </>
+                ) : null}
               </PromptInputSelectContent>
             </PromptInputSelect>
 
