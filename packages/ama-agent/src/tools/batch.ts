@@ -24,7 +24,13 @@ const batchSchema = z.object({
 // Tools that cannot be batched (to prevent infinite recursion)
 const DISALLOWED_TOOLS = new Set(["batch"]);
 
-// Map of available tools for batch execution
+// Max concurrency pool size
+const MAX_CONCURRENCY = 5;
+
+// Per-call timeout (ms)
+const PER_CALL_TIMEOUT = 30_000;
+
+// All safe batchable tools
 const batchableToolExecutors: Record<
   string,
   (args: any, projectCwd?: string) => Promise<any>
@@ -42,6 +48,38 @@ interface BatchToolCallResult {
   success: boolean;
   result?: any;
   error?: string;
+  durationMs?: number;
+  timedOut?: boolean;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`BATCH_CALL_TIMEOUT: exceeded ${ms}ms`));
+    }, ms);
+    promise
+      .then((v) => { clearTimeout(timer); resolve(v); })
+      .catch((e) => { clearTimeout(timer); reject(e); });
+  });
+}
+
+async function runWithConcurrencyLimit<T>(
+  tasks: (() => Promise<T>)[],
+  limit: number,
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tasks.length) {
+      const idx = nextIndex++;
+      results[idx] = await tasks[idx]();
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
 }
 
 export const batchTool = async function (
@@ -58,7 +96,6 @@ export const batchTool = async function (
 }> {
   const { tool_calls } = input;
 
-  // Limit to 10 calls
   const callsToExecute = tool_calls.slice(0, 10);
   const discardedCalls = tool_calls.slice(10);
 
@@ -66,17 +103,17 @@ export const batchTool = async function (
     tool: string;
     parameters: Record<string, unknown>;
   }): Promise<BatchToolCallResult> => {
+    const start = performance.now();
     try {
-      // Check if tool is disallowed
       if (DISALLOWED_TOOLS.has(call.tool)) {
         return {
           tool: call.tool,
           success: false,
           error: `Tool '${call.tool}' is not allowed in batch. Disallowed tools: ${Array.from(DISALLOWED_TOOLS).join(", ")}`,
+          durationMs: 0,
         };
       }
 
-      // Get the executor for this tool
       const executor = batchableToolExecutors[call.tool];
       if (!executor) {
         const availableTools = Object.keys(batchableToolExecutors).join(", ");
@@ -84,28 +121,37 @@ export const batchTool = async function (
           tool: call.tool,
           success: false,
           error: `Tool '${call.tool}' not found. Available tools for batching: ${availableTools}`,
+          durationMs: 0,
         };
       }
 
-      // Execute the tool
-      const result = await executor(call.parameters, projectCwd);
+      const result = await withTimeout(executor(call.parameters, projectCwd), PER_CALL_TIMEOUT);
+      const durationMs = Math.round(performance.now() - start);
 
       return {
         tool: call.tool,
-        success: result.success !== false, // Treat undefined success as true
+        success: result.success !== false,
         result,
+        durationMs,
       };
     } catch (error: any) {
+      const durationMs = Math.round(performance.now() - start);
+      const timedOut = error.message?.includes("BATCH_CALL_TIMEOUT");
       return {
         tool: call.tool,
         success: false,
         error: error.message || String(error),
+        durationMs,
+        timedOut,
       };
     }
   };
 
-  // Execute all calls in parallel
-  const results = await Promise.all(callsToExecute.map(executeCall));
+  // Execute with bounded concurrency
+  const tasks = callsToExecute.map(
+    (call) => () => executeCall(call),
+  );
+  const results = await runWithConcurrencyLimit(tasks, MAX_CONCURRENCY);
 
   // Add discarded calls as errors
   for (const call of discardedCalls) {
@@ -113,6 +159,7 @@ export const batchTool = async function (
       tool: call.tool,
       success: false,
       error: "Maximum of 10 tools allowed in batch",
+      durationMs: 0,
     });
   }
 

@@ -16,7 +16,9 @@ const grepSchema = z.object({
         includePattern: z.string().optional().describe('Glob pattern for files to include (e.g., "*.ts")'),
         excludePattern: z.string().optional().describe('Glob pattern for files to exclude'),
         caseSensitive: z.boolean().optional().describe('Whether the search should be case sensitive'),
-    })
+        path: z.string().optional().describe('Subdirectory to search in'),
+        sortByMtime: z.boolean().optional().describe('Sort results by file modification time (default: false)'),
+    }).optional(),
 })
 
 export const grepTool = tool({

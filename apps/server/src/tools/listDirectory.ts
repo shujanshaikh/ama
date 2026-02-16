@@ -8,12 +8,13 @@ const listSchema = z.object({
     maxDepth: z.number().optional().describe("Maximum recursion depth (default: 3)"),
     pattern: z.string().optional().describe("File extension (e.g., '.ts') or glob-like pattern to filter files"),
     showHidden: z.boolean().optional().describe("Whether to show hidden files starting with '.' (default: false)"),
+    includeMetadata: z.boolean().optional().describe("Whether to fetch file metadata like mtime (default: false — faster without I/O)"),
 });
 
 export const listDirectory = tool({
     description: 'Lists files and directories in a tree structure. Returns a visual tree output with directories and files. By default, searches recursively up to depth 3 and excludes common directories like node_modules, .git, dist, etc. Use pattern to filter by file extension. Prefer Glob or Grep tools for specific file searches.',
     inputSchema: listSchema,
-    execute: async ({ path, recursive, maxDepth, pattern, showHidden }) => {
+    execute: async ({ path, recursive, maxDepth, pattern, showHidden, includeMetadata }) => {
         try {
             const result = await executeTool("listDirectory", {
                 path,
@@ -21,6 +22,7 @@ export const listDirectory = tool({
                 maxDepth,
                 pattern,
                 showHidden,
+                includeMetadata,
             });
             return result;
         } catch (error: any) {

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { AMA_DIR } from "../constant";
+import { isPathWithinProject } from "./sandbox";
 
 interface RegisteredProject {
     id: string;
@@ -108,15 +109,6 @@ class ProjectRegistry {
 // Export singleton instance
 export const projectRegistry = new ProjectRegistry();
 
-// Export helper function for path validation
-export function isPathWithinProject(filePath: string, projectCwd: string): boolean {
-    try {
-        const resolved = path.resolve(projectCwd, filePath);
-        const normalized = path.normalize(resolved);
-        const normalizedCwd = path.normalize(projectCwd);
-        return normalized.startsWith(normalizedCwd);
-    } catch {
-        return false;
-    }
-}
+// Re-export for backward compatibility
+export { isPathWithinProject } from "./sandbox";
 

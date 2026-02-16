@@ -42,7 +42,9 @@
   "scripts": {
     "dev": "tsup --watch",
     "build": "rm -rf dist && NODE_ENV=production tsup",
-    "prepublishOnly": "bun run build",
+    "test": "bun test src/__tests__",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run test && bun run build",
     "install-global": "bun run build && npm link || bun link"
   },
   "devDependencies": {

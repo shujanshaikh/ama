@@ -14,6 +14,12 @@ import { runTerminalCommand } from './tools/runTerminalCommand'
 import { connectToUserStreams } from './lib/userStreams'
 import { rpcHandlers } from './lib/rpc-handlers'
 import { batchTool } from './tools/batch'
+import {
+  executeTool,
+  parseToolCall,
+  ValidationError,
+  type ToolExecutorFn,
+} from './lib/tool-executor'
 
 
 // Reconnection config
@@ -33,15 +39,6 @@ function getReconnectDelay(): number {
   return Math.floor(delay + jitter)
 }
 
-interface ToolCall {
-  type: 'tool_call'
-  id: string
-  tool: string
-  args: Record<string, any>
-  projectId?: string
-  projectCwd?: string
-}
-
 interface RpcCall {
   type: 'rpc_call'
   id: string
@@ -49,8 +46,7 @@ interface RpcCall {
   args: Record<string, any>
 }
 
-
-const toolExecutors: Record<string, (args: any, projectCwd?: string) => Promise<any>> = {
+export const toolExecutors: Record<string, ToolExecutorFn> = {
   editFile: editFiles,
   deleteFile: deleteFile,
   grep: grepTool,
@@ -86,34 +82,56 @@ export function connectToServer(serverUrl: string = DEFAULT_SERVER_URL) {
   })
 
   ws.on('message', async (data) => {
-    const message = JSON.parse(data.toString()) as ToolCall | RpcCall
+    let message: any
+    try {
+      message = JSON.parse(data.toString())
+    } catch {
+      console.error(pc.red('failed to parse incoming message'))
+      return
+    }
 
     if (message.type === 'tool_call') {
-      console.log(pc.gray(`> ${message.tool}`))
-
-      try {
-        const executor = toolExecutors[message.tool]
-        if (!executor) {
-          throw new Error(`Unknown tool: ${message.tool}`)
-        }
-
-        const result = await executor(message.args, message.projectCwd)
-
+      // Validate the tool_call payload with Zod
+      const validated = parseToolCall(message)
+      if (validated instanceof ValidationError) {
         ws.send(JSON.stringify({
           type: 'tool_result',
-          id: message.id,
-          result,
+          id: message.id ?? 'unknown',
+          error: validated.message,
         }))
-
-      } catch (error: any) {
-        ws.send(JSON.stringify({
-          type: 'tool_result',
-          id: message.id,
-          error: error.message,
-        }))
-
-        console.error(pc.red(`  ${message.tool} failed: ${error.message}`))
+        console.error(pc.red(`  validation error: ${validated.message}`))
+        return
       }
+
+      console.log(pc.gray(`> ${validated.tool}`))
+
+      // Execute through centralized engine (timeout + envelope)
+      const response = await executeTool(
+        validated.tool,
+        validated.args,
+        validated.projectCwd,
+        toolExecutors,
+      )
+
+      if (response.success) {
+        ws.send(JSON.stringify({
+          type: 'tool_result',
+          id: validated.id,
+          result: response.data,
+        }))
+      } else {
+        ws.send(JSON.stringify({
+          type: 'tool_result',
+          id: validated.id,
+          error: response.error?.message ?? 'Unknown error',
+        }))
+        console.error(pc.red(`  ${validated.tool} failed: ${response.error?.message}`))
+      }
+
+      if (response.metadata?.durationMs && response.metadata.durationMs > 5000) {
+        console.log(pc.yellow(`  ${validated.tool} took ${response.metadata.durationMs}ms`))
+      }
+
     } else if (message.type === 'rpc_call') {
       console.log(pc.gray(`> rpc: ${message.method}`))
 
@@ -165,5 +183,3 @@ export async function main() {
   await connectToUserStreams(serverUrl)
   startHttpServer()
 }
-
-

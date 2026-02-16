@@ -42,6 +42,7 @@ const listSchema = z.object({
     maxDepth: z.number().optional().describe("Maximum recursion depth (default: 3)"),
     pattern: z.string().optional().describe("File extension (e.g., '.ts') or glob-like pattern"),
     showHidden: z.boolean().optional().describe("Whether to show hidden files (default: false)"),
+    includeMetadata: z.boolean().optional().describe("Whether to fetch file metadata like mtime (default: false — faster without I/O)"),
 });
 
 interface FileEntry {
@@ -147,12 +148,13 @@ function buildTreeOutput(entries: FileEntry[], basePath: string): string {
 }
 
 export const list = async function(input: z.infer<typeof listSchema>, projectCwd?: string) {
-    const { 
-        path: relativePath, 
-        recursive = true, 
-        maxDepth = 3, 
-        pattern, 
-        showHidden = false 
+    const {
+        path: relativePath,
+        recursive = true,
+        maxDepth = 3,
+        pattern,
+        showHidden = false,
+        includeMetadata = false,
     } = input;
 
     if (maxDepth !== undefined && (!Number.isInteger(maxDepth) || maxDepth < 0)) {
@@ -269,8 +271,10 @@ export const list = async function(input: z.infer<typeof listSchema>, projectCwd
 
         await walk(absolutePath, 0);
 
-        // Get mtimes for all entries (batched parallel)
-        await getMtimesBatched(collected);
+        // Only fetch mtimes when metadata is requested (saves I/O)
+        if (includeMetadata) {
+            await getMtimesBatched(collected);
+        }
 
         // Count stats
         const totalFiles = collected.filter(item => item.type === 'file').length;

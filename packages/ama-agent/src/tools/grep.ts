@@ -7,6 +7,7 @@ export const GREP_LIMITS = {
     DEFAULT_MAX_MATCHES: 200,
     MAX_LINE_LENGTH: 500,
     MAX_TOTAL_OUTPUT_SIZE: 1 * 1024 * 1024,
+    EXECUTION_TIMEOUT_MS: 15_000,
     TRUNCATION_MESSAGE:
         '\n[Results truncated due to size limits. Use more specific patterns or file filters to narrow your search.]',
 };
@@ -18,6 +19,7 @@ const grepSchema = z.object({
         excludePattern: z.string().optional().describe('Glob pattern for files to exclude'),
         caseSensitive: z.boolean().optional().describe('Whether the search should be case sensitive'),
         path: z.string().optional().describe('Subdirectory to search in'),
+        sortByMtime: z.boolean().optional().describe('Sort results by file modification time (default: false)'),
     }).optional(),
 });
 
@@ -28,34 +30,36 @@ interface GrepMatch {
     mtime: number;
 }
 
+// ── Cached ripgrep binary resolution (resolved once at module load) ─────
+let _cachedRgPath: string | null = null;
+
 async function getRipgrepPath(): Promise<string> {
-    // Check common ripgrep locations
+    if (_cachedRgPath) return _cachedRgPath;
+
     const paths = [
         '/opt/homebrew/bin/rg',
         '/usr/local/bin/rg',
         '/usr/bin/rg',
-        'rg', // Fallback to PATH
     ];
-    
+
     for (const rgPath of paths) {
-        try {
-            const proc = Bun.spawn(['which', rgPath], { stdout: 'pipe', stderr: 'pipe' });
-            await proc.exited;
-            if (proc.exitCode === 0) {
-                return rgPath;
-            }
-        } catch {
-            continue;
+        if (fs.existsSync(rgPath)) {
+            _cachedRgPath = rgPath;
+            return rgPath;
         }
     }
-    
-    return 'rg'; // Default fallback
+
+    _cachedRgPath = 'rg';
+    return 'rg';
 }
+
+// Eagerly resolve at import time
+getRipgrepPath();
 
 async function getMtimesBatched(files: string[]): Promise<Map<string, number>> {
     const mtimeMap = new Map<string, number>();
     const BATCH_SIZE = 50;
-    
+
     for (let i = 0; i < files.length; i += BATCH_SIZE) {
         const batch = files.slice(i, i + BATCH_SIZE);
         const results = await Promise.all(
@@ -69,7 +73,7 @@ async function getMtimesBatched(files: string[]): Promise<Map<string, number>> {
         );
         results.forEach(({ path, mtime }) => mtimeMap.set(path, mtime));
     }
-    
+
     return mtimeMap;
 }
 
@@ -85,14 +89,13 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
     }
 
     try {
-        const { includePattern, excludePattern, caseSensitive, path: subPath } = options || {};
-        
+        const { includePattern, excludePattern, caseSensitive, path: subPath, sortByMtime = false } = options || {};
+
         let searchDir = projectCwd || process.cwd();
-        
-        // Handle subdirectory path
+
         if (subPath) {
             searchDir = path.isAbsolute(subPath) ? subPath : path.resolve(searchDir, subPath);
-            
+
             if (projectCwd) {
                 const validation = validatePath(subPath, projectCwd);
                 if (!validation.valid) {
@@ -105,7 +108,6 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             }
         }
 
-        // Verify directory exists
         if (!fs.existsSync(searchDir)) {
             return {
                 success: false,
@@ -115,33 +117,28 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
         }
 
         const rgPath = await getRipgrepPath();
-        
-        // Build ripgrep arguments
+
         const args: string[] = [
-            '-n',                    // Line numbers
-            '--with-filename',       // Always show filename
-            '--no-heading',          // Don't group by file
-            '--color=never',         // No ANSI colors
-            '--max-count=100',       // Max matches per file
-            '--max-columns=1000',    // Truncate long lines
+            '-n',
+            '--with-filename',
+            '--no-heading',
+            '--color=never',
+            '--max-count=100',
+            '--max-columns=1000',
         ];
 
-        // Case sensitivity (default: case insensitive)
         if (!caseSensitive) {
             args.push('-i');
         }
 
-        // Include pattern (e.g., "*.ts", "*.{js,jsx}")
         if (includePattern) {
             args.push('--glob', includePattern);
         }
 
-        // Exclude pattern
         if (excludePattern) {
             args.push('--glob', `!${excludePattern}`);
         }
 
-        // Always exclude common directories
         args.push('--glob', '!node_modules/**');
         args.push('--glob', '!.git/**');
         args.push('--glob', '!dist/**');
@@ -152,21 +149,35 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
         args.push('--glob', '!yarn.lock');
         args.push('--glob', '!bun.lockb');
 
-        // Add the pattern and search directory
         args.push('--regexp', query);
         args.push(searchDir);
 
-        // Execute ripgrep using Bun.spawn
         const proc = Bun.spawn([rgPath, ...args], {
             stdout: 'pipe',
             stderr: 'pipe',
         });
 
+        // Timeout + cancellation for ripgrep
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+            timedOut = true;
+            proc.kill();
+        }, GREP_LIMITS.EXECUTION_TIMEOUT_MS);
+
         const stdout = await new Response(proc.stdout).text();
         const stderr = await new Response(proc.stderr).text();
         const exitCode = await proc.exited;
 
-        // Exit code 1 means no matches (not an error)
+        clearTimeout(timeoutId);
+
+        if (timedOut) {
+            return {
+                success: false,
+                message: `Search timed out after ${GREP_LIMITS.EXECUTION_TIMEOUT_MS}ms. Use more specific patterns.`,
+                error: 'GREP_TIMEOUT',
+            };
+        }
+
         if (exitCode === 1) {
             return {
                 success: true,
@@ -178,7 +189,6 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             };
         }
 
-        // Other non-zero exit codes are errors
         if (exitCode !== 0) {
             return {
                 success: false,
@@ -187,13 +197,11 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             };
         }
 
-        // Parse ripgrep output
         const lines = stdout.trim().split('\n').filter(line => line.length > 0);
         const rawMatches: GrepMatch[] = [];
         const uniqueFiles = new Set<string>();
 
         for (const line of lines) {
-            // Format: filepath:linenum:content
             const firstColon = line.indexOf(':');
             const secondColon = line.indexOf(':', firstColon + 1);
 
@@ -202,7 +210,6 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
                 const lineNumber = parseInt(line.substring(firstColon + 1, secondColon), 10);
                 let content = line.substring(secondColon + 1);
 
-                // Truncate long content
                 if (content.length > GREP_LIMITS.MAX_LINE_LENGTH) {
                     content = content.substring(0, GREP_LIMITS.MAX_LINE_LENGTH) + '...';
                 }
@@ -217,40 +224,33 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             }
         }
 
-        // Get mtimes for sorting by recency
-        const mtimeMap = await getMtimesBatched(Array.from(uniqueFiles));
-
-        // Add mtimes to matches
-        for (const match of rawMatches) {
-            match.mtime = mtimeMap.get(match.file) || 0;
+        // Only fetch mtimes when sorting is requested (saves I/O)
+        if (sortByMtime && uniqueFiles.size > 0) {
+            const mtimeMap = await getMtimesBatched(Array.from(uniqueFiles));
+            for (const match of rawMatches) {
+                match.mtime = mtimeMap.get(match.file) || 0;
+            }
+            rawMatches.sort((a, b) => {
+                if (b.mtime !== a.mtime) return b.mtime - a.mtime;
+                return a.file.localeCompare(b.file);
+            });
         }
 
-        // Sort by mtime (most recent first), then by file path
-        rawMatches.sort((a, b) => {
-            if (b.mtime !== a.mtime) {
-                return b.mtime - a.mtime;
-            }
-            return a.file.localeCompare(b.file);
-        });
-
-        // Apply limits
         const truncated = rawMatches.length > GREP_LIMITS.DEFAULT_MAX_MATCHES;
-        const finalMatches = truncated 
-            ? rawMatches.slice(0, GREP_LIMITS.DEFAULT_MAX_MATCHES) 
+        const finalMatches = truncated
+            ? rawMatches.slice(0, GREP_LIMITS.DEFAULT_MAX_MATCHES)
             : rawMatches;
 
-        // Build output
         const detailedMatches = finalMatches.map(m => ({
             file: m.file,
             lineNumber: m.lineNumber,
             content: m.content,
         }));
 
-        const matches = finalMatches.map(m => 
+        const matches = finalMatches.map(m =>
             `${m.file}:${m.lineNumber}:${m.content}`
         );
 
-        // Group matches by file for formatted output
         const groupedOutput: string[] = [`Found ${finalMatches.length} matches`];
         let currentFile = '';
 

@@ -2,6 +2,9 @@ import { z } from "zod";
 import path from "node:path";
 import { validatePath } from "../lib/sandbox";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB hard cap
+const MAX_LINES_RETURNED = 10_000;
+
 const read_fileSchema = z.object({
   relative_file_path: z
     .string()
@@ -21,7 +24,6 @@ const read_fileSchema = z.object({
     .describe("The one-indexed line number to end reading at (inclusive)."),
 })
 
-// Helper function to read file content and return appropriate response
 async function readFileContent(
   absolute_file_path: string,
   relative_file_path: string,
@@ -30,8 +32,7 @@ async function readFileContent(
   end_line_one_indexed?: number
 ) {
   const file = Bun.file(absolute_file_path);
-  
-  // Check if file exists
+
   const exists = await file.exists();
   if (!exists) {
     return {
@@ -41,18 +42,34 @@ async function readFileContent(
     };
   }
 
-  // Check if it's a directory by checking file size (directories have size 0 and reading them fails)
   try {
+    // Check file size before reading
+    const stat = await file.stat();
+    if (stat.size > MAX_FILE_SIZE) {
+      return {
+        success: false,
+        message: `File too large (${Math.round(stat.size / 1024 / 1024)}MB). Maximum is ${MAX_FILE_SIZE / 1024 / 1024}MB. Use line ranges to read portions.`,
+        error: 'FILE_TOO_LARGE',
+      };
+    }
+
     const fileContent = await file.text();
     const lines = fileContent.split(/\r?\n/);
     const totalLines = lines.length;
 
     if (should_read_entire_file) {
+      const cappedLines = lines.slice(0, MAX_LINES_RETURNED);
+      const truncated = totalLines > MAX_LINES_RETURNED;
+      const content = cappedLines.join('\n');
+
       return {
         success: true,
-        message: `Successfully read entire file: ${relative_file_path} (${totalLines} lines)`,
-        content: fileContent,
+        message: truncated
+          ? `Read first ${MAX_LINES_RETURNED} of ${totalLines} lines from: ${relative_file_path} (truncated)`
+          : `Successfully read entire file: ${relative_file_path} (${totalLines} lines)`,
+        content,
         totalLines,
+        truncated,
       };
     }
 
@@ -67,19 +84,22 @@ async function readFileContent(
     }
 
     const normalizedEnd = Math.min(end_line_one_indexed as number, totalLines);
-    const selectedLines = lines
-      .slice(startIndex, normalizedEnd)
-      .join('\n');
-    const linesRead = normalizedEnd - (start_line_one_indexed as number) + 1;
+    const rangeSize = normalizedEnd - startIndex;
+    const cappedEnd = rangeSize > MAX_LINES_RETURNED
+      ? startIndex + MAX_LINES_RETURNED
+      : normalizedEnd;
+
+    const selectedLines = lines.slice(startIndex, cappedEnd).join('\n');
+    const linesRead = cappedEnd - startIndex;
 
     return {
       success: true,
-      message: `Successfully read lines ${start_line_one_indexed}-${normalizedEnd} from file: ${relative_file_path} (${linesRead} lines of ${totalLines} total)`,
+      message: `Successfully read lines ${start_line_one_indexed}-${cappedEnd} from file: ${relative_file_path} (${linesRead} lines of ${totalLines} total)`,
       content: selectedLines,
       totalLines,
+      truncated: cappedEnd < normalizedEnd,
     };
   } catch (error: any) {
-    // If reading fails, it might be a directory or permission issue
     if (error?.code === 'EISDIR') {
       return {
         success: false,
@@ -97,7 +117,7 @@ async function readFileContent(
 
 export const read_file = async function(input: z.infer<typeof read_fileSchema>, projectCwd?: string) {
   const { relative_file_path, should_read_entire_file, start_line_one_indexed, end_line_one_indexed } = input;
-  
+
   try {
     if (!relative_file_path) {
       return {
@@ -154,9 +174,8 @@ export const read_file = async function(input: z.infer<typeof read_fileSchema>, 
       }
     }
 
-    // Resolve the absolute file path
     let absolute_file_path: string;
-    
+
     if (projectCwd) {
       const validation = validatePath(relative_file_path, projectCwd);
       if (!validation.valid) {
@@ -168,11 +187,9 @@ export const read_file = async function(input: z.infer<typeof read_fileSchema>, 
       }
       absolute_file_path = validation.resolvedPath!;
     } else {
-      // Fallback to process.cwd() if no projectCwd provided
       absolute_file_path = path.resolve(relative_file_path);
     }
 
-    // Use the helper function to read file content
     return await readFileContent(
       absolute_file_path,
       relative_file_path,
