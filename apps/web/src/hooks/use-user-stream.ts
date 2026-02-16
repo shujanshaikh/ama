@@ -83,7 +83,6 @@ export function useUserStream(userId: string | undefined, token: string | undefi
                 if (isUnmountedRef.current) return;
 
                 setStatus('disconnected');
-                setCliConnected(false);
 
                 pendingCalls.current.forEach((pending, requestId) => {
                     clearTimeout(pending.timeout);

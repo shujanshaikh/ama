@@ -150,7 +150,10 @@ function Chat() {
                 if (result.success) {
                     await fetch(`${API_URL}/undo`, {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: {
+                            "Content-Type": "application/json",
+                            ...(gatewayTokenRef.current ? { Authorization: `Bearer ${gatewayTokenRef.current}` } : {}),
+                        },
                         body: JSON.stringify({
                             chatId: _chatId,
                             deleteOnly: true,
@@ -166,7 +169,10 @@ function Chat() {
             } else {
                 const response = await fetch(`${API_URL}/undo`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(gatewayTokenRef.current ? { Authorization: `Bearer ${gatewayTokenRef.current}` } : {}),
+                    },
                     body: JSON.stringify({ chatId: _chatId }),
                 });
 
@@ -193,7 +199,10 @@ function Chat() {
         try {
             await fetch(`${API_URL}/undo`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(gatewayTokenRef.current ? { Authorization: `Bearer ${gatewayTokenRef.current}` } : {}),
+                },
                 body: JSON.stringify({ chatId: _chatId, deleteOnly: true }),
             });
             await refetchSnapshot();
