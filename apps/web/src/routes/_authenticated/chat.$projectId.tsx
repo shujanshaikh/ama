@@ -25,6 +25,7 @@ import { ChatStatusBar } from "@/components/chat/chat-status-bar";
 import { ChatPromptInput } from "@/components/chat/chat-prompt-input";
 import { CollapsedSidebarTrigger } from "@/components/chat/collapsed-sidebar-trigger";
 import { ApiKeyDialog } from "@/components/api-key-dialog";
+import { DiffReviewPanel } from "@/components/diff-review-panel";
 
 function useGatewayToken(trpc: ReturnType<typeof useTRPC>) {
     const tokenRef = useRef<string | null>(null);
@@ -577,7 +578,8 @@ function Chat() {
             {/* Grain texture overlay */}
             <div className="grain-overlay" aria-hidden="true" />
             <Sidepanel />
-            <SidebarInset className="relative w-full flex flex-col min-h-0">
+            <SidebarInset className="relative w-full flex flex-row min-h-0">
+              <div className={cn("relative flex flex-col min-w-0 min-h-0", showReview ? "flex-1 min-w-0 w-0" : "flex-1")}>
                 <div
                     className={cn(
                         "size-full",
@@ -745,6 +747,15 @@ function Chat() {
                                 )}
                             </div>
                 </div>
+              </div>
+                {showReview && (
+                    <div className="w-[480px] min-w-[380px] border-l border-border/40">
+                        <DiffReviewPanel
+                            messages={messages}
+                            onClose={() => setShowReview(false)}
+                        />
+                    </div>
+                )}
             </SidebarInset>
             <ApiKeyDialog
                 open={apiKeyDialogOpen}
