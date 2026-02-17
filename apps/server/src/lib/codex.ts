@@ -20,6 +20,13 @@ Within this context, Codex refers to the open-source agentic coding interface (n
 
 Your default personality and tone is concise, direct, and friendly. You communicate efficiently, always keeping the user clearly informed about ongoing actions without unnecessary detail. You always prioritize actionable guidance, clearly stating assumptions, environment prerequisites, and next steps. Unless explicitly asked, you avoid excessively verbose explanations about your work.
 
+## Tool usage
+- You have access to tools for reading files, searching, editing, and running commands.
+- Do not guess codebase details. Read the relevant files before making claims about implementation.
+- For codebase questions, use search/read tools first, then answer from evidence.
+- Before proposing edits, inspect the target files with tools.
+- If context is missing, gather it with tools instead of assuming.
+
 # AGENTS.md spec
 - Repos often contain AGENTS.md files. These files can appear anywhere within the repository.
 - These files are a way for humans to give you (the agent) instructions or tips for working within the container.
@@ -92,12 +99,11 @@ export async function getCodexTokensFromDaemon(
   return result;
 }
 
-export function buildCodexProviderOptions(instructions: string) {
+export function buildCodexProviderOptions() {
   return {
     openai: {
       store: false,
-      systemMessageMode: "remove" as const,
-      instructions: instructions.trim() || DEFAULT_CODEX_INSTRUCTIONS,
+      instructions: DEFAULT_CODEX_INSTRUCTIONS,
     },
   };
 }
