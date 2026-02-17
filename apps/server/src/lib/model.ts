@@ -1,23 +1,21 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { createOpenAI } from "@ai-sdk/openai";
 import { createGateway } from "ai";
 import type { LanguageModel } from "ai";
 
 export type ModelInfo = {
   id: string;
   name: string;
-  type: "free" | "gateway";
+  type: "free" | "gateway" | "codex";
 };
 
 // Models that use /chat/completions endpoint (OpenAI-compatible)
-const OPENAI_COMPATIBLE_MODELS = ["big-pickle", "glm-4.7-free" , "kimi-k2.5-free"];
+const OPENAI_COMPATIBLE_MODELS = ["glm-4.7-free" , "kimi-k2.5-free"];
 
 // Models that use /messages endpoint (Anthropic-compatible)
 const ANTHROPIC_MODELS = ["minimax-m2.1-free"];
 
-// Models that use /responses endpoint (OpenAI)
-const OPENAI_MODELS = ["gpt-5-nano"];
+
 
 
 // Provider instances
@@ -32,11 +30,6 @@ const anthropicProvider = createAnthropic({
   baseURL: "https://opencode.ai/zen/v1",
 });
 
-const openaiProvider = createOpenAI({
-  apiKey: process.env.OPENCODE_API_KEY,
-  baseURL: "https://opencode.ai/zen/v1",
-});
-
 export function createOpenCodeZenModel(modelId: string): LanguageModel {
   // For OpenCode models, remove the "opencode/" prefix if present
   const cleanModelId = modelId.replace(/^opencode\//, "");
@@ -47,10 +40,6 @@ export function createOpenCodeZenModel(modelId: string): LanguageModel {
 
   if (ANTHROPIC_MODELS.includes(cleanModelId)) {
     return anthropicProvider(cleanModelId);
-  }
-
-  if (OPENAI_MODELS.includes(cleanModelId)) {
-    return openaiProvider(cleanModelId);
   }
 
   // Default to OpenAI-compatible for unknown models
@@ -76,6 +65,12 @@ export const models: ModelInfo[] = [
   { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", type: "gateway" },
   { id: "openai/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "gateway" },
   { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5", type: "gateway" },
+  // ChatGPT subscription models (Codex)
+  {id : "gpt-5.3-codex", name: "GPT 5.3 Codex", type: "codex" },
+  { id: "codex/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "codex" },
+  { id: "codex/gpt-5.2", name: "GPT 5.2", type: "codex" },
+  { id: "codex/gpt-5.1-codex-mini", name: "GPT 5.1 Codex Mini", type: "codex" },
+  { id: "codex/gpt-5.1-codex-max", name: "GPT 5.1 Codex Max", type: "codex" },
 ];
 
 export function createGatewayModel(modelId: string, userApiKey: string): LanguageModel {
@@ -85,5 +80,9 @@ export function createGatewayModel(modelId: string, userApiKey: string): Languag
 
 export function isGatewayModel(modelId: string): boolean {
   return models.find((m) => m.id === modelId)?.type === "gateway";
+}
+
+export function isCodexModel(modelId: string): boolean {
+  return models.find((m) => m.id === modelId)?.type === "codex";
 }
 

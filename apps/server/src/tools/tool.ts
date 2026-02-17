@@ -6,10 +6,10 @@ import { grepTool } from "./grep";
 import { globTool } from "./glob";
 import { listDirectory } from "./listDirectory";
 import { runTerminalCommand } from "./runTerminalCommand";
-import { webSearch } from "./web-search";
+import { webSearch } from "./webSearch";
 import { batchTool } from "./batch";
 import { supermemoryTools } from "@supermemory/tools/ai-sdk";
-import { exploreTool } from "./sub-agent";
+import { exploreTool } from "./exploreAgent";
 
 export const tool = {
   readFile: readFile,
