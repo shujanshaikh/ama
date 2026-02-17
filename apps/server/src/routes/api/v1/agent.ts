@@ -94,7 +94,7 @@ const undoBodySchema = z.object({
     deleteOnly: z.boolean().optional(),
 });
 
-function buildCodexMessages(messages: ModelMessage[], systemPrompt: string): ModelMessage[] {
+function buildCodexMessages(messages: ModelMessage[]): ModelMessage[] {
     const cleaned: ModelMessage[] = [];
 
     for (const message of messages) {
@@ -121,13 +121,7 @@ function buildCodexMessages(messages: ModelMessage[], systemPrompt: string): Mod
         cleaned.push(message);
     }
 
-    return [
-        {
-            role: "user",
-            content: systemPrompt,
-        },
-        ...cleaned,
-    ];
+    return cleaned;
 }
 
 agentRouter.post("/agent-proxy", async (c) => {
@@ -251,13 +245,13 @@ agentRouter.post("/agent-proxy", async (c) => {
                         const modelMessages = await convertToModelMessages(uiMessages);
                         const codex = isCodexModel(model);
                         const messagesForModel = codex
-                            ? buildCodexMessages(modelMessages as ModelMessage[], systemPrompt)
+                            ? buildCodexMessages(modelMessages as ModelMessage[])
                             : modelMessages;
 
                         const result = streamText({
                             messages: messagesForModel,
                             model: languageModel,
-                            system: codex ? undefined : systemPrompt,
+                            system: systemPrompt,
                             // Codex reasoning models do not support temperature.
                             temperature: codex ? undefined : 1.0,
                             stopWhen: stepCountIs(25),
@@ -266,7 +260,7 @@ agentRouter.post("/agent-proxy", async (c) => {
                                 chunking: "word",
                             }),
                             tools: tools,
-                            providerOptions: codex ? buildCodexProviderOptions(systemPrompt) : undefined,
+                            providerOptions: codex ? buildCodexProviderOptions() : undefined,
                         });
                         result.consumeStream();
                         dataStream.merge(
