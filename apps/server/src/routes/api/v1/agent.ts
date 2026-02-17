@@ -252,7 +252,6 @@ agentRouter.post("/agent-proxy", async (c) => {
                             messages: messagesForModel,
                             model: languageModel,
                             system: systemPrompt,
-                            // Codex reasoning models do not support temperature.
                             temperature: codex ? undefined : 1.0,
                             stopWhen: stepCountIs(25),
                             experimental_transform: smoothStream({
@@ -260,7 +259,7 @@ agentRouter.post("/agent-proxy", async (c) => {
                                 chunking: "word",
                             }),
                             tools: tools,
-                            providerOptions: codex ? buildCodexProviderOptions() : undefined,
+                            providerOptions: codex ? buildCodexProviderOptions(systemPrompt) : undefined,
                         });
                         result.consumeStream();
                         dataStream.merge(
