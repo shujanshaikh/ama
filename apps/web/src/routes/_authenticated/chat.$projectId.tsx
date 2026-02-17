@@ -7,14 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { Sidepanel } from "@/components/side-panel";
-import { PreviewIframe } from "@/components/web-view";
 import { CodeEditor } from "@/components/code-editor";
-import { DiffReviewPanel } from "@/components/diff-review-panel";
-import {
-    ResizablePanelGroup,
-    ResizablePanel,
-    ResizableHandle,
-} from "@/components/ui/resizable";
 import { API_URL } from "@/utils/constant";
 import { useTRPC } from "@/utils/trpc";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -74,7 +67,6 @@ function Chat() {
     const navigate = useNavigate();
     const [input, setInput] = useState("");
     const [model, setModel] = useState(models[0].id);
-    const [previewCollapsed, setPreviewCollapsed] = useState(true);
     const [showCodeEditor, setShowCodeEditor] = useState(false);
     const [dismissedError, setDismissedError] = useState(false);
     const [planName, setPlanName] = useState<string | null>(null);
@@ -344,11 +336,7 @@ function Chat() {
 
     const handleReview = useCallback(() => {
         setShowReview((prev) => !prev);
-        // Also open the right panel if it's collapsed
-        if (previewCollapsed) {
-            setPreviewCollapsed(false);
-        }
-    }, [previewCollapsed]);
+    }, []);
 
     const { mutate: generateTitle } = useMutation({
         ...trpc.generateTitle.generateTitle.mutationOptions(),
@@ -504,17 +492,13 @@ function Chat() {
         setMessages,
     });
 
-    // Keyboard shortcuts: Cmd/Ctrl+E for editor, Cmd/Ctrl+A for preview
+    // Keyboard shortcut: Cmd/Ctrl+E for editor
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            // Check for Cmd (Mac) or Ctrl (Windows/Linux)
             if (event.metaKey || event.ctrlKey) {
                 if (event.key === "e" || event.key === "E") {
                     event.preventDefault();
                     setShowCodeEditor((prev) => !prev);
-                } else if (event.key === "a" || event.key === "A") {
-                    event.preventDefault();
-                    setPreviewCollapsed((prev) => !prev);
                 }
             }
         };
@@ -617,23 +601,10 @@ function Chat() {
                     )}
                 >
                     <CollapsedSidebarTrigger />
-                    <ResizablePanelGroup
-                        direction="horizontal"
-                        className="h-full w-full"
-                    >
-                        <ResizablePanel
-                            defaultSize={previewCollapsed ? 100 : 40}
-                            minSize={30}
-                            className="flex flex-col min-h-0"
-                        >
                             <div className="flex flex-col h-full min-h-0 w-full overflow-hidden relative">
                                 <ChatToolbar
                                     onShowCodeEditor={() =>
                                         setShowCodeEditor(true)
-                                    }
-                                    previewCollapsed={previewCollapsed}
-                                    onTogglePreview={() =>
-                                        setPreviewCollapsed(false)
                                     }
                                 />
                                 {!_chatId ? (
@@ -773,33 +744,6 @@ function Chat() {
                                     </>
                                 )}
                             </div>
-                        </ResizablePanel>
-
-                        {!previewCollapsed && (
-                            <>
-                                <ResizableHandle />
-                                <ResizablePanel
-                                    defaultSize={60}
-                                    minSize={40}
-                                    className="flex flex-col min-h-0"
-                                >
-                                    {showReview ? (
-                                        <DiffReviewPanel
-                                            messages={messages}
-                                            onClose={() => setShowReview(false)}
-                                        />
-                                    ) : (
-                                        <PreviewIframe
-                                            onCollapsedChange={
-                                                setPreviewCollapsed
-                                            }
-                                            projectId={_projectId}
-                                        />
-                                    )}
-                                </ResizablePanel>
-                            </>
-                        )}
-                    </ResizablePanelGroup>
                 </div>
             </SidebarInset>
             <ApiKeyDialog
