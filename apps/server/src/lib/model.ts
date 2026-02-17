@@ -1,6 +1,5 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { createOpenAI } from "@ai-sdk/openai";
 import { createGateway } from "ai";
 import type { LanguageModel } from "ai";
 
@@ -11,13 +10,12 @@ export type ModelInfo = {
 };
 
 // Models that use /chat/completions endpoint (OpenAI-compatible)
-const OPENAI_COMPATIBLE_MODELS = ["big-pickle", "glm-4.7-free" , "kimi-k2.5-free"];
+const OPENAI_COMPATIBLE_MODELS = ["glm-4.7-free" , "kimi-k2.5-free"];
 
 // Models that use /messages endpoint (Anthropic-compatible)
 const ANTHROPIC_MODELS = ["minimax-m2.1-free"];
 
-// Models that use /responses endpoint (OpenAI)
-const OPENAI_MODELS = ["gpt-5-nano"];
+
 
 
 // Provider instances
@@ -32,11 +30,6 @@ const anthropicProvider = createAnthropic({
   baseURL: "https://opencode.ai/zen/v1",
 });
 
-const openaiProvider = createOpenAI({
-  apiKey: process.env.OPENCODE_API_KEY,
-  baseURL: "https://opencode.ai/zen/v1",
-});
-
 export function createOpenCodeZenModel(modelId: string): LanguageModel {
   // For OpenCode models, remove the "opencode/" prefix if present
   const cleanModelId = modelId.replace(/^opencode\//, "");
@@ -47,10 +40,6 @@ export function createOpenCodeZenModel(modelId: string): LanguageModel {
 
   if (ANTHROPIC_MODELS.includes(cleanModelId)) {
     return anthropicProvider(cleanModelId);
-  }
-
-  if (OPENAI_MODELS.includes(cleanModelId)) {
-    return openaiProvider(cleanModelId);
   }
 
   // Default to OpenAI-compatible for unknown models
