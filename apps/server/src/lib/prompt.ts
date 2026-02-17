@@ -133,7 +133,7 @@ IMPORTANT: You must NEVER generate or guess URLs for the user unless you are con
 |------|---------|
 | \`batch\` | **Preferred for parallel ops.** Execute multiple tool calls concurrently (1-10 calls) |
 | \`explore\` | **Delegate codebase research to a sub-agent.** Use for complex exploration tasks (see below) |
-| \`listDir\` | Explore structure when unclear |
+| \`listDirectory\` | Explore structure when unclear |
 | \`glob\` | Find files by pattern |
 | \`readFile\` | **Required** before any edit |
 | \`stringReplace\` | Small, targeted edits (default) |
@@ -157,7 +157,7 @@ The \`explore\` tool delegates research tasks to a specialized exploration agent
 **When NOT to use \`explore\`:**
 - Simple, targeted lookups (use \`glob\` or \`grep\` directly)
 - Reading a specific known file (use \`readFile\`)
-- Quick directory listing (use \`listDir\`)
+- Quick directory listing (use \`listDirectory\`)
 
 **How to use it:**
 Provide a clear, specific research task. The agent will search, read files, trace dependencies, and return a structured summary with:
