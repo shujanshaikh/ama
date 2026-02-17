@@ -56,8 +56,6 @@ export const createMinimaxProvide = createOpenCodeZenModel;
 export const models: ModelInfo[] = [
   // Free models (OpenCode Zen)
   { id: "minimax-m2.1-free", name: "Minimax M2.1 Free", type: "free" },
-  { id: "gpt-5-nano", name: "GPT 5 Nano", type: "free" },
-  { id: "big-pickle", name: "Big Pickle", type: "free" },
   { id: "kimi-k2.5-free", name: "Kimi K2.5 Free", type: "free" },
   { id: "glm-4.7-free", name: "GLM 4.7 Free", type: "free" },
   // Gateway models (BYOK — single AI_GATEWAY_API_KEY for all)
