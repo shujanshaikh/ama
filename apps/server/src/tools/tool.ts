@@ -5,7 +5,7 @@ import { deleteFile } from "./deleteFile";
 import { grepTool } from "./grep";
 import { globTool } from "./glob";
 import { listDirectory } from "./listDirectory";
-import { runTerminalCommand } from "./runTerminalCommand";
+import { bashTool } from "./bash";
 import { webSearch } from "./webSearch";
 import { batchTool } from "./batch";
 import { supermemoryTools } from "@supermemory/tools/ai-sdk";
@@ -19,7 +19,7 @@ export const tool = {
   grep: grepTool,
   glob: globTool,
   listDirectory: listDirectory,
-  runTerminalCommand: runTerminalCommand,
+  bash: bashTool,
   webSearch: webSearch,
   batch: batchTool,
   explore: exploreTool,

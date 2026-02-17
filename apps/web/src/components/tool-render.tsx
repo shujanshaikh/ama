@@ -67,7 +67,7 @@ const getToolDisplayInfo = (
       return { label: "Glob", detail: params.pattern as string };
     case "grep":
       return { label: "Grep", detail: params.query as string };
-    case "runTerminalCommand":
+    case "bash":
       return { label: "Run", detail: (params.command as string)?.slice(0, 30) };
     case "webSearch":
       return { label: "Search", detail: params.query as string };
@@ -359,8 +359,8 @@ export const ToolRenderer = ({
     }
   }
 
-  // Run Terminal Command
-  if (part.type === "tool-runTerminalCommand") {
+  // Bash (Run Terminal Command)
+  if (part.type === "tool-bash") {
     const { toolCallId, state } = part;
     const command = part.input?.command;
 

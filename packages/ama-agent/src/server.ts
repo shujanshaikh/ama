@@ -10,7 +10,7 @@ import { list } from './tools/ls-dir'
 import pc from 'picocolors'
 import { startHttpServer } from './http'
 import { getTokens } from './lib/auth-login'
-import { runTerminalCommand } from './tools/runTerminalCommand'
+import { bashTool } from './tools/bash'
 import { connectToUserStreams } from './lib/userStreams'
 import { rpcHandlers } from './lib/rpc-handlers'
 import { batchTool } from './tools/batch'
@@ -54,7 +54,7 @@ export const toolExecutors: Record<string, ToolExecutorFn> = {
   listDirectory: list,
   readFile: read_file,
   stringReplace: apply_patch,
-  runTerminalCommand: runTerminalCommand,
+  bash: bashTool,
   batch: batchTool,
 }
 

@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { requireProjectCwd } from "./sandbox";
 
-// ── Unified response envelope ──────────────────────────────────────────────
 export interface ToolResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -16,7 +15,6 @@ export interface ToolResponse<T = unknown> {
   };
 }
 
-// ── Incoming tool-call schema (validated at the WS boundary) ───────────────
 export const toolCallSchema = z.object({
   type: z.literal("tool_call"),
   id: z.string(),
@@ -28,7 +26,6 @@ export const toolCallSchema = z.object({
 
 export type ValidatedToolCall = z.infer<typeof toolCallSchema>;
 
-// ── Per-tool timeout configuration ─────────────────────────────────────────
 const DEFAULT_TIMEOUT_MS = 30_000; // 30s
 
 const TOOL_TIMEOUTS: Record<string, number> = {
@@ -39,7 +36,7 @@ const TOOL_TIMEOUTS: Record<string, number> = {
   editFile: 15_000,
   deleteFile: 10_000,
   stringReplace: 15_000,
-  runTerminalCommand: 60_000,
+  bash: 60_000,
   batch: 120_000,
 };
 
@@ -47,7 +44,6 @@ function getTimeoutForTool(tool: string): number {
   return TOOL_TIMEOUTS[tool] ?? DEFAULT_TIMEOUT_MS;
 }
 
-// ── Timeout wrapper ────────────────────────────────────────────────────────
 function withTimeout<T>(promise: Promise<T>, ms: number, tool: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -94,10 +90,8 @@ export class ValidationError extends Error {
   }
 }
 
-// ── Tool executor type ─────────────────────────────────────────────────────
 export type ToolExecutorFn = (args: any, projectCwd?: string) => Promise<any>;
 
-// ── Main execution engine ──────────────────────────────────────────────────
 export async function executeTool(
   toolName: string,
   args: Record<string, unknown>,
@@ -115,7 +109,6 @@ export async function executeTool(
     };
   }
 
-  // Fail closed: mutating tools require projectCwd
   const cwdCheck = requireProjectCwd(toolName, projectCwd);
   if (!cwdCheck.allowed) {
     return {
@@ -157,7 +150,6 @@ export async function executeTool(
   }
 }
 
-// ── Validate incoming WS message ───────────────────────────────────────────
 export function parseToolCall(raw: unknown): ValidatedToolCall | ValidationError {
   const result = toolCallSchema.safeParse(raw);
   if (!result.success) {

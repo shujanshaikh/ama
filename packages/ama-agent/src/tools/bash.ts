@@ -6,40 +6,27 @@ const ExplanationSchema = z.object({
     .describe("One sentence explanation as to why this tool is being used"),
 });
 
-// ── Category-based command safety policy ───────────────────────────────────
-
-/** Patterns that are always blocked (destructive / dangerous) */
 const BLOCKED_PATTERNS: RegExp[] = [
-  // rm with -r/-f flags (combined or separate) targeting /, ~, $HOME, or *
   /\brm\s+(-\w+\s+)*(\/ |\/\s*$|~|\/\*|\*)/,
-  // Disk-wiping commands
   /\bdd\s+.*of=\/dev\//,
   /\bmkfs\b/,
-  // Fork bomb
   /:\(\)\{.*\|.*&\}\s*;?\s*:/,
-  // Recursive chmod/chown on root
   /\bchmod\s+.*-R.*\s+\/\s*$/,
   /\bchown\s+.*-R.*\s+\/\s*$/,
-  // Pipe from remote URL directly into shell
   /\b(curl|wget)\s+.*\|\s*(ba)?sh/,
-  // Move root filesystem
   /\bmv\s+(\/|\*)\s/,
-  // Write random data to disk device
   /\bcat\s+\/dev\/(u?random|zero)\s*>\s*\/dev\//,
-  // Windows-specific destructive
   /\bformat\s+[A-Z]:/i,
   /\bdiskpart\b/i,
   /\bcipher\s+\/w:/i,
 ];
 
-/** Argument-level patterns that should be rejected */
 const DANGEROUS_FLAGS: RegExp[] = [
   /--no-preserve-root/,
   /\bgit\s+push\s+.*--force\b/,
   /\bgit\s+push\s+-f\b/,
 ];
 
-/** Max output size per command (1MB) */
 const MAX_OUTPUT_SIZE = 1 * 1024 * 1024;
 
 function evaluateCommandSafety(command: string): { safe: boolean; reason?: string } {
@@ -60,7 +47,7 @@ function evaluateCommandSafety(command: string): { safe: boolean; reason?: strin
   return { safe: true };
 }
 
-export const RunTerminalCmdParamsSchema = z
+export const BashParamsSchema = z
   .object({
     command: z.string().describe("The terminal command to execute (e.g., 'ls -la', 'pwd', 'echo $HOME')"),
     is_background: z
@@ -136,12 +123,11 @@ export const runSecureTerminalCommand = async (
   }
 };
 
-export const runTerminalCommand = async (
-  input: z.infer<typeof RunTerminalCmdParamsSchema>,
+export const bashTool = async (
+  input: z.infer<typeof BashParamsSchema>,
   projectCwd?: string,
 ) => {
   try {
-    // Validate command safety first for both foreground and background
     const safety = evaluateCommandSafety(input.command);
     if (!safety.safe) {
       console.log(`[CLI] Blocked command: ${input.command} — ${safety.reason}`);

@@ -590,6 +590,8 @@ function Chat() {
 
     return (
         <SidebarProvider defaultOpen={true} className="h-svh">
+            {/* Grain texture overlay */}
+            <div className="grain-overlay" aria-hidden="true" />
             <Sidepanel />
             <SidebarInset className="relative w-full flex flex-col min-h-0">
                 <div

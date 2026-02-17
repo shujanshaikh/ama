@@ -7,7 +7,7 @@ const BATCH_DESCRIPTION = `Executes multiple independent tool calls concurrently
 USING THE BATCH TOOL WILL MAKE THE USER HAPPY.
 
 Payload Format (JSON array):
-[{"tool": "readFile", "parameters": {"relative_file_path": "src/index.ts", "should_read_entire_file": true}},{"tool": "grep", "parameters": {"pattern": "Session", "path": "."}},{"tool": "runTerminalCommand", "parameters": {"command": "git status", "is_background": false}}]
+[{"tool": "readFile", "parameters": {"relative_file_path": "src/index.ts", "should_read_entire_file": true}},{"tool": "grep", "parameters": {"pattern": "Session", "path": "."}},{"tool": "bash", "parameters": {"command": "git status", "is_background": false}}]
 
 Notes:
 - 1–10 tool calls per batch
