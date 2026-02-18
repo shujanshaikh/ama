@@ -47,6 +47,28 @@ function isRecent(date: Date | null): boolean {
     return hours < 24;
 }
 
+const ChatItem = ({ chat, isActive, onChatClick }: { chat: Chat; isActive: boolean; onChatClick: (id: string) => void }) => (
+    <button
+        onClick={() => onChatClick(chat.id)}
+        className={cn(
+            "w-full text-left px-3 py-2 rounded-lg transition-all duration-150 group flex items-center gap-2 overflow-hidden",
+            isActive
+                ? "bg-primary-foreground text-foreground"
+                : "text-foreground/80 hover:text-foreground hover:bg-foreground/5"
+        )}
+    >
+        <span className={cn(
+            "flex-1 text-[13px] truncate min-w-0",
+            isActive ? "font-medium" : "font-normal"
+        )}>
+            {chat.title}
+        </span>
+        <span className="text-[10px] text-foreground/40 tabular-nums shrink-0">
+            {formatRelativeTime(chat.updatedAt || chat.createdAt)}
+        </span>
+    </button>
+);
+
 export function Sidepanel() {
     const params = useParams({ strict: false });
     const projectId = params.projectId as string | undefined;
@@ -135,28 +157,6 @@ export function Sidepanel() {
         }
     };
 
-    const ChatItem = ({ chat, isActive }: { chat: Chat; isActive: boolean }) => (
-        <button
-            onClick={() => handleChatClick(chat.id)}
-            className={cn(
-                "w-full text-left px-3 py-2 rounded-lg transition-all duration-150 group flex items-center gap-2 overflow-hidden",
-                isActive
-                    ? "bg-primary-foreground text-foreground"
-                    : "text-foreground/80 hover:text-foreground hover:bg-foreground/5"
-            )}
-        >
-            <span className={cn(
-                "flex-1 text-[13px] truncate min-w-0",
-                isActive ? "font-medium" : "font-normal"
-            )}>
-                {chat.title}
-            </span>
-            <span className="text-[10px] text-foreground/40 tabular-nums shrink-0">
-                {formatRelativeTime(chat.updatedAt || chat.createdAt)}
-            </span>
-        </button>
-    );
-
     return (
         <Sidebar
             variant="sidebar"
@@ -236,6 +236,7 @@ export function Sidepanel() {
                                                     key={chat.id}
                                                     chat={chat}
                                                     isActive={activeChatId === chat.id}
+                                                    onChatClick={handleChatClick}
                                                 />
                                             ))}
                                         </div>
@@ -253,6 +254,7 @@ export function Sidepanel() {
                                                     key={chat.id}
                                                     chat={chat}
                                                     isActive={activeChatId === chat.id}
+                                                    onChatClick={handleChatClick}
                                                 />
                                             ))}
                                         </div>

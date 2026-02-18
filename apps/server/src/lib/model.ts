@@ -10,7 +10,7 @@ export type ModelInfo = {
 };
 
 // Models that use /chat/completions endpoint (OpenAI-compatible)
-const OPENAI_COMPATIBLE_MODELS = ["glm-4.7-free" , "kimi-k2.5-free"];
+const OPENAI_COMPATIBLE_MODELS = ["glm-5-free" , "glm-4.7-free" , "kimi-k2.5-free"];
 
 // Models that use /messages endpoint (Anthropic-compatible)
 const ANTHROPIC_MODELS = ["minimax-m2.1-free"];
@@ -58,6 +58,7 @@ export const models: ModelInfo[] = [
   { id: "minimax-m2.1-free", name: "Minimax M2.1 Free", type: "free" },
   { id: "kimi-k2.5-free", name: "Kimi K2.5 Free", type: "free" },
   { id: "glm-4.7-free", name: "GLM 4.7 Free", type: "free" },
+  { id: "glm-5-free", name: "GLM 5 Free", type: "free" },
   // Gateway models (BYOK — single AI_GATEWAY_API_KEY for all)
   { id: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5", type: "gateway" },
   { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", type: "gateway" },

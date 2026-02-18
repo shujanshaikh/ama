@@ -6,6 +6,7 @@ export const models = [
   { id: "big-pickle", name: "Big Pickle", type: "free" as const },
   { id: "kimi-k2.5-free", name: "Kimi K2.5 Free", type: "free" as const },
   { id: "glm-4.7-free", name: "GLM 4.7 Free", type: "free" as const },
+  { id: "glm-5-free", name: "GLM 5 Free", type: "free" as const },
   // Gateway models (BYOK)
   { id: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5", type: "gateway" as const },
   { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", type: "gateway" as const },
