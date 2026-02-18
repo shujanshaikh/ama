@@ -142,16 +142,18 @@ function DashboardPage() {
   };
 
   return (
-    <div className="relative w-full h-full bg-background text-foreground">
-      <div className="absolute top-8 right-6">
-        <div className="text-xs font-medium text-muted-foreground/70 px-3 py-1.5 bg-muted/30 rounded-full border border-border/30">
+    <div className="relative w-full h-full bg-background text-foreground overflow-auto">
+      <div className="grain-overlay" aria-hidden="true" />
+
+      <div className="absolute top-8 right-6 z-10">
+        <div className="text-xs font-medium text-muted-foreground/70 px-3 py-1.5 bg-muted/40 rounded-sm border border-border/40 shadow-rough backdrop-blur-sm">
           {user?.email}
         </div>
       </div>
 
-      <div className="absolute top-8 left-6 flex items-center gap-2">
+      <div className="absolute top-8 left-6 flex items-center gap-2 z-10">
         <AmaLogo size={24} />
-        <span className="text-xl font-bold text-foreground">ama</span>
+        <span className="text-xl font-bold text-foreground tracking-tight">ama</span>
       </div>
 
       <div className="flex flex-col justify-center min-h-[35vh] px-6 pt-16 pb-2">
@@ -164,18 +166,18 @@ function DashboardPage() {
             <div className="flex items-center gap-3">
               <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="transition-none shadow-sm bg-background hover:bg-secondary">
+                  <Button variant="outline" size="sm" className="transition-none shadow-rough bg-background hover:bg-secondary/60 rounded-sm border-border/60">
                     <Plus className="size-3" />
                     Import Project
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-sm">
+                <DialogContent className="sm:max-w-sm rounded-sm shadow-rough border-border/60">
                   <DialogHeader>
                     <DialogTitle className="text-sm font-medium">
                       Import project
                     </DialogTitle>
                     <DialogDescription className="text-xs">
-                      Run <code className="px-1 py-0.5 bg-secondary border border-border rounded text-[10px] font-mono">pwd</code> in your terminal to get the actual path
+                      Run <code className="px-1 py-0.5 bg-secondary border border-border rounded-sm text-[10px] font-mono">pwd</code> in your terminal to get the actual path
                     </DialogDescription>
                   </DialogHeader>
 
@@ -195,14 +197,14 @@ function DashboardPage() {
                           }
                         }}
                         autoFocus
-                        className="w-full h-9 px-3 text-sm bg-secondary border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
+                        className="w-full h-9 px-3 text-sm bg-secondary/50 border border-border/60 rounded-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/40 transition-colors input-rough"
                       />
                     </div>
                     <div className="flex justify-end">
                       <Button
                         onClick={handleManualPathSubmit}
                         disabled={!manualPath.trim() || isCreatingManual}
-                        className="h-8 px-3 text-xs bg-foreground text-background hover:bg-foreground/90 rounded-md transition-colors disabled:opacity-50"
+                        className="h-8 px-3 text-xs bg-foreground text-background hover:bg-foreground/90 rounded-sm transition-colors disabled:opacity-50"
                       >
                         {isCreatingManual ? (
                           <div className="size-3 border-2 border-background/30 border-t-background rounded-full animate-spin" />
@@ -214,24 +216,24 @@ function DashboardPage() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <p className="text-[10px] text-muted-foreground hidden sm:block">
+              <p className="text-[10px] text-muted-foreground/70 hidden sm:block">
                 Connect your local project with ama
               </p>
             </div>
           </div>
         </div>
-       
+
       </div>
 
 
       <div className="max-w-2xl mx-auto px-6 pb-20">
-      <hr className="border-border mb-4" />
+        <hr className="border-border/40 mb-4" style={{ borderStyle: 'dashed' }} />
         {isLoadingProjects ? (
           <section className="mb-8">
-            <Skeleton className="h-4 w-20 mb-3" />
+            <Skeleton className="h-4 w-20 mb-3 rounded-sm" />
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-20 rounded-lg" />
+                <Skeleton key={i} className="h-20 rounded-sm" />
               ))}
             </div>
           </section>
@@ -239,17 +241,17 @@ function DashboardPage() {
           <section className="mb-8">
             <div>
               <div className="flex items-center justify-between gap-3 mb-3">
-                <h2 className="text-xs font-medium text-foreground/70">
-                  Open existing project
+                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  Projects
                 </h2>
                 <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground/50" />
                   <input
                     type="text"
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-7 w-64 pl-7 pr-2 text-xs bg-muted/30 border border-border/50 rounded-md text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border transition-all"
+                    className="h-7 w-64 pl-7 pr-2 text-xs bg-muted/20 border border-border/40 rounded-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring/30 focus:border-border/60 transition-all input-rough"
                   />
                 </div>
               </div>
@@ -257,37 +259,37 @@ function DashboardPage() {
                 <div className="grid grid-cols-2 gap-2">
                   {filteredProjects.map((project) => {
                     const firstLetter = project.name.charAt(0).toUpperCase();
-                    const colors = [
-                      "bg-red-500",
-                      "bg-orange-500",
-                      "bg-amber-500",
-                      "bg-yellow-500",
-                      "bg-lime-500",
-                      "bg-green-500",
-                      "bg-emerald-500",
-                      "bg-teal-500",
-                      "bg-cyan-500",
-                      "bg-sky-500",
-                      "bg-blue-500",
-                      "bg-indigo-500",
-                      "bg-violet-500",
-                      "bg-purple-500",
-                      "bg-fuchsia-500",
-                      "bg-pink-500",
-                      "bg-rose-500",
+                    const muted = [
+                      "bg-red-400/80",
+                      "bg-orange-400/80",
+                      "bg-amber-400/80",
+                      "bg-yellow-400/80",
+                      "bg-lime-400/80",
+                      "bg-green-400/80",
+                      "bg-emerald-400/80",
+                      "bg-teal-400/80",
+                      "bg-cyan-400/80",
+                      "bg-sky-400/80",
+                      "bg-blue-400/80",
+                      "bg-indigo-400/80",
+                      "bg-violet-400/80",
+                      "bg-purple-400/80",
+                      "bg-fuchsia-400/80",
+                      "bg-pink-400/80",
+                      "bg-rose-400/80",
                     ];
-                    const colorIndex = firstLetter.charCodeAt(0) % colors.length;
-                    const avatarColor = colors[colorIndex];
+                    const colorIndex = firstLetter.charCodeAt(0) % muted.length;
+                    const avatarColor = muted[colorIndex];
 
                     return (
                       <div
                         key={project.id}
-                        className="group cursor-pointer border border-border/50 hover:border-border rounded-md p-2 transition-all duration-150 hover:bg-muted/20"
+                        className="group cursor-pointer border border-border/30 hover:border-border/60 rounded-sm p-2.5 transition-all duration-150 hover:bg-muted/15 shadow-rough"
                         onClick={() => handleProjectClick(project)}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2.5">
                           <div
-                            className={`size-6 rounded ${avatarColor} flex items-center justify-center text-white font-semibold text-[11px] shrink-0`}
+                            className={`size-7 rounded-sm ${avatarColor} flex items-center justify-center text-white font-bold text-[11px] shrink-0`}
                           >
                             {firstLetter}
                           </div>
@@ -295,7 +297,7 @@ function DashboardPage() {
                             <h3 className="font-medium text-sm text-foreground truncate">
                               {project.name}
                             </h3>
-                            <p className="text-[10px] text-muted-foreground truncate">
+                            <p className="text-[10px] text-muted-foreground/60 truncate font-mono">
                               {project.cwd.split("/").slice(-2).join("/")}
                             </p>
                           </div>
@@ -306,7 +308,7 @@ function DashboardPage() {
                 </div>
               ) : (
                 <div className="py-6 text-center">
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground/60">
                     No projects found matching "{searchQuery}"
                   </p>
                 </div>
@@ -315,8 +317,8 @@ function DashboardPage() {
           </section>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-sm text-muted-foreground">No projects yet</p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground/70">No projects yet</p>
+            <p className="text-xs text-muted-foreground/50 mt-1">
               Open a project folder to get started
             </p>
           </div>
@@ -324,7 +326,7 @@ function DashboardPage() {
         <IdeProjects />
       </div>
 
-    
+
     </div>
   );
 }

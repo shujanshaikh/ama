@@ -25,6 +25,7 @@ export function ContextSelector({
   onToggleFile,
 }: ContextSelectorProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [prevQuery, setPrevQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
 
@@ -110,9 +111,10 @@ export function ContextSelector({
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [filteredFiles, selectedIndex, onFileSelect, onClose, isLoadingContext, onToggleFile]);
 
-  useEffect(() => {
+  if (prevQuery !== query) {
+    setPrevQuery(query);
     setSelectedIndex(0);
-  }, [query]);
+  }
 
   const isCliDisconnected = !userStream?.cliConnected;
 

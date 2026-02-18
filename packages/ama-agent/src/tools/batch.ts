@@ -4,7 +4,7 @@ import { deleteFile } from "./delete-file";
 import { grepTool } from "./grep";
 import { globTool } from "./glob";
 import { list } from "./ls-dir";
-import { runTerminalCommand } from "./runTerminalCommand";
+import { bashTool } from "./bash";
 
 const toolCallSchema = z.object({
   tool: z.string().describe("The name of the tool to execute"),
@@ -40,7 +40,7 @@ const batchableToolExecutors: Record<
   glob: globTool,
   listDirectory: list,
   readFile: read_file,
-  runTerminalCommand: runTerminalCommand,
+  bash: bashTool,
 };
 
 interface BatchToolCallResult {

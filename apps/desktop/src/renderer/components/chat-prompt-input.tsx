@@ -111,6 +111,7 @@ export function ChatPromptInput({
 
   const freeModels = models.filter((m) => m.type === "free");
   const gatewayModels = models.filter((m) => m.type === "gateway");
+  const codexModels = models.filter((m) => m.type === "codex");
 
   useEffect(() => {
     if (hasGatewayKey && pendingGatewayModel) {
@@ -508,6 +509,24 @@ export function ChatPromptInput({
                       </span>
                     </SelectItem>
                   ))}
+                  {codexModels.length > 0 && (
+                    <>
+                      <div className="my-1 border-t border-border" />
+                      <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                        ChatGPT Subscription
+                      </div>
+                      {codexModels.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          <span className="flex items-center gap-1.5">
+                            <span>{m.name}</span>
+                            <span className="text-[10px] font-medium lowercase text-muted-foreground">
+                              codex
+                            </span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
 

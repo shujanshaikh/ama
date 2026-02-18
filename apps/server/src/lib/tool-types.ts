@@ -5,7 +5,7 @@ import type { grepTool } from "@/tools/grep"
 import type { editFile } from "@/tools/editFile"
 import type { deleteFile } from "@/tools/deleteFile"
 import type { stringReplace } from "@/tools/stringReplace"
-import type { runTerminalCommand } from "@/tools/runTerminalCommand"
+import type { bashTool } from "@/tools/bash"
 import type { InferUITool, UIMessage } from "ai"
 import z from "zod"
 import { webSearch } from "@/tools/webSearch"
@@ -70,7 +70,7 @@ type globToolType = InferUITool<typeof globTool>;
 type grepToolType = InferUITool<typeof grepTool>;
 type editFileType = InferUITool<typeof editFile>;
 type deleteFileType = InferUITool<typeof deleteFile>;
-type runTerminalCommand = InferUITool<typeof runTerminalCommand>;
+type bashToolType = InferUITool<typeof bashTool>;
 type webSearch = InferUITool<typeof webSearch>;
 type batchToolType = InferUITool<typeof batchTool>;
 type exploreToolType = InferUITool<typeof exploreTool>;
@@ -83,7 +83,7 @@ export type ChatTools = {
   grep: grepToolType;
   editFile: editFileType;
   deleteFile: deleteFileType;
-  runTerminalCommand: runTerminalCommand;
+  bash: bashToolType;
   webSearch: webSearch;
   batch: batchToolType;
   explore: exploreToolType;

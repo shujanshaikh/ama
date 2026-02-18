@@ -121,21 +121,33 @@ async function setupDefaultSettings(): Promise<void> {
         fs.mkdirSync(userDir, { recursive: true })
     }
 
-    // Default settings with the theme (castrogusttavo.min-theme uses "Min Dark" and "Min Light")
+    // Default settings - minimal, clean UI with Poimandres theme
     const defaultSettings: Record<string, unknown> = {
         // Disable signature verification for Open VSX extensions
         "extensions.verifySignature": false,
-        // Theme settings
-        "workbench.colorTheme": "Min Dark",
+        // Theme
+        "workbench.colorTheme": "Vesper",
         "workbench.startupEditor": "none",
-        // Editor settings
+        // Editor
         "editor.fontSize": 14,
         "editor.fontFamily": "'JetBrains Mono', 'Fira Code', Menlo, Monaco, 'Courier New', monospace",
         "editor.minimap.enabled": false,
         "editor.wordWrap": "on",
-        // UI settings
-        "window.menuBarVisibility": "compact",
-        "workbench.activityBar.location": "top",
+        "editor.renderLineHighlight": "gutter",
+        "editor.scrollbar.vertical": "auto",
+        "editor.scrollbar.horizontal": "auto",
+        "editor.overviewRulerBorder": false,
+        "editor.hideCursorInOverviewRuler": true,
+        "editor.guides.indentation": false,
+        // Minimal UI
+        "window.menuBarVisibility": "hidden",
+        "window.commandCenter": false,
+        "workbench.layoutControl.enabled": false,
+        "workbench.activityBar.location": "default",
+        "workbench.sideBar.location": "right",
+        "workbench.editor.showTabs": "single",
+        "workbench.statusBar.visible": false,
+        "breadcrumbs.enabled": false,
     }
 
     // Merge with existing settings if they exist
@@ -151,7 +163,7 @@ async function setupDefaultSettings(): Promise<void> {
 
     const mergedSettings = { ...defaultSettings, ...existingSettings }
     // Ensure critical settings are always set correctly
-    mergedSettings["workbench.colorTheme"] = "Min Dark"
+    mergedSettings["workbench.colorTheme"] = "Vesper"
     mergedSettings["extensions.verifySignature"] = false
 
     await fs.promises.writeFile(settingsPath, JSON.stringify(mergedSettings, null, 2))
@@ -165,7 +177,8 @@ async function setupDefaultSettings(): Promise<void> {
 async function installExtensions(): Promise<void> {
     const binPath = getCodeServerBin()
     const extensions = [
-        "castrogusttavo.min-theme"
+        "raunofreiberg.vesper",
+        "ziterz.codesandbox-black-theme"
     ]
 
     for (const ext of extensions) {

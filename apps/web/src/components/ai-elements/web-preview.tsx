@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon, GlobeIcon, LockIcon, XIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 export type WebPreviewContextValue = {
   url: string;
@@ -177,10 +177,12 @@ export const WebPreviewUrl = ({
 }: WebPreviewUrlProps) => {
   const { url, setUrl } = useWebPreview();
   const [inputValue, setInputValue] = useState(url);
+  const [prevUrl, setPrevUrl] = useState(url);
 
-  useEffect(() => {
+  if (prevUrl !== url) {
+    setPrevUrl(url);
     setInputValue(url);
-  }, [url]);
+  }
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);

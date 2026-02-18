@@ -6,17 +6,14 @@ const MUTATING_TOOLS = new Set([
     "editFile",
     "deleteFile",
     "stringReplace",
-    "runTerminalCommand",
+    "bash",
 ]);
 
 export function isMutatingTool(toolName: string): boolean {
     return MUTATING_TOOLS.has(toolName);
 }
 
-/**
- * Robust boundary check using path.relative instead of startsWith.
- * Resolves symlinks for both root and target to prevent escapes.
- */
+
 export function isPathWithinProject(filePath: string, projectCwd: string): boolean {
     try {
         const resolvedCwd = safeRealpath(projectCwd);
@@ -34,11 +31,6 @@ export function isPathWithinProject(filePath: string, projectCwd: string): boole
     }
 }
 
-/**
- * Resolve real path, following symlinks. Falls back to path.resolve if
- * the target doesn't exist yet (e.g. for new file creation — we still
- * check the parent directory).
- */
 function safeRealpath(p: string): string {
     try {
         return fs.realpathSync(p);
@@ -96,9 +88,6 @@ export function resolveProjectPath(filePath: string, projectCwd: string): string
     return path.resolve(projectCwd, filePath);
 }
 
-/**
- * Require projectCwd for mutating tools. Returns an error response if missing.
- */
 export function requireProjectCwd(
     toolName: string,
     projectCwd: string | undefined,
