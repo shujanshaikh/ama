@@ -9,7 +9,7 @@ import { exploreSubagentPrompt } from "../lib/prompt";
 import { createOpenCodeZenModel } from "@/lib/model";
 
 export const exploreSubagent = new ToolLoopAgent({
-    model: createOpenCodeZenModel("minimax-m2.1-free"),
+    model: createOpenCodeZenModel("glm-5-free"),
     instructions: exploreSubagentPrompt,
     tools: {
         readFile: readFile,
