@@ -311,7 +311,6 @@ export const ToolRenderer = ({
         | undefined;
       const matchCount =
         output?.matchCount || output?.result?.totalMatches || 0;
-      const content = part.output?.content;
       return (
         <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
@@ -650,41 +649,6 @@ export const ToolRenderer = ({
     const { toolCallId, state } = part;
     const task = part.input?.task as string | undefined;
     const output = part.output;
-    
-    // Extract tool parts from sub-agent messages
-    // The output could be in different formats depending on how it's yielded
-    const toolParts: SubagentToolPart[] = [];
-    
-    if (output) {
-      // If output is an array of messages
-      if (Array.isArray(output)) {
-        for (const item of output) {
-          // Check if item has parts directly
-          if (item?.parts && Array.isArray(item.parts)) {
-            for (const p of item.parts) {
-              if (p?.type?.startsWith('tool-')) {
-                toolParts.push(p as SubagentToolPart);
-              }
-            }
-          }
-          // Check if item itself is a tool part
-          if (item?.type?.startsWith('tool-')) {
-            toolParts.push(item as SubagentToolPart);
-          }
-        }
-      }
-      // If output is a single message with parts
-      else if (typeof output === 'object' && 'parts' in output) {
-        const parts = (output as { parts: unknown[] }).parts;
-        if (Array.isArray(parts)) {
-          for (const p of parts) {
-            if ((p as SubagentToolPart)?.type?.startsWith('tool-')) {
-              toolParts.push(p as SubagentToolPart);
-            }
-          }
-        }
-      }
-    }
 
     const isLoading = state === "input-streaming" || state === "input-available";
 
@@ -693,7 +657,7 @@ export const ToolRenderer = ({
         key={toolCallId}
         task={task || "codebase"}
         isLoading={isLoading}
-        toolParts={toolParts}
+        output={output}
       />
     );
   }
@@ -942,28 +906,88 @@ function getSubagentToolLabel(part: SubagentToolPart): string {
   }
 }
 
-// Simple ToolLine component
-function ToolLine({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-1 sm:gap-1.5 py-0.5 sm:py-1 text-xs sm:text-sm text-muted-foreground">
-      {children}
-    </div>
-  );
+const MAX_VISIBLE_EXPLORE_STEPS = 100;
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function collectSubagentToolParts(output: unknown): SubagentToolPart[] {
+  if (!output) return [];
+
+  const stack: unknown[] = [output];
+  const parts: SubagentToolPart[] = [];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) continue;
+
+    if (Array.isArray(current)) {
+      // Push in reverse to preserve display order when popping.
+      for (let i = current.length - 1; i >= 0; i -= 1) {
+        stack.push(current[i]);
+      }
+      continue;
+    }
+
+    if (!isObjectRecord(current)) {
+      continue;
+    }
+
+    const type = current.type;
+    if (typeof type === "string" && type.startsWith("tool-")) {
+      parts.push({
+        type,
+        toolCallId:
+          typeof current.toolCallId === "string"
+            ? current.toolCallId
+            : undefined,
+        state: typeof current.state === "string" ? current.state : undefined,
+        input: current.input,
+        output: current.output,
+      });
+      continue;
+    }
+
+    const nestedParts = current.parts;
+    if (Array.isArray(nestedParts)) {
+      for (let i = nestedParts.length - 1; i >= 0; i -= 1) {
+        stack.push(nestedParts[i]);
+      }
+    }
+  }
+
+  return parts;
 }
 
 // Explore Tool component for sub-agent
 function ExploreTool({
   task,
   isLoading,
-  toolParts,
+  output,
 }: {
   task: string;
   isLoading: boolean;
-  toolParts: SubagentToolPart[];
+  output: unknown;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const truncatedTask = task.length > 80 ? task.slice(0, 80) + "…" : task;
-  const hasTools = toolParts.length > 0;
+
+  // Lazy compute detailed tool steps only when expanded. This prevents heavy
+  // parsing/rendering during long-running explore streams.
+  const expandedToolParts = useMemo(
+    () => (isOpen ? collectSubagentToolParts(output) : []),
+    [isOpen, output],
+  );
+
+  const hiddenCount = Math.max(
+    0,
+    expandedToolParts.length - MAX_VISIBLE_EXPLORE_STEPS,
+  );
+  const visibleToolParts =
+    hiddenCount > 0
+      ? expandedToolParts.slice(-MAX_VISIBLE_EXPLORE_STEPS)
+      : expandedToolParts;
 
   const label = (
     <>
@@ -971,20 +995,15 @@ function ExploreTool({
       <span className="text-[10px] sm:text-xs truncate max-w-[200px] sm:max-w-[300px]">
         {truncatedTask}
       </span>
-      {hasTools && (
+      {isOpen && expandedToolParts.length > 0 && (
         <span className="text-muted-foreground/60 text-[10px] sm:text-xs">
-          ({toolParts.length} tool{toolParts.length !== 1 ? "s" : ""})
+          ({expandedToolParts.length} tool
+          {expandedToolParts.length !== 1 ? "s" : ""})
         </span>
       )}
     </>
   );
 
-  // Show simple line only if no tools and not loading
-  if (!hasTools && !isLoading) {
-    return <ToolLine>{label}</ToolLine>;
-  }
-
-  // Show collapsible when we have tools OR when loading (to show progress)
   return (
     <div>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -998,10 +1017,16 @@ function ExploreTool({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="mt-0.5 pl-5 border-l border-border/50">
-            {hasTools ? (
-              toolParts.map((tp, i) => (
+            {hiddenCount > 0 && (
+              <div className="text-xs text-muted-foreground/50 py-0.5">
+                Showing latest {MAX_VISIBLE_EXPLORE_STEPS} of{" "}
+                {expandedToolParts.length} steps
+              </div>
+            )}
+            {visibleToolParts.length > 0 ? (
+              visibleToolParts.map((tp, i) => (
                 <div
-                  key={tp.toolCallId || i}
+                  key={`${tp.toolCallId ?? "tool"}-${i}`}
                   className="text-xs text-muted-foreground/70 font-mono py-0.5 truncate"
                 >
                   {getSubagentToolLabel(tp)}
@@ -1009,7 +1034,7 @@ function ExploreTool({
               ))
             ) : (
               <div className="text-xs text-muted-foreground/50 py-0.5">
-                Starting exploration...
+                {isLoading ? "Starting exploration..." : "No tool steps captured."}
               </div>
             )}
           </div>
