@@ -8,7 +8,7 @@ import {
     JsonToSseTransformStream,
 } from "ai";
 import { convertToModelMessages } from "ai";
-import { tools } from "@/tools/tool";
+import { tool } from "@/tools/tool";
 import {
     getMessagesByChatId,
     saveMessages,
@@ -258,7 +258,7 @@ agentRouter.post("/agent-proxy", async (c) => {
                                 delayInMs: 20,
                                 chunking: "word",
                             }),
-                            tools: tools,
+                            tools: tool,
                             providerOptions: codex ? buildCodexProviderOptions(systemPrompt) : undefined,
                         });
                         result.consumeStream();

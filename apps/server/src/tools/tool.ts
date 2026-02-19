@@ -8,7 +8,6 @@ import { listDirectory } from "./listDirectory";
 import { bashTool } from "./bash";
 import { webSearch } from "./webSearch";
 import { batchTool } from "./batch";
-import { supermemoryTools } from "@supermemory/tools/ai-sdk";
 import { exploreTool } from "./exploreAgent";
 
 export const tool = {
@@ -23,13 +22,4 @@ export const tool = {
   webSearch: webSearch,
   batch: batchTool,
   explore: exploreTool,
-};
-
-const supermemoryToolsConfig = process.env.SUPERMEMORY_API_KEY
-  ? supermemoryTools(process.env.SUPERMEMORY_API_KEY)
-  : {};
-
-export const tools = {
-  ...tool,
-  ...supermemoryToolsConfig,
 };
