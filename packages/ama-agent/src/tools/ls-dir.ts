@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { validatePath, resolveProjectPath } from "../lib/sandbox";
 
-const IGNORE_PATTERNS = [
+const DEFAULT_IGNORE_PATTERNS = [
     "node_modules",
     "__pycache__",
     ".git",
@@ -37,12 +37,13 @@ const RESULT_LIMIT = 500;
 const MTIME_BATCH_SIZE = 50;
 
 const listSchema = z.object({
-    path: z.string().optional().describe("Relative path to the directory to list"),
+    path: z.string().optional().describe("Path to the directory to list"),
     recursive: z.boolean().optional().describe("Whether to list files recursively (default: true)"),
     maxDepth: z.number().optional().describe("Maximum recursion depth (default: 3)"),
     pattern: z.string().optional().describe("File extension (e.g., '.ts') or glob-like pattern"),
     showHidden: z.boolean().optional().describe("Whether to show hidden files (default: false)"),
-    includeMetadata: z.boolean().optional().describe("Whether to fetch file metadata like mtime (default: false — faster without I/O)"),
+    includeMetadata: z.boolean().optional().describe("Whether to fetch file metadata like mtime (default: false -- faster without I/O)"),
+    ignore: z.array(z.string()).optional().describe("Additional glob patterns to ignore (added to default ignore list)"),
 });
 
 interface FileEntry {
@@ -54,14 +55,14 @@ interface FileEntry {
     depth: number;
 }
 
-function shouldIgnore(name: string, showHidden: boolean): boolean {
+function shouldIgnore(name: string, showHidden: boolean, ignoreSet: Set<string>): boolean {
     // Check hidden files
     if (!showHidden && name.startsWith('.') && name !== '.') {
         return true;
     }
     
     // Check ignore patterns
-    return IGNORE_PATTERNS.includes(name);
+    return ignoreSet.has(name);
 }
 
 function matchPattern(name: string, pattern: string | undefined): boolean {
@@ -155,6 +156,7 @@ export const list = async function(input: z.infer<typeof listSchema>, projectCwd
         pattern,
         showHidden = false,
         includeMetadata = false,
+        ignore: extraIgnore,
     } = input;
 
     if (maxDepth !== undefined && (!Number.isInteger(maxDepth) || maxDepth < 0)) {
@@ -202,6 +204,14 @@ export const list = async function(input: z.infer<typeof listSchema>, projectCwd
             };
         }
 
+        // Build the ignore set from defaults + user-provided extras
+        const ignoreSet = new Set<string>(DEFAULT_IGNORE_PATTERNS);
+        if (extraIgnore && extraIgnore.length > 0) {
+            for (const pat of extraIgnore) {
+                ignoreSet.add(pat);
+            }
+        }
+
         const collected: FileEntry[] = [];
         let truncated = false;
 
@@ -232,7 +242,7 @@ export const list = async function(input: z.infer<typeof listSchema>, projectCwd
                     break;
                 }
 
-                if (shouldIgnore(entry.name, showHidden)) {
+                if (shouldIgnore(entry.name, showHidden, ignoreSet)) {
                     continue;
                 }
 

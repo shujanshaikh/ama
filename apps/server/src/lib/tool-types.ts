@@ -44,7 +44,10 @@ export interface CodeMapping {
 
 export interface RunTerminalCommandInput {
   command: string;
-  is_background: boolean;
+  is_background?: boolean;
+  timeout?: number;
+  workdir?: string;
+  description: string;
 }
 
 export interface RunTerminalCommandOutput {

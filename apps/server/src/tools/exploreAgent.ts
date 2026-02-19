@@ -22,7 +22,7 @@ export const exploreSubagent = new ToolLoopAgent({
 
 
 export const exploreTool = tool({
-    description: 'Delegate a research task to an exploration agent that can search, read, and navigate the codebase. Use this to find relevant files, trace dependencies, understand architecture, or gather context before making changes. The agent returns a structured summary of its findings including file paths, code excerpts, and architectural observations.',
+    description: 'Delegate research to a sub-agent for LONG or COMPLEX tasks: adding features, refactoring, multi-file changes, "how does X work?" questions, tracing dependencies across the codebase, or understanding unfamiliar architecture. Returns a structured summary with file paths, code excerpts, and architectural observations. Use this FIRST when the task spans 3+ files or requires broad exploration. For small single-file edits, use glob/grep/readFile directly.',
     inputSchema: z.object({
         task: z.string().describe('A specific research question or exploration goal, e.g. "Find all files related to authentication and how the auth middleware is wired up" or "What database models exist and how are they connected"'),
     }),

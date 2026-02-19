@@ -5,8 +5,7 @@ import { validatePath, resolveProjectPath } from "../lib/sandbox";
 
 const globSchema = z.object({
     pattern: z.string().describe('Glob pattern to match files (e.g., "**/*.js", "src/**/*.ts", "*.json"). Supports standard glob syntax with *, **, and ? wildcards'),
-    path: z.string().optional().describe('Optional relative directory path within the project to limit the search scope. If not provided, searches from the project root'),
-    sortByMtime: z.boolean().optional().describe('Sort results by modification time (default: false — faster without I/O)'),
+    path: z.string().optional().describe('Optional directory path to limit the search scope. If not provided, searches from the project root'),
 });
 
 const RESULT_LIMIT = 100;
@@ -38,7 +37,7 @@ async function getMtimesBatched(files: string[]): Promise<FileWithMtime[]> {
 }
 
 export const globTool = async function(input: z.infer<typeof globSchema>, projectCwd?: string) {
-    const { pattern, path: inputPath, sortByMtime = false } = input;
+    const { pattern, path: inputPath } = input;
 
     if (!pattern) {
         return {
@@ -92,9 +91,9 @@ export const globTool = async function(input: z.infer<typeof globSchema>, projec
             files.push(match);
         }
 
-        // Only do mtime lookups when sorting is requested
+        // Always sort by mtime (newest first) - aligned with OpenCode behavior
         let sortedFiles: string[];
-        if (sortByMtime && files.length > 0) {
+        if (files.length > 0) {
             const filesWithMtime = await getMtimesBatched(files);
             filesWithMtime.sort((a, b) => b.mtime - a.mtime);
             sortedFiles = filesWithMtime.map(f => f.path);

@@ -13,11 +13,11 @@ export const GREP_LIMITS = {
 const grepSchema = z.object({
     query: z.string().describe('The regex pattern to search for'),
     options: z.object({
-        includePattern: z.string().optional().describe('Glob pattern for files to include (e.g., "*.ts")'),
+        includePattern: z.string().optional().describe('Glob pattern for files to include (e.g., "*.ts", "*.{ts,tsx}")'),
         excludePattern: z.string().optional().describe('Glob pattern for files to exclude'),
         caseSensitive: z.boolean().optional().describe('Whether the search should be case sensitive'),
         path: z.string().optional().describe('Subdirectory to search in'),
-        sortByMtime: z.boolean().optional().describe('Sort results by file modification time (default: false)'),
+        sortByMtime: z.boolean().optional().describe('Sort results by file modification time (default: true)'),
     }).optional(),
 })
 

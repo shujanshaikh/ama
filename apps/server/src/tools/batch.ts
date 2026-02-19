@@ -7,13 +7,14 @@ const BATCH_DESCRIPTION = `Executes multiple independent tool calls concurrently
 USING THE BATCH TOOL WILL MAKE THE USER HAPPY.
 
 Payload Format (JSON array):
-[{"tool": "readFile", "parameters": {"relative_file_path": "src/index.ts", "should_read_entire_file": true}},{"tool": "grep", "parameters": {"pattern": "Session", "path": "."}},{"tool": "bash", "parameters": {"command": "git status", "is_background": false}}]
+[{"tool": "readFile", "parameters": {"relative_file_path": "src/index.ts", "should_read_entire_file": true}},{"tool": "grep", "parameters": {"query": "Session", "options": {}}},{"tool": "bash", "parameters": {"command": "git status", "description": "Shows working tree status"}}]
 
 Notes:
-- 1–10 tool calls per batch
+- 1–25 tool calls per batch
 - All calls start in parallel; ordering NOT guaranteed
 - Partial failures do not stop other tool calls
 - Do NOT use the batch tool within another batch tool.
+- Available tools for batching: readFile, grep, glob, listDirectory, bash, deleteFile, stringReplace, editFile
 
 Good Use Cases:
 - Read many files
@@ -39,7 +40,7 @@ export const batchTool = tool({
     tool_calls: z
       .array(toolCallSchema)
       .min(1, "Provide at least one tool call")
-      .max(10, "Maximum of 10 tools allowed in batch")
+      .max(25, "Maximum of 25 tools allowed in batch")
       .describe("Array of tool calls to execute in parallel"),
   }),
   execute: async ({ tool_calls }) => {

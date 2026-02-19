@@ -5,6 +5,8 @@ import { grepTool } from "./grep";
 import { globTool } from "./glob";
 import { list } from "./ls-dir";
 import { bashTool } from "./bash";
+import { apply_patch } from "./stringReplace";
+import { editFiles } from "./edit-file";
 
 const toolCallSchema = z.object({
   tool: z.string().describe("The name of the tool to execute"),
@@ -17,7 +19,7 @@ const batchSchema = z.object({
   tool_calls: z
     .array(toolCallSchema)
     .min(1, "Provide at least one tool call")
-    .max(10, "Maximum of 10 tools allowed in batch")
+    .max(25, "Maximum of 25 tools allowed in batch")
     .describe("Array of tool calls to execute in parallel"),
 });
 
@@ -30,7 +32,10 @@ const MAX_CONCURRENCY = 5;
 // Per-call timeout (ms)
 const PER_CALL_TIMEOUT = 30_000;
 
-// All safe batchable tools
+// Maximum batch size
+const MAX_BATCH_SIZE = 25;
+
+// All batchable tools (includes stringReplace and editFile now)
 const batchableToolExecutors: Record<
   string,
   (args: any, projectCwd?: string) => Promise<any>
@@ -41,6 +46,8 @@ const batchableToolExecutors: Record<
   listDirectory: list,
   readFile: read_file,
   bash: bashTool,
+  stringReplace: apply_patch,
+  editFile: editFiles,
 };
 
 interface BatchToolCallResult {
@@ -96,8 +103,8 @@ export const batchTool = async function (
 }> {
   const { tool_calls } = input;
 
-  const callsToExecute = tool_calls.slice(0, 10);
-  const discardedCalls = tool_calls.slice(10);
+  const callsToExecute = tool_calls.slice(0, MAX_BATCH_SIZE);
+  const discardedCalls = tool_calls.slice(MAX_BATCH_SIZE);
 
   const executeCall = async (call: {
     tool: string;
@@ -158,7 +165,7 @@ export const batchTool = async function (
     results.push({
       tool: call.tool,
       success: false,
-      error: "Maximum of 10 tools allowed in batch",
+      error: `Maximum of ${MAX_BATCH_SIZE} tools allowed in batch`,
       durationMs: 0,
     });
   }

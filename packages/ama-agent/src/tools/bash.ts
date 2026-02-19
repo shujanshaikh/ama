@@ -1,9 +1,11 @@
 import { z } from "zod";
 
 const ExplanationSchema = z.object({
-  explanation: z
+  description: z
     .string()
-    .describe("One sentence explanation as to why this tool is being used"),
+    .describe(
+      "Clear, concise description of what this command does in 5-10 words. Examples:\nInput: ls\nOutput: Lists files in current directory\n\nInput: git status\nOutput: Shows working tree status\n\nInput: npm install\nOutput: Installs package dependencies\n\nInput: mkdir foo\nOutput: Creates directory 'foo'",
+    ),
 });
 
 const BLOCKED_PATTERNS: RegExp[] = [
@@ -28,6 +30,7 @@ const DANGEROUS_FLAGS: RegExp[] = [
 ];
 
 const MAX_OUTPUT_SIZE = 1 * 1024 * 1024;
+const DEFAULT_TIMEOUT = 120_000; // 2 minutes (matches OpenCode default)
 
 function evaluateCommandSafety(command: string): { safe: boolean; reason?: string } {
   const trimmed = command.trim();
@@ -49,10 +52,20 @@ function evaluateCommandSafety(command: string): { safe: boolean; reason?: strin
 
 export const BashParamsSchema = z
   .object({
-    command: z.string().describe("The terminal command to execute (e.g., 'ls -la', 'pwd', 'echo $HOME')"),
+    command: z.string().describe("The terminal command to execute"),
     is_background: z
       .boolean()
+      .optional()
+      .default(false)
       .describe("Whether the command should be run in the background"),
+    timeout: z
+      .number()
+      .optional()
+      .describe("Optional timeout in milliseconds. If not specified, commands will time out after 120000ms (2 minutes)."),
+    workdir: z
+      .string()
+      .optional()
+      .describe("The working directory to run the command in. Defaults to the project directory. Use this instead of 'cd' commands."),
   })
   .merge(ExplanationSchema);
 
@@ -138,9 +151,22 @@ export const bashTool = async (
       };
     }
 
+    // Validate timeout if provided
+    if (input.timeout !== undefined && input.timeout < 0) {
+      return {
+        success: false,
+        message: `Invalid timeout value: ${input.timeout}. Timeout must be a positive number.`,
+        error: "INVALID_TIMEOUT",
+      };
+    }
+
+    // Resolve working directory: workdir param > projectCwd > process.cwd()
+    const cwd = input.workdir || projectCwd || process.cwd();
+    const timeout = input.timeout ?? DEFAULT_TIMEOUT;
+
     if (input?.is_background) {
       const proc = Bun.spawn(["sh", "-c", input.command], {
-        cwd: projectCwd || process.cwd(),
+        cwd,
         stdout: "ignore",
         stderr: "ignore",
       });
@@ -157,8 +183,8 @@ export const bashTool = async (
     } else {
       const result: any = await runSecureTerminalCommand(
         input.command,
-        30000,
-        projectCwd
+        timeout,
+        cwd,
       );
 
       if (result?.error && !result?.exitCode) {

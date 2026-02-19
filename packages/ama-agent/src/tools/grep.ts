@@ -5,7 +5,7 @@ import { validatePath } from "../lib/sandbox";
 
 export const GREP_LIMITS = {
     DEFAULT_MAX_MATCHES: 200,
-    MAX_LINE_LENGTH: 500,
+    MAX_LINE_LENGTH: 2000, // aligned with OpenCode's 2000-char truncation
     MAX_TOTAL_OUTPUT_SIZE: 1 * 1024 * 1024,
     EXECUTION_TIMEOUT_MS: 15_000,
     TRUNCATION_MESSAGE:
@@ -15,11 +15,11 @@ export const GREP_LIMITS = {
 const grepSchema = z.object({
     query: z.string().describe('The regex pattern to search for'),
     options: z.object({
-        includePattern: z.string().optional().describe('Glob pattern for files to include (e.g., "*.ts")'),
+        includePattern: z.string().optional().describe('Glob pattern for files to include (e.g., "*.ts", "*.{ts,tsx}")'),
         excludePattern: z.string().optional().describe('Glob pattern for files to exclude'),
         caseSensitive: z.boolean().optional().describe('Whether the search should be case sensitive'),
         path: z.string().optional().describe('Subdirectory to search in'),
-        sortByMtime: z.boolean().optional().describe('Sort results by file modification time (default: false)'),
+        sortByMtime: z.boolean().optional().describe('Sort results by file modification time (default: true)'),
     }).optional(),
 });
 
@@ -89,7 +89,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
     }
 
     try {
-        const { includePattern, excludePattern, caseSensitive, path: subPath, sortByMtime = false } = options || {};
+        const { includePattern, excludePattern, caseSensitive, path: subPath, sortByMtime = true } = options || {};
 
         let searchDir = projectCwd || process.cwd();
 
@@ -119,12 +119,12 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
         const rgPath = await getRipgrepPath();
 
         const args: string[] = [
-            '-n',
-            '--with-filename',
-            '--no-heading',
+            '-nH',          // line numbers + filename (compact form, matching OpenCode)
+            '--hidden',     // search hidden files (aligned with OpenCode)
+            '--no-messages', // suppress error messages for unreadable files
             '--color=never',
             '--max-count=100',
-            '--max-columns=1000',
+            '--max-columns=2000',
         ];
 
         if (!caseSensitive) {
@@ -139,6 +139,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             args.push('--glob', `!${excludePattern}`);
         }
 
+        // Default exclusions
         args.push('--glob', '!node_modules/**');
         args.push('--glob', '!.git/**');
         args.push('--glob', '!dist/**');
@@ -148,6 +149,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
         args.push('--glob', '!package-lock.json');
         args.push('--glob', '!yarn.lock');
         args.push('--glob', '!bun.lockb');
+        args.push('--glob', '!pnpm-lock.yaml');
 
         args.push('--regexp', query);
         args.push(searchDir);
@@ -178,6 +180,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             };
         }
 
+        // exit code 1 = no matches (not an error)
         if (exitCode === 1) {
             return {
                 success: true,
@@ -189,7 +192,9 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             };
         }
 
-        if (exitCode !== 0) {
+        // exit code 2 = partial errors (e.g. broken symlinks, permission issues)
+        // Still process any results we got - don't treat as full failure
+        if (exitCode !== 0 && exitCode !== 2) {
             return {
                 success: false,
                 message: `Ripgrep error: ${stderr || 'Unknown error'}`,
@@ -210,6 +215,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
                 const lineNumber = parseInt(line.substring(firstColon + 1, secondColon), 10);
                 let content = line.substring(secondColon + 1);
 
+                // Truncate long lines (aligned with OpenCode's 2000-char limit)
                 if (content.length > GREP_LIMITS.MAX_LINE_LENGTH) {
                     content = content.substring(0, GREP_LIMITS.MAX_LINE_LENGTH) + '...';
                 }
@@ -224,7 +230,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             }
         }
 
-        // Only fetch mtimes when sorting is requested (saves I/O)
+        // Sort by mtime by default (aligned with OpenCode behavior)
         if (sortByMtime && uniqueFiles.size > 0) {
             const mtimeMap = await getMtimesBatched(Array.from(uniqueFiles));
             for (const match of rawMatches) {

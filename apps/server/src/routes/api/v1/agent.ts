@@ -253,7 +253,7 @@ agentRouter.post("/agent-proxy", async (c) => {
                             model: languageModel,
                             system: systemPrompt,
                             temperature: codex ? undefined : 1.0,
-                            stopWhen: stepCountIs(25),
+                            stopWhen: stepCountIs(45),
                             experimental_transform: smoothStream({
                                 delayInMs: 20,
                                 chunking: "word",

@@ -18,7 +18,7 @@ interface PierreDiffProps {
 }
 
 const getDiffOptions = (splitView: boolean): FileDiffProps<undefined>['options'] => ({
-  theme: { dark: "min-dark", light: "min-light" },
+  theme: { dark: "vesper", light: "vesper" },
   diffStyle: splitView ? "split" : "unified",
   diffIndicators: "bars",
   expandUnchanged: true,
