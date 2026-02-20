@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { createServer, type Server } from "node:http";
 import { AMA_DIR } from "../constant";
 
 export const CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
@@ -48,7 +49,7 @@ interface PendingOAuth {
   reject: (error: Error) => void;
 }
 
-let oauthServer: ReturnType<typeof Bun.serve> | undefined;
+let oauthServer: Server | undefined;
 let pendingOAuth: PendingOAuth | undefined;
 
 const HTML_SUCCESS = `<!doctype html>
@@ -296,66 +297,79 @@ async function startOAuthServer(): Promise<{ redirectUri: string }> {
     return { redirectUri: `http://localhost:${OAUTH_PORT}${CALLBACK_PATH}` };
   }
 
-  oauthServer = Bun.serve({
-    port: OAUTH_PORT,
-    fetch(request) {
-      const url = new URL(request.url);
-      if (url.pathname !== CALLBACK_PATH) {
-        return new Response("Not found", { status: 404 });
-      }
+  oauthServer = createServer((req, res) => {
+    const requestUrl = new URL(req.url || "/", `http://localhost:${OAUTH_PORT}`);
 
-      const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state");
-      const error = url.searchParams.get("error");
-      const errorDescription = url.searchParams.get("error_description");
+    if (requestUrl.pathname !== CALLBACK_PATH) {
+      res.statusCode = 404;
+      res.end("Not found");
+      return;
+    }
 
-      if (error) {
-        const message = errorDescription || error;
-        pendingOAuth?.reject(new Error(message));
-        pendingOAuth = undefined;
-        return new Response(HTML_ERROR(message), {
-          headers: { "Content-Type": "text/html" },
-        });
-      }
+    const code = requestUrl.searchParams.get("code");
+    const state = requestUrl.searchParams.get("state");
+    const error = requestUrl.searchParams.get("error");
+    const errorDescription = requestUrl.searchParams.get("error_description");
 
-      if (!code) {
-        const message = "Missing authorization code";
-        pendingOAuth?.reject(new Error(message));
-        pendingOAuth = undefined;
-        return new Response(HTML_ERROR(message), {
-          status: 400,
-          headers: { "Content-Type": "text/html" },
-        });
-      }
+    const sendHtml = (html: string, statusCode = 200) => {
+      res.statusCode = statusCode;
+      res.setHeader("Content-Type", "text/html");
+      res.end(html);
+    };
 
-      if (!pendingOAuth || state !== pendingOAuth.state) {
-        const message = "Invalid state - potential CSRF attack";
-        pendingOAuth?.reject(new Error(message));
-        pendingOAuth = undefined;
-        return new Response(HTML_ERROR(message), {
-          status: 400,
-          headers: { "Content-Type": "text/html" },
-        });
-      }
-
-      const current = pendingOAuth;
+    if (error) {
+      const message = errorDescription || error;
+      pendingOAuth?.reject(new Error(message));
       pendingOAuth = undefined;
-      exchangeCodeForTokens(code, `http://localhost:${OAUTH_PORT}${CALLBACK_PATH}`, current.pkce)
-        .then((tokens) => current.resolve(tokens))
-        .catch((err) => current.reject(err as Error));
+      sendHtml(HTML_ERROR(message));
+      return;
+    }
 
-      return new Response(HTML_SUCCESS, {
-        headers: { "Content-Type": "text/html" },
-      });
-    },
+    if (!code) {
+      const message = "Missing authorization code";
+      pendingOAuth?.reject(new Error(message));
+      pendingOAuth = undefined;
+      sendHtml(HTML_ERROR(message), 400);
+      return;
+    }
+
+    if (!pendingOAuth || state !== pendingOAuth.state) {
+      const message = "Invalid state - potential CSRF attack";
+      pendingOAuth?.reject(new Error(message));
+      pendingOAuth = undefined;
+      sendHtml(HTML_ERROR(message), 400);
+      return;
+    }
+
+    const current = pendingOAuth;
+    pendingOAuth = undefined;
+    exchangeCodeForTokens(code, `http://localhost:${OAUTH_PORT}${CALLBACK_PATH}`, current.pkce)
+      .then((tokens) => current.resolve(tokens))
+      .catch((err) => current.reject(err as Error));
+
+    sendHtml(HTML_SUCCESS);
   });
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      oauthServer?.once("error", reject);
+      oauthServer?.listen(OAUTH_PORT, "127.0.0.1", () => {
+        oauthServer?.off("error", reject);
+        resolve();
+      });
+    });
+  } catch (error) {
+    oauthServer?.close();
+    oauthServer = undefined;
+    throw error;
+  }
 
   return { redirectUri: `http://localhost:${OAUTH_PORT}${CALLBACK_PATH}` };
 }
 
 function stopOAuthServer() {
   if (oauthServer) {
-    oauthServer.stop();
+    oauthServer.close();
     oauthServer = undefined;
   }
 }

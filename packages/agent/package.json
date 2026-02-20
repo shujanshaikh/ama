@@ -1,0 +1,34 @@
+{
+  "name": "@ama/agent",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Local tool implementations for ama CLI",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "./node_modules/.bin/tsx --test test/**/*.test.ts"
+  },
+  "dependencies": {
+    "diff": "^8.0.2",
+    "glob": "^11.0.3",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.2"
+  }
+}

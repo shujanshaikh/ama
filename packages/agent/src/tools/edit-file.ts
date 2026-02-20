@@ -1,8 +1,9 @@
 import { z } from "zod"
 import path from "node:path";
-import { mkdir } from "node:fs/promises";
-import { calculateDiffStats } from "../lib/diff";
-import { validatePath, resolveProjectPath } from "../lib/sandbox";
+import { constants } from "node:fs";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { calculateDiffStats } from "../lib/diff.ts";
+import { validatePath, resolveProjectPath } from "../lib/sandbox.ts";
 
 const editFilesSchema = z.object({
   target_file: z
@@ -45,20 +46,27 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>, 
 
       let isNewFile = providedNewFile
       let existingContent = ""
-      const file = Bun.file(filePath);
+      const fileExists = async () => {
+        try {
+          await access(filePath, constants.F_OK);
+          return true;
+        } catch {
+          return false;
+        }
+      };
       
       if (isNewFile === undefined) {
-        const exists = await file.exists();
+        const exists = await fileExists();
         if (exists) {
-          existingContent = await file.text();
+          existingContent = await readFile(filePath, "utf8");
           isNewFile = false;
         } else {
           isNewFile = true;
         }
       } else if (!isNewFile) {
-        const exists = await file.exists();
+        const exists = await fileExists();
         if (exists) {
-          existingContent = await file.text();
+          existingContent = await readFile(filePath, "utf8");
         } else {
           isNewFile = true;
         }
@@ -75,8 +83,7 @@ export const editFiles = async function(input: z.infer<typeof editFilesSchema>, 
         };
       }
 
-      // Write the new content using Bun.write
-      await Bun.write(filePath, content);
+      await writeFile(filePath, content, "utf8");
 
       const diffStats = calculateDiffStats(existingContent, content);
       

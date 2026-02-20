@@ -10,7 +10,7 @@ import fs from "fs";
 import readline from "readline";
 import { spawn } from "child_process";
 
-const VERSION = process.env.VERSION ?? "0.0.9";
+const VERSION = process.env.VERSION ?? "0.0.22";
 
 const PROJECT_DIR = process.cwd();
 
@@ -78,13 +78,14 @@ async function checkForUpdates(): Promise<{ current: string; latest: string; has
 // Run npm install globally
 function runNpmInstall(): Promise<void> {
     return new Promise((resolve, reject) => {
-        const child = spawn('bun', ['add', '-g', 'amai@latest'], {
+        const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+        const child = spawn(npmCommand, ['install', '-g', 'amai@latest'], {
             stdio: 'inherit',
             shell: true
         });
         child.on('close', (code) => {
             if (code === 0) resolve();
-            else reject(new Error(`bun add exited with code ${code}`));
+            else reject(new Error(`npm install exited with code ${code}`));
         });
         child.on('error', reject);
     });

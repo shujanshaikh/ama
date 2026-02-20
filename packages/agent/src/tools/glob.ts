@@ -1,7 +1,8 @@
 import { z } from "zod";
-import path from "node:path";
 import fs from "node:fs";
-import { validatePath, resolveProjectPath } from "../lib/sandbox";
+import fsp from "node:fs/promises";
+import { glob } from "glob";
+import { validatePath, resolveProjectPath } from "../lib/sandbox.ts";
 
 const globSchema = z.object({
     pattern: z.string().describe('Glob pattern to match files (e.g., "**/*.js", "src/**/*.ts", "*.json"). Supports standard glob syntax with *, **, and ? wildcards'),
@@ -23,9 +24,9 @@ async function getMtimesBatched(files: string[]): Promise<FileWithMtime[]> {
         const batch = files.slice(i, i + MTIME_BATCH_SIZE);
         const batchResults = await Promise.all(
             batch.map(async (filePath) => {
-                const mtime = await Bun.file(filePath)
-                    .stat()
-                    .then((stats) => stats.mtime.getTime())
+                const mtime = await fsp
+                    .stat(filePath)
+                    .then((stats) => stats.mtimeMs)
                     .catch(() => 0);
                 return { path: filePath, mtime };
             })
@@ -70,26 +71,16 @@ export const globTool = async function(input: z.infer<typeof globSchema>, projec
             }
         }
 
-        const glob = new Bun.Glob(pattern);
-        const files: string[] = [];
-        let truncated = false;
-
-        for await (const match of glob.scan({
+        const matches = await glob(pattern, {
             cwd: searchPath,
             absolute: true,
-            onlyFiles: true,
-            followSymlinks: false,
-        })) {
-            if (match.includes('/node_modules/') || match.includes('/.git/')) {
-                continue;
-            }
+            nodir: true,
+            follow: false,
+            ignore: ["**/node_modules/**", "**/.git/**"],
+        });
 
-            if (files.length >= RESULT_LIMIT) {
-                truncated = true;
-                break;
-            }
-            files.push(match);
-        }
+        const truncated = matches.length > RESULT_LIMIT;
+        const files = truncated ? matches.slice(0, RESULT_LIMIT) : matches;
 
         // Always sort by mtime (newest first) - aligned with OpenCode behavior
         let sortedFiles: string[];

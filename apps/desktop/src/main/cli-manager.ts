@@ -1,5 +1,5 @@
 import { app } from "electron";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -32,7 +32,7 @@ function getDaemonEntryPath(): string {
   // In dev mode, resolve to the workspace package dist
   return path.resolve(
     app.getAppPath(),
-    "../../packages/ama-agent/dist/lib/daemon-entry.js",
+    "../../packages/cli/dist/lib/daemon-entry.js",
   );
 }
 
@@ -92,15 +92,7 @@ function spawnDaemon(): void {
 
   const logFd = fs.openSync(LOG_FILE, "a");
 
-  const bunCheck = spawnSync("bun", ["--version"], { stdio: "ignore" });
-  if (bunCheck.error || bunCheck.status !== 0) {
-    console.error(
-      "[cli-manager] Bun runtime is required to start daemon tools, but it was not found in PATH.",
-    );
-    return;
-  }
-
-  const child = spawn("bun", [entryPath], {
+  const child = spawn(process.execPath, [entryPath], {
     env: {
       ...process.env,
       AMA_DAEMON: "1",

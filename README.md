@@ -18,8 +18,9 @@ ama/
 │   ├── web/         # Frontend application (React + TanStack Start)
 │   └── server/      # Backend API server (Hono)
 ├── packages/
-│   └── ama-agent/   # CLI agent for local codebase operations
-    ├──db/            # Database schema and queries
+│   ├── cli/         # CLI runtime and daemon
+│   ├── agent/       # Tool implementations used by the CLI
+│   └── db/          # Database schema and queries
 ```
 
 ## Tech Stack
@@ -82,7 +83,7 @@ Open [http://localhost:3001](http://localhost:3001) in your browser to see the w
 ### Building the CLI Agent
 
 ```bash
-cd packages/ama-agent
+cd packages/cli
 bun run build
 bun link
 ```

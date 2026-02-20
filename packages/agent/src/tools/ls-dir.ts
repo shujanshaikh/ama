@@ -1,7 +1,8 @@
 import { z } from "zod";
 import fs from "node:fs";
+import fsp from "node:fs/promises";
 import path from "node:path";
-import { validatePath, resolveProjectPath } from "../lib/sandbox";
+import { validatePath, resolveProjectPath } from "../lib/sandbox.ts";
 
 const DEFAULT_IGNORE_PATTERNS = [
     "node_modules",
@@ -88,9 +89,9 @@ async function getMtimesBatched(entries: FileEntry[]): Promise<void> {
         const batch = entries.slice(i, i + MTIME_BATCH_SIZE);
         await Promise.all(
             batch.map(async (entry) => {
-                entry.mtime = await Bun.file(entry.absolutePath)
-                    .stat()
-                    .then((stats) => stats.mtime.getTime())
+                entry.mtime = await fsp
+                    .stat(entry.absolutePath)
+                    .then((stats) => stats.mtimeMs)
                     .catch(() => 0);
             })
         );

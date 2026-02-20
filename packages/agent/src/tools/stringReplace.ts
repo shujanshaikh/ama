@@ -1,8 +1,11 @@
 // Fuzzy matching strategies sourced from OpenCode's edit tool:
 // https://github.com/anomalyco/opencode
 import { z } from "zod";
-import { calculateDiffStats } from "../lib/diff";
-import { validatePath, resolveProjectPath } from "../lib/sandbox";
+import path from "node:path";
+import { constants } from "node:fs";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { calculateDiffStats } from "../lib/diff.ts";
+import { validatePath, resolveProjectPath } from "../lib/sandbox.ts";
 
 const apply_patchSchema = z.object({
     file_path: z.string().describe("The path to the file you want to search and replace in. You can use either a relative path in the workspace or an absolute path. If an absolute path is provided, it will be preserved as is"),
@@ -394,14 +397,17 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
         const basePath = projectCwd || process.cwd();
         const absolute_file_path = resolveProjectPath(file_path, basePath);
 
-        const file = Bun.file(absolute_file_path);
-        const exists = await file.exists();
+        let exists = true;
+        try {
+            await access(absolute_file_path, constants.F_OK);
+        } catch {
+            exists = false;
+        }
+
         if (!exists) {
             if (old_string === "") {
-                const { mkdir } = await import("node:fs/promises");
-                const path = await import("node:path");
                 await mkdir(path.dirname(absolute_file_path), { recursive: true });
-                await Bun.write(absolute_file_path, new_string);
+                await writeFile(absolute_file_path, new_string, "utf8");
                 const diffStats = calculateDiffStats("", new_string);
                 return {
                     success: true,
@@ -422,7 +428,7 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
 
         let fileContent: string;
         try {
-            fileContent = await file.text();
+            fileContent = await readFile(absolute_file_path, "utf8");
         } catch (error: any) {
             return {
                 success: false,
@@ -458,7 +464,7 @@ export const apply_patch = async function(input: z.infer<typeof apply_patchSchem
         }
 
         try {
-            await Bun.write(absolute_file_path, newContent);
+            await writeFile(absolute_file_path, newContent, "utf8");
             const diffStats = calculateDiffStats(fileContent, newContent);
             return {
                 success: true,

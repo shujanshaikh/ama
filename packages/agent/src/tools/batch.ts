@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { read_file } from "./read-file";
-import { deleteFile } from "./delete-file";
-import { grepTool } from "./grep";
-import { globTool } from "./glob";
-import { list } from "./ls-dir";
-import { bashTool } from "./bash";
-import { apply_patch } from "./stringReplace";
-import { editFiles } from "./edit-file";
+import { read_file } from "./read-file.ts";
+import { deleteFile } from "./delete-file.ts";
+import { grepTool } from "./grep.ts";
+import { globTool } from "./glob.ts";
+import { list } from "./ls-dir.ts";
+import { bashTool } from "./bash.ts";
+import { apply_patch } from "./stringReplace.ts";
+import { editFiles } from "./edit-file.ts";
 
 const toolCallSchema = z.object({
   tool: z.string().describe("The name of the tool to execute"),

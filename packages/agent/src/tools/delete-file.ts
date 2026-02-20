@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { unlink } from "node:fs/promises";
-import { validatePath, resolveProjectPath } from "../lib/sandbox";
+import { constants } from "node:fs";
+import { access, readFile, unlink } from "node:fs/promises";
+import { validatePath, resolveProjectPath } from "../lib/sandbox.ts";
 
 
 const deleteFileSchema = z.object({
@@ -41,9 +42,12 @@ export const deleteFile = async function(input: z.infer<typeof deleteFileSchema>
             };
         }
 
-        // Use Bun.file() to check existence and read content
-        const file = Bun.file(absolute_file_path);
-        const exists = await file.exists();
+        let exists = true;
+        try {
+            await access(absolute_file_path, constants.F_OK);
+        } catch {
+            exists = false;
+        }
         
         if (!exists) {
             return {
@@ -56,7 +60,7 @@ export const deleteFile = async function(input: z.infer<typeof deleteFileSchema>
         // Read original content before deletion
         let originalContent: string;
         try {
-            originalContent = await file.text();
+            originalContent = await readFile(absolute_file_path, "utf8");
         } catch {
             return {
                 success: false,
@@ -65,7 +69,6 @@ export const deleteFile = async function(input: z.infer<typeof deleteFileSchema>
             };
         }
 
-        // Delete the file (Bun doesn't have native unlink, use Node's fs.promises.unlink)
         try {
             await unlink(absolute_file_path);
         } catch {

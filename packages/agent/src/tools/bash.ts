@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { spawn } from "node:child_process";
 
 const ExplanationSchema = z.object({
   description: z
@@ -85,27 +86,39 @@ export const runSecureTerminalCommand = async (
       };
     }
 
-    const proc = Bun.spawn(["sh", "-c", command], {
+    const proc = spawn("sh", ["-c", command], {
       cwd: cwd || process.cwd(),
-      stdout: "pipe",
-      stderr: "pipe",
+      stdio: ["ignore", "pipe", "pipe"],
     });
 
     let timedOut = false;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let stdout = "";
+    let stderr = "";
 
     if (timeout > 0) {
       timeoutId = setTimeout(() => {
         timedOut = true;
-        proc.kill();
+        proc.kill("SIGTERM");
       }, timeout);
     }
 
-    const [stdout, stderr, exitCode] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-      proc.exited,
-    ]);
+    if (proc.stdout) {
+      proc.stdout.on("data", (chunk: Buffer | string) => {
+        stdout += chunk.toString();
+      });
+    }
+
+    if (proc.stderr) {
+      proc.stderr.on("data", (chunk: Buffer | string) => {
+        stderr += chunk.toString();
+      });
+    }
+
+    const exitCode = await new Promise<number | null>((resolve, reject) => {
+      proc.once("error", reject);
+      proc.once("close", (code) => resolve(code));
+    });
 
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -124,7 +137,7 @@ export const runSecureTerminalCommand = async (
     return {
       stdout: stdout.slice(0, MAX_OUTPUT_SIZE),
       stderr: stderr.slice(0, MAX_OUTPUT_SIZE),
-      exitCode,
+      exitCode: exitCode ?? 1,
     };
   } catch (error: any) {
     console.error("Error while executing the securedShell command", error);
@@ -165,10 +178,10 @@ export const bashTool = async (
     const timeout = input.timeout ?? DEFAULT_TIMEOUT;
 
     if (input?.is_background) {
-      const proc = Bun.spawn(["sh", "-c", input.command], {
+      const proc = spawn("sh", ["-c", input.command], {
         cwd,
-        stdout: "ignore",
-        stderr: "ignore",
+        stdio: "ignore",
+        detached: true,
       });
 
       proc.unref();

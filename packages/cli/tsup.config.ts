@@ -16,7 +16,7 @@ export default defineConfig([
     clean: true,
     splitting: false,
     sourcemap: false,
-    target: "node18",
+    target: "node25",
     platform: "node",
     treeshake: true,
     // Externalize Node.js built-ins and packages that use dynamic requires
@@ -36,9 +36,9 @@ export default defineConfig([
       // Packages that need to be external
       "ws",
     ],
-    // Add shebang to make CLI executable with Bun runtime
+    // Add shebang to make CLI executable with Node.js runtime
     banner: {
-      js: "#!/usr/bin/env bun",
+      js: "#!/usr/bin/env node",
     },
     env: {
       VERSION: process.env.VERSION ?? packageJson.version ?? "0.0.0",

@@ -13,16 +13,13 @@ npm install -g amai
 ### Option 2: Install Globally from Source
 
 ```bash
-# From the ama-agent package directory
-cd packages/ama-agent
-bun install
-bun run build
+# From the cli package directory
+cd packages/cli
+npm install
+npm run build
 
 # Link globally using npm
 npm link
-
-# Or use bun link
-bun link
 
 # Or use the install script
 ./install-global.sh
@@ -32,9 +29,7 @@ bun link
 
 ```bash
 # In your other project directory
-npm link /path/to/ama/packages/ama-agent
-# or with bun
-bun link /path/to/ama/packages/ama-agent
+npm link /path/to/ama/packages/cli
 ```
 
 ### Option 4: Install from Local Path
@@ -43,11 +38,11 @@ In your project's `package.json`:
 ```json
 {
   "dependencies": {
-    "amai": "file:../path/to/ama/packages/ama-agent"
+    "amai": "file:../path/to/ama/packages/cli"
   }
 }
 ```
-Then run `npm install` or `bun install`.
+Then run `npm install`.
 
 ## Usage
 
@@ -112,9 +107,9 @@ amai --help
 To build the CLI:
 
 ```bash
-cd packages/ama-agent
-bun install
-bun run build
+cd packages/cli
+npm install
+npm run build
 ```
 
 The built files will be in the `dist/` directory.

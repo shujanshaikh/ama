@@ -1,7 +1,7 @@
 {
   "name": "amai",
   "type": "module",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "ama cli",
   "keywords": [
     "ama",
@@ -15,7 +15,7 @@
   "repository": {
     "type": "git"
   },
-  "prepare": "bun run build",
+  "prepare": "npm run build",
   "bin": {
     "amai": "./dist/cli.js"
   },
@@ -43,17 +43,18 @@
     "dev": "tsup --watch",
     "build": "rm -rf dist && NODE_ENV=production tsup",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build",
-    "install-global": "bun run build && npm link || bun link"
+    "prepublishOnly": "npm run build",
+    "install-global": "npm run build && npm link"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/node": "^25.0.1",
     "@types/ws": "^8.18.1"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
+    "@ama/agent": "workspace:*",
     "@hono/node-server": "^1.19.7",
     "hono": "^4.10.7",
     "picocolors": "^1.1.1",
@@ -64,5 +65,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": "^24.8.0"
   }
 }

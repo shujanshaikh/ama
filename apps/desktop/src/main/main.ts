@@ -14,12 +14,7 @@ import {
   handleCallback,
   getUser,
 } from "./auth";
-import {
-  syncAuthTokens,
-  clearAuthTokens,
-  startCLIDaemon,
-  stopCLIDaemon,
-} from "./cli-manager";
+import { syncAuthTokens } from "./cli-manager";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -81,7 +76,6 @@ async function processDeepLink(url: string): Promise<void> {
       mainWindow.focus();
     }
     syncAuthTokens();
-    startCLIDaemon();
   } catch (error) {
     console.error("[auth] Callback failed:", error);
   }
@@ -159,7 +153,6 @@ app.whenReady().then(async () => {
         }
       });
       syncAuthTokens();
-      startCLIDaemon();
     }
   } catch (error) {
     console.error("Failed to get initial auth state:", error);
@@ -178,6 +171,3 @@ app.on("window-all-closed", () => {
   }
 });
 
-app.on("before-quit", () => {
-  stopCLIDaemon();
-});

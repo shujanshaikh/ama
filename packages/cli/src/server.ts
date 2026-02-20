@@ -1,19 +1,21 @@
 import WebSocket from 'ws'
-import { read_file } from './tools/read-file'
-import { apply_patch } from './tools/stringReplace'
 import { DEFAULT_SERVER_URL } from './constant'
-import { editFiles } from './tools/edit-file'
-import { deleteFile } from './tools/delete-file'
-import { grepTool } from './tools/grep'
-import { globTool } from './tools/glob'
-import { list } from './tools/ls-dir'
 import pc from 'picocolors'
 import { startHttpServer } from './http'
 import { getTokens } from './lib/auth-login'
-import { bashTool } from './tools/bash'
 import { connectToUserStreams } from './lib/userStreams'
 import { rpcHandlers } from './lib/rpc-handlers'
-import { batchTool } from './tools/batch'
+import {
+  apply_patch,
+  bashTool,
+  batchTool,
+  deleteFile,
+  editFiles,
+  globTool,
+  grepTool,
+  list,
+  read_file,
+} from '@ama/agent'
 import {
   executeTool,
   parseToolCall,

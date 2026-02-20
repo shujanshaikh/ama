@@ -2,7 +2,7 @@ import { z } from "zod";
 import path from "node:path";
 import fs from "node:fs";
 import * as fsp from "node:fs/promises";
-import { validatePath } from "../lib/sandbox";
+import { validatePath } from "../lib/sandbox.ts";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB hard cap
 const MAX_LINES_RETURNED = 2000;
@@ -183,7 +183,7 @@ async function readFileContent(
             };
         }
 
-        const fileContent = await Bun.file(absolute_file_path).text();
+        const fileContent = await fsp.readFile(absolute_file_path, "utf8");
         const lines = fileContent.split(/\r?\n/);
         const totalLines = lines.length;
 

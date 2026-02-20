@@ -15,7 +15,7 @@ const config: ForgeConfig = {
         schemes: ["ama"],
       },
     ],
-    extraResource: ["../../packages/ama-agent/dist"],
+    extraResource: ["../../packages/cli/dist"],
   },
   makers: [
     {

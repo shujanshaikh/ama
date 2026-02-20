@@ -1,7 +1,9 @@
 import { z } from "zod";
 import path from "node:path";
 import fs from "node:fs";
-import { validatePath } from "../lib/sandbox";
+import fsp from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { validatePath } from "../lib/sandbox.ts";
 
 export const GREP_LIMITS = {
     DEFAULT_MAX_MATCHES: 200,
@@ -64,9 +66,9 @@ async function getMtimesBatched(files: string[]): Promise<Map<string, number>> {
         const batch = files.slice(i, i + BATCH_SIZE);
         const results = await Promise.all(
             batch.map(async (filePath) => {
-                const mtime = await Bun.file(filePath)
-                    .stat()
-                    .then((stats) => stats.mtime.getTime())
+                const mtime = await fsp
+                    .stat(filePath)
+                    .then((stats) => stats.mtimeMs)
                     .catch(() => 0);
                 return { path: filePath, mtime };
             })
@@ -154,21 +156,35 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
         args.push('--regexp', query);
         args.push(searchDir);
 
-        const proc = Bun.spawn([rgPath, ...args], {
-            stdout: 'pipe',
-            stderr: 'pipe',
+        const proc = spawn(rgPath, args, {
+            stdio: ['ignore', 'pipe', 'pipe'],
         });
 
         // Timeout + cancellation for ripgrep
         let timedOut = false;
+        let stdout = '';
+        let stderr = '';
         const timeoutId = setTimeout(() => {
             timedOut = true;
-            proc.kill();
+            proc.kill('SIGTERM');
         }, GREP_LIMITS.EXECUTION_TIMEOUT_MS);
 
-        const stdout = await new Response(proc.stdout).text();
-        const stderr = await new Response(proc.stderr).text();
-        const exitCode = await proc.exited;
+        if (proc.stdout) {
+            proc.stdout.on('data', (chunk: Buffer | string) => {
+                stdout += chunk.toString();
+            });
+        }
+
+        if (proc.stderr) {
+            proc.stderr.on('data', (chunk: Buffer | string) => {
+                stderr += chunk.toString();
+            });
+        }
+
+        const exitCode = await new Promise<number | null>((resolve, reject) => {
+            proc.once('error', reject);
+            proc.once('close', (code) => resolve(code));
+        });
 
         clearTimeout(timeoutId);
 
