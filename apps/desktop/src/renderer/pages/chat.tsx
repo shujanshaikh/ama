@@ -402,9 +402,7 @@ export function ChatPage() {
                     ? `http://localhost:8081/?folder=${encodeURIComponent(project.cwd)}`
                     : "http://localhost:8081"
                 }
-                webUrl="http://localhost:3003"
                 onReturnToChat={() => setShowEditor(false)}
-                projectId={projectId}
               />
             </div>
           )}
