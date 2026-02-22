@@ -34,25 +34,37 @@ interface GrepMatch {
 
 // ── Cached ripgrep binary resolution (resolved once at module load) ─────
 let _cachedRgPath: string | null = null;
+let _cachedRgChecked = false;
 
-async function getRipgrepPath(): Promise<string> {
-    if (_cachedRgPath) return _cachedRgPath;
+async function getRipgrepPath(): Promise<string | null> {
+    if (_cachedRgChecked) return _cachedRgPath;
 
-    const paths = [
-        '/opt/homebrew/bin/rg',
-        '/usr/local/bin/rg',
-        '/usr/bin/rg',
-    ];
+    const candidates: string[] = [];
+    if (process.env.RG_PATH) {
+        candidates.push(process.env.RG_PATH);
+    }
 
-    for (const rgPath of paths) {
-        if (fs.existsSync(rgPath)) {
+    candidates.push('/opt/homebrew/bin/rg', '/usr/local/bin/rg', '/usr/bin/rg');
+
+    const pathEntries = process.env.PATH?.split(path.delimiter) ?? [];
+    const rgNames = process.platform === 'win32' ? ['rg.exe', 'rg'] : ['rg'];
+    for (const entry of pathEntries) {
+        for (const name of rgNames) {
+            candidates.push(path.join(entry, name));
+        }
+    }
+
+    for (const rgPath of candidates) {
+        if (rgPath && fs.existsSync(rgPath)) {
             _cachedRgPath = rgPath;
+            _cachedRgChecked = true;
             return rgPath;
         }
     }
 
-    _cachedRgPath = 'rg';
-    return 'rg';
+    _cachedRgChecked = true;
+    _cachedRgPath = null;
+    return null;
 }
 
 // Eagerly resolve at import time
@@ -120,12 +132,20 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
 
         const rgPath = await getRipgrepPath();
 
+        if (!rgPath) {
+            return {
+                success: false,
+                message: 'Ripgrep (rg) not found on PATH. Install ripgrep to use this tool.',
+                error: 'GREP_NOT_FOUND',
+            };
+        }
+
         const args: string[] = [
             '-nH',          // line numbers + filename (compact form, matching OpenCode)
             '--hidden',     // search hidden files (aligned with OpenCode)
             '--no-messages', // suppress error messages for unreadable files
             '--color=never',
-            '--max-count=100',
+            `--max-count=${GREP_LIMITS.DEFAULT_MAX_MATCHES}`,
             '--max-columns=2000',
         ];
 
@@ -164,6 +184,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
         let timedOut = false;
         let stdout = '';
         let stderr = '';
+        let outputTruncated = false;
         const timeoutId = setTimeout(() => {
             timedOut = true;
             proc.kill('SIGTERM');
@@ -171,7 +192,18 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
 
         if (proc.stdout) {
             proc.stdout.on('data', (chunk: Buffer | string) => {
-                stdout += chunk.toString();
+                const text = chunk.toString();
+                if (stdout.length >= GREP_LIMITS.MAX_TOTAL_OUTPUT_SIZE) {
+                    outputTruncated = true;
+                    return;
+                }
+                const remaining = GREP_LIMITS.MAX_TOTAL_OUTPUT_SIZE - stdout.length;
+                if (text.length > remaining) {
+                    stdout += text.slice(0, remaining);
+                    outputTruncated = true;
+                    return;
+                }
+                stdout += text;
             });
         }
 
@@ -258,7 +290,7 @@ export const grepTool = async function(input: z.infer<typeof grepSchema>, projec
             });
         }
 
-        const truncated = rawMatches.length > GREP_LIMITS.DEFAULT_MAX_MATCHES;
+        const truncated = rawMatches.length > GREP_LIMITS.DEFAULT_MAX_MATCHES || outputTruncated;
         const finalMatches = truncated
             ? rawMatches.slice(0, GREP_LIMITS.DEFAULT_MAX_MATCHES)
             : rawMatches;
