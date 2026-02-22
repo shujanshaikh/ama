@@ -16,8 +16,9 @@ An AI agent that lives in your browser and makes changes to your local codebase.
 ama/
 ├── apps/
 │   ├── web/         # Frontend application (React + TanStack Start)
-│   └── server/      # Backend API server (Hono)
+│   └── server/      # Legacy backend API server (kept unchanged)
 ├── packages/
+│   ├── bridge/      # Cloudflare Workers + Durable Objects backend
 │   ├── cli/         # CLI runtime and daemon
 │   ├── agent/       # Tool implementations used by the CLI
 │   └── db/          # Database schema and queries
@@ -55,11 +56,11 @@ WORKOS_COOKIE_PASSWORD=""
 DATABASE_URL=""
 WORKOS_REDIRECT_URI=http://localhost:3001/api/auth/callback
 UPLOADTHING_TOKEN=''
-VITE_API_URL=http://localhost:3000/api/v1
-VITE_WS_URL="ws://localhost:3000"
+VITE_API_URL=http://localhost:8787/api/v1
+VITE_WS_URL="ws://localhost:8787"
 ```
 
-**apps/server/.env**
+**packages/bridge/.dev.vars**
 ```env
 WORKOS_CLIENT_ID=""
 WORKOS_API_KEY=""
@@ -95,4 +96,5 @@ This will build and link the CLI globally so you can use it from any directory.
 - `bun run dev` - Start all applications in development mode
 - `bun run build` - Build all applications
 - `bun run dev:web` - Start only the web application
+- `bun run dev:server` - Start only the Cloudflare Worker bridge backend
 - `bun run check-types` - Check TypeScript types across all apps

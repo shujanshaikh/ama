@@ -1,4 +1,4 @@
-import type { ChatMessage, SubagentToolPart } from "@ama/server/lib/tool-types";
+import type { ChatMessage, SubagentToolPart } from "@ama/bridge/lib/tool-types";
 import { motion } from "motion/react";
 import { Badge } from "./ui/badge";
 import {

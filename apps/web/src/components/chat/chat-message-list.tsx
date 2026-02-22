@@ -26,7 +26,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToolRenderer } from '@/components/tool-render';
-import type { ChatMessage } from '@ama/server/lib/tool-types';
+import type { ChatMessage } from '@ama/bridge/lib/tool-types';
 
 interface ChatMessageListProps {
   messages: ChatMessage[];

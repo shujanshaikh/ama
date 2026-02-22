@@ -14,6 +14,8 @@ apps/desktop/.vite/
 .env
 .env*.local
 .env.production
+.dev.vars
+.dev.vars.*
 
 # IDEs and editors
 .vscode/*

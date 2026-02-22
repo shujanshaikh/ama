@@ -1,7 +1,7 @@
 import type { DataUIPart } from "ai";
 import type React from "react";
 import { createContext, useContext, useMemo, useState } from "react";
-import type { CustomUIDataTypes } from "@ama/server/lib/tool-types";
+import type { CustomUIDataTypes } from "@ama/bridge/lib/tool-types";
 
 type DataStreamContextValue = {
   dataStream: DataUIPart<CustomUIDataTypes>[];
