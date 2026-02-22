@@ -24,8 +24,7 @@
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F @ama/backend dev",
-    "dev:setup": "turbo -F @ama/backend dev:setup",
-    "dev:desktop": "turbo -F @ama/desktop dev"
+    "dev:setup": "turbo -F @ama/backend dev:setup"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.10",
