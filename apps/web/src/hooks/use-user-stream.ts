@@ -41,7 +41,7 @@ const generateRequestId = () =>
     `${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
 
 // const getWsUrl = () => {
-//     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+//     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787/api/v1';
 //     return apiUrl.replace(/^http/, 'wss').replace(/\/api\/v1$/, '');
 // };
 

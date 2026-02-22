@@ -27,7 +27,7 @@ import { SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/selec
 import { cn } from '@/lib/utils';
 import { ContextSelector } from '@/components/context-selector';
 import { getFileIcon } from '@/components/file-icons';
-import { models } from '@ama/server/lib/model';
+import { models } from '@ama/bridge/lib/model';
 
 interface ChatPromptInputProps {
   input: string;

@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, X, FileCode2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PierreDiff } from '@/components/pierre-diff';
 import { getFileIcon } from '@/components/file-icons';
-import type { ChatMessage } from '@ama/server/lib/tool-types';
+import type { ChatMessage } from '@ama/bridge/lib/tool-types';
 
 interface DiffReviewPanelProps {
     messages: ChatMessage[];

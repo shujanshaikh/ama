@@ -67,7 +67,7 @@ amai [command] [options]
 ### Environment Variables
 
 - `SERVER_URL` - WebSocket server URL to connect to (optional, has a default)
-  - Example: `ws://localhost:3000` or `wss://your-server.com`
+  - Example: `ws://localhost:8787` or `wss://your-server.com`
 
 ### Examples
 

@@ -22,8 +22,10 @@ interface UserStreamProviderProps {
 export function UserStreamProvider({ userId, children }: UserStreamProviderProps) {
     const trpc = useTRPC();
     const { data: tokenData } = useQuery({
-        ...trpc.apiKeys.getAccessToken.queryOptions(),
+        ...trpc.apiKeys.getGatewayToken.queryOptions(),
         enabled: !!userId,
+        staleTime: 50 * 60 * 1000,
+        refetchInterval: 50 * 60 * 1000,
     });
     const token = tokenData?.token;
     const { status, cliConnected, call, requestCliStatus, isReady } = useUserStream(userId, token);

@@ -18,13 +18,13 @@
     }
   },
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "turbo dev --filter=!@ama/server",
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F @ama/backend dev",
-    "dev:setup": "turbo -F @ama/backend dev:setup"
+    "dev:server": "turbo -F @ama/bridge dev",
+    "dev:setup": "turbo -F @ama/bridge dev"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.10",

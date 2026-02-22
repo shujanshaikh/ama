@@ -14,7 +14,7 @@
     "@ai-sdk/openai": "^3.0.25",
     "@ai-sdk/react": "^3.0.42",
     "@ama/db": "workspace:*",
-    "@ama/server": "workspace:*",
+    "@ama/bridge": "workspace:*",
     "@icons-pack/react-simple-icons": "^13.8.0",
     "@pierre/diffs": "^1.0.2",
     "@radix-ui/react-avatar": "^1.1.11",

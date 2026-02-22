@@ -507,6 +507,38 @@ export async function getCodexStatus(): Promise<{ authenticated: boolean }> {
   }
 }
 
+export async function codexFetch(body: string): Promise<{
+  status: number;
+  headers: Record<string, string>;
+  body: string;
+}> {
+  const { accessToken, accountId } = await getCodexTokens();
+
+  const response = await fetch(CODEX_API_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "ChatGPT-Account-Id": accountId,
+      originator: "ama",
+      Accept: "text/event-stream",
+    },
+    body,
+  });
+
+  const text = await response.text();
+  const headers: Record<string, string> = {};
+  response.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+
+  return {
+    status: response.status,
+    headers,
+    body: text,
+  };
+}
+
 export async function codexLogout(): Promise<void> {
   pendingOAuth = undefined;
   stopOAuthServer();

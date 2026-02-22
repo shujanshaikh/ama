@@ -1,0 +1,14 @@
+name = "ama-bridge"
+main = "src/worker.ts"
+compatibility_date = "2026-02-22"
+
+[observability]
+enabled = true
+
+[[durable_objects.bindings]]
+name = "BRIDGE_SESSION_DO"
+class_name = "BridgeSessionDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["BridgeSessionDO"]

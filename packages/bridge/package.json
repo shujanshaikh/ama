@@ -1,0 +1,50 @@
+{
+  "name": "@ama/bridge",
+  "main": "src/worker.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/worker.ts",
+      "default": "./src/worker.ts"
+    },
+    "./*": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    }
+  },
+  "types": "./src/worker.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "check-types": "tsc -b --pretty false",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.9",
+    "@ai-sdk/google": "^3.0.10",
+    "@ai-sdk/openai": "^3.0.7",
+    "@ai-sdk/openai-compatible": "^2.0.4",
+    "@hono/trpc-server": "^0.4.0",
+    "@neondatabase/serverless": "^1.0.2",
+    "@openrouter/ai-sdk-provider": "^1.5.3",
+    "@supermemory/tools": "^1.3.65",
+    "@trpc/server": "^11.5.0",
+    "@upstash/ratelimit": "^2.0.7",
+    "@upstash/redis": "^1.36.0",
+    "ai": "^6.0.40",
+    "better-auth": "^1.0.0",
+    "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.45.1",
+    "exa-js": "^2.0.12",
+    "hono": "^4.10.7",
+    "iron-session": "^8.0.4",
+    "jose": "^6.1.3",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@ama/config": "workspace:*",
+    "@cloudflare/workers-types": "^4.20260213.0",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.3.0"
+  }
+}

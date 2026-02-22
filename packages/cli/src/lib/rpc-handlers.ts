@@ -3,6 +3,7 @@ import { getContext } from './get-files';
 import { scanIdeProjects } from './ide-projects';
 import { Snapshot } from '../snapshot/snapshot';
 import {
+    codexFetch,
     codexLogout,
     getCodexStatus,
     getCodexTokens,
@@ -194,6 +195,17 @@ export const rpcHandlers: Record<string, (input: any) => Promise<any>> = {
         return getCodexTokens();
     },
 
+    'daemon:codex_fetch': async ({ body }: { body: string }) => {
+        if (typeof body !== 'string' || !body.trim()) {
+            const error: RpcError = {
+                _tag: 'ValidationError',
+                message: 'body is required',
+            };
+            throw error;
+        }
+        return codexFetch(body);
+    },
+
     'daemon:codex_status': async () => {
         return getCodexStatus();
     },
@@ -203,4 +215,3 @@ export const rpcHandlers: Record<string, (input: any) => Promise<any>> = {
         return { success: true };
     },
 };
-
