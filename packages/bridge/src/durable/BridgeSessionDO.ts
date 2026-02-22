@@ -6,6 +6,7 @@ type SocketAttachment = {
   role: SocketRole;
   userId: string;
   connectedAt: number;
+  lastSeenAt: number;
 };
 
 type PendingFrontendRpc = {
@@ -19,6 +20,8 @@ type PendingAgentCall = {
   timeout: ReturnType<typeof setTimeout>;
 };
 
+const CLI_HEARTBEAT_TIMEOUT_MS = 15000;
+
 function toText(message: ArrayBuffer | string): string {
   if (typeof message === "string") return message;
   return new TextDecoder().decode(message);
@@ -28,6 +31,7 @@ export class BridgeSessionDO implements DurableObject {
   private readonly state: DurableObjectState;
   private readonly pendingFrontendRpc = new Map<string, PendingFrontendRpc>();
   private readonly pendingAgentCalls = new Map<string, PendingAgentCall>();
+  private readonly cliLastSeenAt = new Map<string, number>();
 
   constructor(state: DurableObjectState, env: WorkerBindings) {
     this.state = state;
@@ -73,6 +77,7 @@ export class BridgeSessionDO implements DurableObject {
       return;
     }
 
+    this.markCliSeen(attachment.userId, ws);
     this.handleCliMessage(attachment.userId, parsed);
   }
 
@@ -81,23 +86,8 @@ export class BridgeSessionDO implements DurableObject {
     if (!attachment) return;
 
     if (attachment.role === "cli") {
-      this.broadcastToFrontends(attachment.userId, {
-        _tag: "cli_status",
-        status: "disconnected",
-        timestamp: Date.now(),
-      });
-
-      const prefix = `${attachment.userId}:`;
-      for (const [key, pending] of this.pendingFrontendRpc) {
-        if (!key.startsWith(prefix)) continue;
-        clearTimeout(pending.timeout);
-        this.safeSend(pending.ws, {
-          _tag: "rpc_error",
-          requestId: key.slice(prefix.length),
-          type: "no_cli_connected",
-          message: "CLI disconnected",
-        });
-        this.pendingFrontendRpc.delete(key);
+      if (!this.getCliSocket(attachment.userId) && this.cliLastSeenAt.has(attachment.userId)) {
+        this.onCliDisconnected(attachment.userId);
       }
       return;
     }
@@ -136,20 +126,22 @@ export class BridgeSessionDO implements DurableObject {
     const server = pair[1];
 
     this.state.acceptWebSocket(server);
-    server.serializeAttachment({ role, userId, connectedAt: Date.now() } satisfies SocketAttachment);
+    const now = Date.now();
+    server.serializeAttachment({ role, userId, connectedAt: now, lastSeenAt: now } satisfies SocketAttachment);
 
     if (role === "cli") {
+      this.markCliSeen(userId, server);
       this.broadcastToFrontends(userId, {
         _tag: "cli_status",
         status: "connected",
-        timestamp: Date.now(),
+        timestamp: now,
       });
     }
 
     if (role === "frontend") {
       this.safeSend(server, {
         _tag: "cli_status",
-        status: this.getCliSocket(userId) ? "connected" : "disconnected",
+        status: this.getConnectedCliSocket(userId) ? "connected" : "disconnected",
         timestamp: Date.now(),
       });
     }
@@ -230,7 +222,7 @@ export class BridgeSessionDO implements DurableObject {
     if (message._tag === "cli_status_request") {
       this.safeSend(ws, {
         _tag: "cli_status_response",
-        connected: this.getCliSocket(userId) !== null,
+        connected: this.getConnectedCliSocket(userId) !== null,
       });
       return;
     }
@@ -238,7 +230,7 @@ export class BridgeSessionDO implements DurableObject {
     if (message._tag !== "rpc_call") return;
 
     const requestId = String(message.requestId ?? "");
-    const cliSocket = this.getCliSocket(userId);
+    const cliSocket = this.getConnectedCliSocket(userId);
 
     if (!cliSocket) {
       this.safeSend(ws, {
@@ -266,6 +258,10 @@ export class BridgeSessionDO implements DurableObject {
   }
 
   private handleCliMessage(userId: string, message: Record<string, unknown>): void {
+    if (message._tag === "cli_heartbeat") {
+      return;
+    }
+
     if (message._tag !== "rpc_result") return;
 
     const requestId = String(message.requestId ?? "");
@@ -297,11 +293,30 @@ export class BridgeSessionDO implements DurableObject {
       const ws = sockets[i];
       if (!ws) continue;
       const attachment = this.getAttachment(ws);
-      if (attachment?.userId === userId) {
+      if (attachment?.userId === userId && this.isSocketOpen(ws)) {
         return ws;
       }
     }
     return null;
+  }
+
+  private getConnectedCliSocket(userId: string): WebSocket | null {
+    const cliSocket = this.getCliSocket(userId);
+    if (!cliSocket) {
+      this.cliLastSeenAt.delete(userId);
+      return null;
+    }
+
+    if (!this.isCliFresh(userId, cliSocket)) {
+      const hadHeartbeat = this.cliLastSeenAt.has(userId) || this.getSocketLastSeenAt(cliSocket) !== null;
+      this.safeClose(cliSocket);
+      if (hadHeartbeat) {
+        this.onCliDisconnected(userId);
+      }
+      return null;
+    }
+
+    return cliSocket;
   }
 
   private getSocketsByRole(role: SocketRole): WebSocket[] {
@@ -317,6 +332,72 @@ export class BridgeSessionDO implements DurableObject {
       return casted;
     } catch {
       return null;
+    }
+  }
+
+  private markCliSeen(userId: string, ws?: WebSocket): void {
+    const now = Date.now();
+    this.cliLastSeenAt.set(userId, now);
+
+    if (!ws) return;
+    const attachment = this.getAttachment(ws);
+    if (!attachment) return;
+    try {
+      ws.serializeAttachment({ ...attachment, lastSeenAt: now } satisfies SocketAttachment);
+    } catch {
+      // no-op
+    }
+  }
+
+  private isCliFresh(userId: string, ws: WebSocket): boolean {
+    const now = Date.now();
+    const lastSeenAt = this.cliLastSeenAt.get(userId) ?? this.getSocketLastSeenAt(ws);
+    if (!lastSeenAt) return false;
+    const fresh = now - lastSeenAt <= CLI_HEARTBEAT_TIMEOUT_MS;
+    if (fresh) {
+      this.cliLastSeenAt.set(userId, lastSeenAt);
+    }
+    return fresh;
+  }
+
+  private getSocketLastSeenAt(ws: WebSocket): number | null {
+    const attachment = this.getAttachment(ws);
+    if (!attachment) return null;
+    return attachment.lastSeenAt ?? attachment.connectedAt ?? null;
+  }
+
+  private onCliDisconnected(userId: string): void {
+    this.cliLastSeenAt.delete(userId);
+
+    this.broadcastToFrontends(userId, {
+      _tag: "cli_status",
+      status: "disconnected",
+      timestamp: Date.now(),
+    });
+
+    const prefix = `${userId}:`;
+    for (const [key, pending] of this.pendingFrontendRpc) {
+      if (!key.startsWith(prefix)) continue;
+      clearTimeout(pending.timeout);
+      this.safeSend(pending.ws, {
+        _tag: "rpc_error",
+        requestId: key.slice(prefix.length),
+        type: "no_cli_connected",
+        message: "CLI disconnected",
+      });
+      this.pendingFrontendRpc.delete(key);
+    }
+  }
+
+  private isSocketOpen(ws: WebSocket): boolean {
+    return ws.readyState === 1;
+  }
+
+  private safeClose(ws: WebSocket): void {
+    try {
+      ws.close(1001, "CLI heartbeat timeout");
+    } catch {
+      // no-op
     }
   }
 

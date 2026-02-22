@@ -1,6 +1,7 @@
 name = "ama-bridge"
 main = "src/worker.ts"
 compatibility_date = "2026-02-22"
+keep_vars = true
 
 [observability]
 enabled = true

@@ -7,10 +7,12 @@ import pc from "picocolors";
 const INITIAL_RECONNECT_DELAY = 1000;
 const MAX_RECONNECT_DELAY = 60000;
 const BACKOFF_MULTIPLIER = 2;
+const CLI_HEARTBEAT_INTERVAL_MS = 5000;
 
 let wsConnection: WebSocket | null = null;
 let reconnectTimeout: NodeJS.Timeout | null = null;
 let reconnectAttempts = 0;
+let heartbeatInterval: NodeJS.Timeout | null = null;
 
 function getReconnectDelay(): number {
   const delay = Math.min(
@@ -47,6 +49,21 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
 
   wsConnection = ws;
 
+  const clearHeartbeat = () => {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
+  };
+
+  const sendHeartbeat = () => {
+    if (ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({
+      _tag: "cli_heartbeat",
+      timestamp: Date.now(),
+    }));
+  };
+
   ws.on("open", () => {
     reconnectAttempts = 0; // Reset on successful connection
     console.log(pc.cyan("connected to user streams"));
@@ -55,6 +72,10 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
       clearTimeout(reconnectTimeout);
       reconnectTimeout = null;
     }
+
+    clearHeartbeat();
+    sendHeartbeat();
+    heartbeatInterval = setInterval(sendHeartbeat, CLI_HEARTBEAT_INTERVAL_MS);
   });
 
   ws.on("message", async (event) => {
@@ -124,7 +145,10 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
   });
 
   ws.on("close", (code, reason) => {
+    void code;
+    void reason;
     wsConnection = null;
+    clearHeartbeat();
     const delay = getReconnectDelay();
     reconnectAttempts++;
     console.log(pc.gray(`user streams disconnected, reconnecting in ${Math.round(delay / 1000)}s...`));
@@ -136,6 +160,7 @@ export const connectToUserStreams = async (serverUrl: string): Promise<WebSocket
   });
 
   ws.on("error", (error) => {
+    clearHeartbeat();
     console.error(pc.red(`stream error: ${error.message}`));
   });
 
@@ -149,4 +174,3 @@ export const getUserStreamConnection = (): WebSocket | null => {
 export const isUserStreamConnected = (): boolean => {
   return wsConnection?.readyState === WebSocket.OPEN;
 };
-
