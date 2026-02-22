@@ -173,17 +173,6 @@ export function CodeEditor({
             >
               Editor
             </button>
-            <button
-              className={cn(
-                "px-2 py-1 text-xs font-medium rounded transition-colors",
-                activeTab === "web"
-                  ? "text-foreground bg-muted"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              onClick={() => setActiveTab("web")}
-            >
-              Preview
-            </button>
           </div>
 
           <div className="flex-1" />
