@@ -40,6 +40,8 @@ type WebSocketMessage = CliStatus | RpcResult | RpcErrorResponse | { _tag: 'cli_
 const generateRequestId = () =>
     `${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
 
+const CLI_STATUS_POLL_INTERVAL_MS = 10000;
+
 // const getWsUrl = () => {
 //     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787/api/v1';
 //     return apiUrl.replace(/^http/, 'wss').replace(/\/api\/v1$/, '');
@@ -51,6 +53,7 @@ export function useUserStream(userId: string | undefined, token: string | undefi
     const [status, setStatus] = useState<ConnectionStatus>('disconnected');
     const [cliConnected, setCliConnected] = useState(false);
     const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const cliStatusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const isUnmountedRef = useRef(false);
 
     useEffect(() => {
@@ -68,6 +71,7 @@ export function useUserStream(userId: string | undefined, token: string | undefi
             const wsUrl = `${WS_URL}/api/v1/user-streams?token=${encodeURIComponent(token)}&type=frontend`;
 
             setStatus('connecting');
+            setCliConnected(false);
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
 
@@ -77,12 +81,31 @@ export function useUserStream(userId: string | undefined, token: string | undefi
                     return;
                 }
                 setStatus('connected');
+
+                ws.send(JSON.stringify({ _tag: 'cli_status_request' }));
+
+                if (cliStatusPollRef.current) {
+                    clearInterval(cliStatusPollRef.current);
+                    cliStatusPollRef.current = null;
+                }
+
+                cliStatusPollRef.current = setInterval(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ _tag: 'cli_status_request' }));
+                    }
+                }, CLI_STATUS_POLL_INTERVAL_MS);
             };
 
             ws.onclose = (_event) => {
                 if (isUnmountedRef.current) return;
 
+                if (cliStatusPollRef.current) {
+                    clearInterval(cliStatusPollRef.current);
+                    cliStatusPollRef.current = null;
+                }
+
                 setStatus('disconnected');
+                setCliConnected(false);
 
                 pendingCalls.current.forEach((pending, requestId) => {
                     clearTimeout(pending.timeout);
@@ -102,6 +125,7 @@ export function useUserStream(userId: string | undefined, token: string | undefi
             ws.onerror = () => {
                 if (isUnmountedRef.current) return;
                 setStatus('error');
+                setCliConnected(false);
             };
 
             ws.onmessage = (event) => {
@@ -169,6 +193,11 @@ export function useUserStream(userId: string | undefined, token: string | undefi
                 reconnectTimeoutRef.current = null;
             }
 
+            if (cliStatusPollRef.current) {
+                clearInterval(cliStatusPollRef.current);
+                cliStatusPollRef.current = null;
+            }
+
             if (wsRef.current) {
                 wsRef.current.close();
                 wsRef.current = null;
@@ -230,7 +259,7 @@ export function useUserStream(userId: string | undefined, token: string | undefi
 
     return {
         status,
-        cliConnected,
+        cliConnected: status === 'connected' && cliConnected,
         call,
         requestCliStatus,
         isReady: status === 'connected',
