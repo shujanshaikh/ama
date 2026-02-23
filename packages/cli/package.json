@@ -1,7 +1,7 @@
 {
   "name": "amai",
   "type": "module",
-  "version": "0.0.22",
+  "version": "0.0.26",
   "description": "ama cli",
   "keywords": [
     "ama",
@@ -54,7 +54,6 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@ama/agent": "workspace:*",
     "@hono/node-server": "^1.19.7",
     "hono": "^4.10.7",
     "picocolors": "^1.1.1",

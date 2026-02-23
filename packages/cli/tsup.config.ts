@@ -19,7 +19,6 @@ export default defineConfig([
     target: "node25",
     platform: "node",
     treeshake: true,
-    // Externalize Node.js built-ins and packages that use dynamic requires
     external: [
       // Node.js built-ins
       "events",

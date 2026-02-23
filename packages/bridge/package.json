@@ -17,7 +17,7 @@
     "build": "tsc -b",
     "check-types": "tsc -b --pretty false",
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "CI=true wrangler deploy --keep-vars --config wrangler.toml"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.9",

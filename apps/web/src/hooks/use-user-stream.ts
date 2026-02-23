@@ -40,7 +40,7 @@ type WebSocketMessage = CliStatus | RpcResult | RpcErrorResponse | { _tag: 'cli_
 const generateRequestId = () =>
     `${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
 
-const CLI_STATUS_POLL_INTERVAL_MS = 10000;
+const CLI_STATUS_POLL_INTERVAL_MS = 5000;
 
 // const getWsUrl = () => {
 //     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787/api/v1';
