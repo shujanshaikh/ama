@@ -15,7 +15,7 @@ import {
   grepTool,
   list,
   read_file,
-} from '@ama/agent'
+} from '../../agent/src/index.ts'
 import {
   executeTool,
   parseToolCall,
