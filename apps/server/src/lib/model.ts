@@ -61,10 +61,12 @@ export const models: ModelInfo[] = [
   { id: "glm-5-free", name: "GLM 5 Free", type: "free" },
   // Gateway models (BYOK — single AI_GATEWAY_API_KEY for all)
   { id: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5", type: "gateway" },
-  { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", type: "gateway" },
+  { id : "openai/gpt-5.3-codex", name: "GPT 5.3 Codex", type: "gateway" },
+  { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.5", type: "gateway" },
   { id: "openai/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "gateway" },
   { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5", type: "gateway" },
   // ChatGPT subscription models (Codex)
+  { id: "codex/gpt-5.3-codex", name: "GPT 5.3 Codex", type: "codex" },
   { id: "codex/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "codex" },
   { id: "codex/gpt-5.2", name: "GPT 5.2", type: "codex" },
   { id: "codex/gpt-5.1-codex-mini", name: "GPT 5.1 Codex Mini", type: "codex" },
