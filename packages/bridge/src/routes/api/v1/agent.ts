@@ -25,7 +25,6 @@ import {
   deleteSnapshotsByChatId,
 } from "@/db";
 import {
-  createOpenCodeZenModel,
   createGatewayModel,
   isGatewayModel,
   isCodexModel,
@@ -243,7 +242,7 @@ agentRouter.post("/agent-proxy", async (c) => {
       }
       languageModel = createGatewayModel(modelInfo.id, userKey);
     } else {
-      languageModel = createOpenCodeZenModel(modelInfo.id, c.env);
+      return c.json({ error: "Model is not supported for this chat." }, 400);
     }
 
     const streamId = generateUUID();
@@ -254,6 +253,7 @@ agentRouter.post("/agent-proxy", async (c) => {
       userId,
       projectId: projectInfo?.projectId,
       projectCwd: projectInfo?.projectCwd,
+      agentLanguageModel: languageModel,
     };
 
     const tools = createTools(toolContext);

@@ -1,7 +1,6 @@
 import { readUIMessageStream, tool, ToolLoopAgent } from "ai";
 import { z } from "zod";
 import { exploreSubagentPrompt } from "@/lib/prompt";
-import { createOpenCodeZenModel } from "@/lib/model";
 import type { ToolExecutionContext } from "@/lib/executeTool";
 import { createReadFileTool } from "@/tools/readFile";
 import { createGlobTool } from "@/tools/glob";
@@ -11,7 +10,7 @@ import { createBatchTool } from "@/tools/batch";
 
 export function createExploreTool(context: ToolExecutionContext) {
   const exploreSubagent = new ToolLoopAgent({
-    model: createOpenCodeZenModel("glm-5-free", context.env),
+    model: context.agentLanguageModel,
     instructions: exploreSubagentPrompt,
     tools: {
       readFile: createReadFileTool(context),

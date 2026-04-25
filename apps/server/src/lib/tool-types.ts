@@ -10,7 +10,7 @@ import type { InferUITool, UIMessage } from "ai"
 import z from "zod"
 import { webSearch } from "@/tools/webSearch"
 import type { batchTool } from "@/tools/batch"
-import type { exploreTool } from "@/tools/exploreAgent"
+import { createExploreTool } from "@/tools/exploreAgent"
 
 
 export interface FileType {
@@ -76,7 +76,7 @@ type deleteFileType = InferUITool<typeof deleteFile>;
 type bashToolType = InferUITool<typeof bashTool>;
 type webSearch = InferUITool<typeof webSearch>;
 type batchToolType = InferUITool<typeof batchTool>;
-type exploreToolType = InferUITool<typeof exploreTool>;
+type exploreToolType = InferUITool<ReturnType<typeof createExploreTool>>;
 
 export type ChatTools = {
   stringReplace: stringReplace;

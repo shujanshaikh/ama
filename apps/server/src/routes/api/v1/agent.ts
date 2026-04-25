@@ -8,7 +8,7 @@ import {
     JsonToSseTransformStream,
 } from "ai";
 import { convertToModelMessages } from "ai";
-import { tool } from "@/tools/tool";
+import { createToolSet } from "@/tools/tool";
 import {
     getMessagesByChatId,
     saveMessages,
@@ -24,13 +24,7 @@ import { convertToUIMessages } from "@/lib/convertToUIMessage";
 import { requestContext } from "@/lib/context";
 import { getTokenForUserId } from "@/index";
 import { requireAuth } from "@/lib/bridgeAuth";
-import {
-    createOpenCodeZenModel,
-    createGatewayModel,
-    isGatewayModel,
-    isCodexModel,
-    models,
-} from "@/lib/model";
+import { createGatewayModel, isGatewayModel, isCodexModel, models } from "@/lib/model";
 import { readGatewayKeyFromVault } from "@/lib/vault";
 import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
 import { createSnapshot, registerProject } from "@/lib/executeTool";
@@ -207,7 +201,7 @@ agentRouter.post("/agent-proxy", async (c) => {
             }
         }
 
-        // Resolve model before streaming: free models use OpenCode Zen, gateway models use user's API key
+        // Resolve model before streaming: gateway models use user's API key, Codex uses subscription RPC.
         let languageModel;
         if (isCodexModel(model)) {
             const cleanModelId = model.replace(/^codex\//, "");
@@ -219,8 +213,10 @@ agentRouter.post("/agent-proxy", async (c) => {
             }
             languageModel = createGatewayModel(model, userKey);
         } else {
-            languageModel = createOpenCodeZenModel(model);
+            return c.json({ error: "Model is not supported for this chat." }, 400);
         }
+
+        const tools = createToolSet(languageModel);
 
         const streamId = generateUUID();
         await createStreamId({ streamId, chatId: chatId });
@@ -258,7 +254,7 @@ agentRouter.post("/agent-proxy", async (c) => {
                                 delayInMs: 20,
                                 chunking: "word",
                             }),
-                            tools: tool,
+                            tools: tools,
                             providerOptions: codex ? buildCodexProviderOptions(systemPrompt) : undefined,
                         });
                         result.consumeStream();

@@ -1,74 +1,23 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGateway } from "ai";
 import type { LanguageModel } from "ai";
-import type { WorkerBindings } from "@/env";
 
 export type ModelInfo = {
   id: string;
   name: string;
-  type: "free" | "gateway" | "codex";
+  type: "gateway" | "codex";
 };
 
-const OPENAI_COMPATIBLE_MODELS = ["glm-5-free", "glm-4.7-free", "kimi-k2.5-free"];
-const ANTHROPIC_MODELS = ["minimax-m2.1-free"];
-
-const openAiProviderCache = new Map<string, ReturnType<typeof createOpenAICompatible>>();
-const anthropicProviderCache = new Map<string, ReturnType<typeof createAnthropic>>();
-
-function getOpenAICompatibleProvider(apiKey: string) {
-  let provider = openAiProviderCache.get(apiKey);
-  if (!provider) {
-    provider = createOpenAICompatible({
-      name: "opencodezen",
-      apiKey,
-      baseURL: "https://opencode.ai/zen/v1",
-    });
-    openAiProviderCache.set(apiKey, provider);
-  }
-  return provider;
-}
-
-function getAnthropicProvider(apiKey: string) {
-  let provider = anthropicProviderCache.get(apiKey);
-  if (!provider) {
-    provider = createAnthropic({
-      apiKey,
-      baseURL: "https://opencode.ai/zen/v1",
-    });
-    anthropicProviderCache.set(apiKey, provider);
-  }
-  return provider;
-}
-
-export function createOpenCodeZenModel(modelId: string, env: WorkerBindings): LanguageModel {
-  const apiKey = env.OPENCODE_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENCODE_API_KEY is required");
-  }
-
-  const cleanModelId = modelId.replace(/^opencode\//, "");
-
-  if (OPENAI_COMPATIBLE_MODELS.includes(cleanModelId)) {
-    return getOpenAICompatibleProvider(apiKey)(cleanModelId);
-  }
-
-  if (ANTHROPIC_MODELS.includes(cleanModelId)) {
-    return getAnthropicProvider(apiKey)(cleanModelId);
-  }
-
-  return getOpenAICompatibleProvider(apiKey)(cleanModelId);
-}
-
 export const models: ModelInfo[] = [
-  { id: "minimax-m2.1-free", name: "Minimax M2.1 Free", type: "free" },
-  { id: "kimi-k2.5-free", name: "Kimi K2.5 Free", type: "free" },
-  { id: "glm-4.7-free", name: "GLM 4.7 Free", type: "free" },
-  { id: "glm-5-free", name: "GLM 5 Free", type: "free" },
+  // Gateway models (BYOK — single AI_GATEWAY_API_KEY for all)
+  { id: "openai/gpt-5.5", name: "GPT 5.5", type: "gateway" },
+  { id: "anthropic/claude-opus-4.7", name: "Claude Opus 4.7", type: "gateway" },
+  { id: "zai/glm-5.1", name: "GLM 5.1", type: "gateway" },
+  { id: "minimax/minimax-m2.7", name: "Minimax M2.7", type: "gateway" },
+  { id: "openai/gpt-5.4", name: "GPT 5.4", type: "gateway" },
   { id: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5", type: "gateway" },
-  { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", type: "gateway" },
-  { id: "openai/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "gateway" },
-  { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5", type: "gateway" },
+  { id: "openai/gpt-5.3-codex", name: "GPT 5.3 Codex", type: "gateway" },
+  // ChatGPT subscription models (Codex)
+  { id: "codex/gpt-5.3-codex", name: "GPT 5.3 Codex", type: "codex" },
   { id: "codex/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "codex" },
   { id: "codex/gpt-5.2", name: "GPT 5.2", type: "codex" },
   { id: "codex/gpt-5.1-codex-mini", name: "GPT 5.1 Codex Mini", type: "codex" },
@@ -76,6 +25,7 @@ export const models: ModelInfo[] = [
 ];
 
 const CODEX_MODEL_SUFFIXES = new Set([
+  "gpt-5.3-codex",
   "gpt-5.2-codex",
   "gpt-5.2",
   "gpt-5.1-codex-mini",
@@ -87,6 +37,10 @@ export function resolveRequestedModel(
   options?: { preferCodex?: boolean },
 ): string {
   const trimmed = modelId.trim();
+
+  if (options?.preferCodex && trimmed === "openai/gpt-5.3-codex") {
+    return "codex/gpt-5.3-codex";
+  }
 
   if (options?.preferCodex && trimmed === "openai/gpt-5.2-codex") {
     return "codex/gpt-5.2-codex";

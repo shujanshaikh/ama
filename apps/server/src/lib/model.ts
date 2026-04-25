@@ -1,70 +1,22 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGateway } from "ai";
 import type { LanguageModel } from "ai";
 
 export type ModelInfo = {
   id: string;
   name: string;
-  type: "free" | "gateway" | "codex";
+  type: "gateway" | "codex";
 };
 
-// Models that use /chat/completions endpoint (OpenAI-compatible)
-const OPENAI_COMPATIBLE_MODELS = ["glm-5-free" , "glm-4.7-free" , "kimi-k2.5-free"];
-
-// Models that use /messages endpoint (Anthropic-compatible)
-const ANTHROPIC_MODELS = ["minimax-m2.1-free"];
-
-
-
-
-// Provider instances
-const openaiCompatibleProvider = createOpenAICompatible({
-  name: "opencodezen",
-  apiKey: process.env.OPENCODE_API_KEY,
-  baseURL: "https://opencode.ai/zen/v1",
-});
-
-const anthropicProvider = createAnthropic({
-  apiKey: process.env.OPENCODE_API_KEY,
-  baseURL: "https://opencode.ai/zen/v1",
-});
-
-export function createOpenCodeZenModel(modelId: string): LanguageModel {
-  // For OpenCode models, remove the "opencode/" prefix if present
-  const cleanModelId = modelId.replace(/^opencode\//, "");
-
-  if (OPENAI_COMPATIBLE_MODELS.includes(cleanModelId)) {
-    return openaiCompatibleProvider(cleanModelId);
-  }
-
-  if (ANTHROPIC_MODELS.includes(cleanModelId)) {
-    return anthropicProvider(cleanModelId);
-  }
-
-  // Default to OpenAI-compatible for unknown models
-  console.warn(
-    `Unknown model ${modelId}, defaulting to OpenAI-compatible provider`,
-  );
-  return openaiCompatibleProvider(cleanModelId);
-}
-
-// Legacy exports for backward compatibility
-export const opencodeZenProvider = openaiCompatibleProvider;
-export const createMinimaxProvide = createOpenCodeZenModel;
 
 export const models: ModelInfo[] = [
-  // Free models (OpenCode Zen)
-  { id: "minimax-m2.1-free", name: "Minimax M2.1 Free", type: "free" },
-  { id: "kimi-k2.5-free", name: "Kimi K2.5 Free", type: "free" },
-  { id: "glm-4.7-free", name: "GLM 4.7 Free", type: "free" },
-  { id: "glm-5-free", name: "GLM 5 Free", type: "free" },
   // Gateway models (BYOK — single AI_GATEWAY_API_KEY for all)
+  { id: "openai/gpt-5.5", name: "GPT 5.5", type: "gateway" },
+  { id: "anthropic/claude-opus-4.7", name: "Claude Opus 4.7", type: "gateway" },
+  { id: "zai/glm-5.1", name: "GLM 5.1", type: "gateway" },
+  { id: "minimax/minimax-m2.7", name: "Minimax M2.7", type: "gateway" },
+  { id: "openai/gpt-5.4", name: "GPT 5.4", type: "gateway" },
   { id: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5", type: "gateway" },
-  { id : "openai/gpt-5.3-codex", name: "GPT 5.3 Codex", type: "gateway" },
-  { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.5", type: "gateway" },
-  { id: "openai/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "gateway" },
-  { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5", type: "gateway" },
+  { id: "openai/gpt-5.3-codex", name: "GPT 5.3 Codex", type: "gateway" },
   // ChatGPT subscription models (Codex)
   { id: "codex/gpt-5.3-codex", name: "GPT 5.3 Codex", type: "codex" },
   { id: "codex/gpt-5.2-codex", name: "GPT 5.2 Codex", type: "codex" },

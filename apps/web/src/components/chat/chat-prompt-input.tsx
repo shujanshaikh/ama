@@ -74,7 +74,6 @@ export function ChatPromptInput({
   onToggleContextSelector,
   onOpenApiKeyDialog,
 }: ChatPromptInputProps) {
-  const freeModels = models.filter((m) => m.type === 'free');
   const gatewayModels = models.filter((m) => m.type === 'gateway');
   const codexModels = models.filter((m) => m.type === 'codex');
   const [pendingGatewayModel, setPendingGatewayModel] = useState<string | null>(
@@ -259,15 +258,6 @@ export function ChatPromptInput({
                 <PromptInputSelectValue />
               </PromptInputSelectTrigger>
               <PromptInputSelectContent>
-                <SelectGroup>
-                  <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold">Free</SelectLabel>
-                  {freeModels.map((m) => (
-                    <PromptInputSelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </PromptInputSelectItem>
-                  ))}
-                </SelectGroup>
-                <SelectSeparator />
                 <SelectGroup>
                   <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold">Bring Your Own Key</SelectLabel>
                   {gatewayModels.map((m) => (

@@ -45,6 +45,6 @@
     "@ama/config": "workspace:*",
     "@cloudflare/workers-types": "^4.20260213.0",
     "typescript": "^5.9.2",
-    "wrangler": "^4.3.0"
+    "wrangler": "^4.85.0"
   }
 }

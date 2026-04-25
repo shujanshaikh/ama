@@ -9,7 +9,6 @@ export interface WorkerBindings {
   UPSTASH_REDIS_REST_TOKEN?: string;
   EXA_API_KEY?: string;
   SUPERMEMORY_API_KEY?: string;
-  OPENCODE_API_KEY?: string;
   REDIS_URL?: string;
   GATEWAY_AUTH_SECRET?: string;
   CORS_ORIGIN?: string;

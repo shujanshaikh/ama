@@ -1,3 +1,4 @@
+import type { LanguageModel } from "ai";
 import { dispatchToAgent } from "@/lib/do-session";
 import type { WorkerBindings } from "@/env";
 
@@ -6,6 +7,8 @@ export type ToolExecutionContext = {
   userId: string;
   projectId?: string;
   projectCwd?: string;
+  /** Subagent used for `explore`; set to the same model as the main agent stream. */
+  agentLanguageModel: LanguageModel;
 };
 
 export const executeTool = async (
