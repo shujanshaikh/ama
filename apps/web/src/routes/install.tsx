@@ -26,44 +26,45 @@ function CopyButton({ text }: { text: string }) {
             onClick={handleCopy}
             variant="ghost"
             size="sm"
-            className="h-9 px-3 gap-2 text-xs font-medium transition-all duration-300 hover:bg-primary/10"
+            className="rounded-none border-l-4 border-foreground h-full px-4 gap-2 font-mono uppercase bg-transparent hover:bg-foreground hover:text-background transition-none"
             aria-label={copied ? "Copied!" : "Copy to clipboard"}
         >
             {copied ? (
                 <>
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    <span className="text-emerald-500">Copied!</span>
+                    <Check className="w-4 h-4" />
+                    <span className="hidden sm:inline">Copied</span>
                 </>
             ) : (
                 <>
-                    <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground hidden sm:inline">Copy</span>
+                    <Copy className="w-4 h-4" />
+                    <span className="hidden sm:inline">Copy</span>
                 </>
             )}
         </Button>
     );
 }
 
-function CodeBlock({ command, delay = 0 }: { command: string; delay?: number }) {
+function CodeBlock({ command, delay = 0, label }: { command: string; delay?: number; label?: string }) {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay }}
-            className="group relative"
+            className="relative group mt-6"
         >
-            <div className="absolute inset-0  from-primary/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl border border-border/60 bg-muted/30 backdrop-blur-sm px-3 sm:px-4 py-3 sm:py-3.5 transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
-                <div className="flex items-center gap-1.5 sm:gap-2 text-primary/60 shrink-0">
-                    <Terminal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="text-xs font-medium">$</span>
+            {label && (
+                <div className="absolute -top-3 -left-2 bg-foreground text-background font-mono text-[10px] px-2 py-1 z-20 uppercase font-bold">
+                    {label}
                 </div>
-                <div className="flex-1 overflow-x-auto scrollbar-hide">
-                    <code className="font-mono text-xs sm:text-sm text-foreground tracking-tight whitespace-nowrap">
+            )}
+            <div className="flex border-rough border-2 border-foreground shadow-[4px_4px_0px_0px_var(--color-primary)] bg-background">
+                <div className="flex flex-1 overflow-x-auto p-3 py-4 scrollbar-hide items-center text-foreground font-bold">
+                    <Terminal className="w-4 h-4 mr-3 text-primary shrink-0" />
+                    <code className="font-mono text-xs sm:text-sm whitespace-nowrap">
                         {command}
                     </code>
                 </div>
-                <div className="shrink-0">
+                <div className="shrink-0 flex items-stretch">
                     <CopyButton text={command} />
                 </div>
             </div>
@@ -88,33 +89,25 @@ function StepCard({
 }) {
     return (
         <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay, ease: "easeOut" }}
+            className="relative grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start py-10 border-b-2 border-foreground last:border-b-0"
         >
-            <div className="absolute left-5 sm:left-6 top-14 sm:top-16 bottom-0 w-px from-border to-transparent hidden md:block" />
-
-            <div className="flex gap-3 sm:gap-4 md:gap-6">
-                <div className="flex flex-col items-center shrink-0">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-md" />
-                        <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background border-2 border-primary/40 flex items-center justify-center">
-                            <span className="text-xs sm:text-sm font-bold text-primary">{step}</span>
-                        </div>
-                    </div>
+            <div className="lg:col-span-4 relative">
+                <div className="font-display text-[14vw] md:text-[6vw] leading-none text-transparent mb-3 mix-blend-difference pointer-events-none absolute -top-8 -left-6" style={{ WebkitTextStroke: "1px var(--color-foreground)", opacity: 0.1 }}>
+                    0{step}
                 </div>
-
-                <div className="flex-1 pb-8 sm:pb-10 min-w-0">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                        <h3 className="text-base sm:text-lg font-semibold text-foreground">{title}</h3>
-                    </div>
-                    <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4 leading-relaxed max-w-lg">
-                        {description}
-                    </p>
-                    {children}
+                <div className="relative z-10 flex items-center gap-3 mb-3">
+                    <Icon className="w-6 h-6 text-primary" />
+                    <h3 className="font-display text-3xl uppercase text-foreground bg-primary/20 mix-blend-luminosity px-2">{title}</h3>
                 </div>
+                <p className="font-mono text-muted-foreground text-xs md:text-sm border-l-2 border-primary pl-4 relative z-10 uppercase tracking-tight">
+                    {description}
+                </p>
+            </div>
+            <div className="lg:col-span-8 min-w-0 relative z-10 pt-4 lg:pt-0">
+                {children}
             </div>
         </motion.div>
     );
@@ -122,65 +115,38 @@ function StepCard({
 
 function InstallPage() {
     return (
-        <div className="min-h-screen flex flex-col bg-background text-foreground relative overflow-hidden">
-            <div
-                className="absolute inset-0 pointer-events-none opacity-[0.02]"
-                style={{
-                    backgroundImage: `
-                        linear-gradient(to right, currentColor 1px, transparent 1px),
-                        linear-gradient(to bottom, currentColor 1px, transparent 1px)
-                    `,
-                    backgroundSize: "60px 60px",
-                }}
-            />
+        <div className="min-h-screen flex flex-col bg-background text-foreground relative overflow-hidden font-sans">
+            <div className="grain-overlay" />
 
-            <div className="absolute top-0 right-0 w-[300px] h-[300px] sm:w-[450px] sm:h-[450px] md:w-[600px] md:h-[600px] bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-0 left-1/4 w-px h-[200vh] bg-border/40 mix-blend-difference pointer-events-none" />
+                <div className="absolute top-0 right-1/4 w-px h-[200vh] bg-border/40 mix-blend-difference pointer-events-none" />
+            </div>
 
-            <main className="relative z-10 flex-1 px-4 sm:px-6 md:px-12 lg:px-24 py-8 sm:py-12 md:py-20">
-                <div className="max-w-3xl mx-auto">
+            <main className="relative z-10 flex-1 px-6 md:px-12 pt-24 pb-16">
+                <div className="max-w-[1500px] mx-auto">
                     <motion.div
-                        initial={{ opacity: 0, y: 16 }}
+                        initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="mb-10 sm:mb-16"
+                        transition={{ duration: 0.8 }}
+                        className="mb-12 relative"
                     >
-                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                            <div className="w-6 sm:w-8 h-px bg-primary" />
-                            <span className="text-[10px] sm:text-xs font-medium tracking-[0.15em] uppercase text-primary">
-                                Quick Start Guide
-                            </span>
+                        <div className="inline-block border-rough border-2 border-foreground bg-primary text-primary-foreground font-mono px-3 py-1 text-[10px] uppercase font-bold mb-6 transform -rotate-2">
+                            SYS.INIT // Quick Start
                         </div>
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-3 sm:mb-4">
-                            Get started with{" "}
-                            <span className="text-primary">ama</span>
+                        <h1 className="font-display text-[10vw] md:text-[6vw] leading-[0.85] tracking-tighter uppercase text-foreground">
+                            Install <span className="text-transparent bg-clip-text" style={{ WebkitTextStroke: "2px var(--color-primary)", backgroundImage: "repeating-linear-gradient(45deg, var(--color-primary) 0, var(--color-primary) 2px, transparent 2px, transparent 8px)" }}>AMA</span>
                         </h1>
-                        <p className="text-muted-foreground text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl">
-                            Follow these simple steps to install the CLI and start using ama in your projects.
-                            It only takes a minute to set up.
+                        <p className="font-mono text-sm md:text-base text-muted-foreground max-w-2xl mt-6 border-l-2 border-foreground pl-4 uppercase tracking-tight">
+                            Execute these raw overrides to embed the agent inside your system. Pure chaos requires absolute permission.
                         </p>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.05 }}
-                        className="mb-6 sm:mb-8 p-3 sm:p-4 rounded-xl border border-amber-500/30 bg-amber-500/5"
-                    >
-                        <div className="flex items-start gap-2 sm:gap-3">
-                            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 mt-0.5 shrink-0" />
+                        
+                        <div className="mt-6 inline-flex items-start gap-3 p-3 border-rough border-2 border-foreground bg-background max-w-xl shadow-[4px_4px_0px_var(--color-primary)]">
+                            <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5 stroke-[3]" />
                             <div>
-                                <h4 className="text-xs sm:text-sm font-medium text-foreground mb-1">Windows Users</h4>
-                                <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-                                    ama CLI requires a Unix-like environment. Please use{" "}
-                                    <a
-                                        href="https://learn.microsoft.com/en-us/windows/wsl/install"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-primary hover:underline"
-                                    >
-                                        WSL (Windows Subsystem for Linux)
-                                    </a>{" "}
-                                    to run the CLI on Windows.
+                                <h4 className="font-mono text-xs font-bold uppercase mb-1">Windows Validation</h4>
+                                <p className="font-mono text-[10px] text-muted-foreground uppercase">
+                                    Windows systems require WSL. Inject via linux subsystem.
                                 </p>
                             </div>
                         </div>
@@ -189,83 +155,53 @@ function InstallPage() {
                     <div className="space-y-2">
                         <StepCard
                             step={1}
-                            title="Install the CLI"
-                            description="Run one of the following commands in your terminal to install the ama CLI globally on your machine. You only need to do this once."
+                            title="Deploy CLI"
+                            description="Run one of the following commands in your terminal to fuse the ama CLI globally onto your machine."
                             icon={Package}
-                            delay={0.1}
+                            delay={0.2}
                         >
                             <div className="space-y-4">
                                 <div>
-                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                        <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                            Recommended
-                                        </span>
-                                        <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium bg-primary/10 text-primary rounded-full">
-                                            Quick Install
-                                        </span>
-                                    </div>
-                                    <CodeBlock command={INSTALL_COMMAND} delay={0.15} />
+                                    <CodeBlock command={INSTALL_COMMAND} delay={0.3} label="Recommended Pipeline" />
                                 </div>
-
-                                <div className="flex items-center gap-2 sm:gap-4">
-                                    <div className="flex-1 h-px bg-border" />
-                                    <span className="text-[10px] sm:text-xs text-muted-foreground font-medium whitespace-nowrap">or via package manager</span>
-                                    <div className="flex-1 h-px bg-border" />
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                npm
-                                            </span>
-                                        </div>
-                                        <CodeBlock command={NPM_COMMAND} delay={0.2} />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                                bun
-                                            </span>
-
-                                        </div>
-                                        <CodeBlock command={BUN_COMMAND} delay={0.25} />
-                                    </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                                    <CodeBlock command={NPM_COMMAND} delay={0.4} label="NPM Inject" />
+                                    <CodeBlock command={BUN_COMMAND} delay={0.5} label="BUN Inject" />
                                 </div>
                             </div>
                         </StepCard>
 
                         <StepCard
                             step={2}
-                            title="Start ama"
-                            description="Launch the ama CLI from any directory. It works globally, so you can run it from anywhere on your system."
+                            title="Boot Sequence"
+                            description="Launch the ama CLI from any directory. Global binary unlocked."
                             icon={Play}
-                            delay={0.3}
+                            delay={0.4}
                         >
-                            <CodeBlock command="amai" delay={0.35} />
+                            <CodeBlock command="amai" delay={0.5} label="Ignition Command" />
+                            
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                transition={{ delay: 0.4 }}
-                                className="mt-3 sm:mt-4 p-3 sm:p-4 bg-muted/30 rounded-xl border border-border/60"
+                                transition={{ delay: 0.6 }}
+                                className="mt-6 border-rough border-2 border-foreground bg-background p-5 shadow-[4px_4px_0px_0px_var(--color-primary)]"
                             >
-
-                                <ul className="text-[11px] sm:text-xs text-muted-foreground space-y-2 sm:space-y-2.5">
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-primary mt-0.5 font-bold">1.</span>
-                                        <span>The CLI will ask you to choose a mode: <code className="px-1 sm:px-1.5 py-0.5 bg-muted rounded text-foreground font-mono text-[10px] sm:text-[11px]">background</code> or <code className="px-1 sm:px-1.5 py-0.5 bg-muted rounded text-foreground font-mono text-[10px] sm:text-[11px]">normal</code> mode</span>
+                                <ul className="font-mono text-xs md:text-sm text-foreground space-y-3 uppercase tracking-tighter">
+                                    <li className="flex items-center gap-3">
+                                        <span className="text-primary font-bold bg-muted px-2 border border-foreground">01</span>
+                                        <span>CLI prompts node state: <code className="bg-foreground text-background font-bold px-2 py-0.5 ml-1 inline-block">bg</code> or <code className="bg-foreground text-background font-bold px-2 py-0.5 inline-block">fg</code></span>
                                     </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-primary mt-0.5 font-bold">2.</span>
-                                        <span>A browser window will open automatically</span>
+                                    <li className="flex items-center gap-3">
+                                        <span className="text-primary font-bold bg-muted px-2 border border-foreground">02</span>
+                                        <span>Browser interface forcefully spins up</span>
                                     </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-primary mt-0.5 font-bold">3.</span>
-                                        <span>Sign in with your account to connect</span>
+                                    <li className="flex items-center gap-3">
+                                        <span className="text-primary font-bold bg-muted px-2 border border-foreground">03</span>
+                                        <span>Authenticate network connection</span>
                                     </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-primary mt-0.5 font-bold">4.</span>
-                                        <span>Start chatting with ama to modify your code!</span>
+                                    <li className="flex items-center gap-3">
+                                        <span className="text-primary font-bold bg-foreground text-background px-2 border border-foreground">04</span>
+                                        <span className="text-primary font-bold">Agent locked. Awaiting destructive code.</span>
                                     </li>
                                 </ul>
                             </motion.div>
@@ -273,80 +209,53 @@ function InstallPage() {
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                transition={{ delay: 0.45 }}
-                                className="mt-2 sm:mt-3 p-2.5 sm:p-3 bg-primary/5 rounded-lg border border-primary/20"
+                                transition={{ delay: 0.7 }}
+                                className="mt-6 flex items-start gap-4 p-4 border-2 border-foreground bg-primary/20 transform rotate-1 mix-blend-luminosity"
                             >
-                                <div className="flex items-start gap-2">
-                                    <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 mt-0.5 text-primary shrink-0" />
-                                    <p className="text-[11px] sm:text-xs text-muted-foreground">
-                                        <span className="font-medium text-foreground">Tip:</span> Use background mode if you want the CLI to run silently while you work in the browser.
-                                    </p>
-                                </div>
+                                <Zap className="w-6 h-6 text-foreground shrink-0 fill-current" />
+                                <p className="font-mono text-xs text-foreground uppercase font-bold leading-tight">
+                                    Use background mode to demonize the process while you orchestrate directly from the browser window.
+                                </p>
                             </motion.div>
                         </StepCard>
                     </div>
 
                     <motion.div
-                        initial={{ opacity: 0, y: 16 }}
+                        initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.5 }}
-                        className="mt-12 sm:mt-16 pt-8 sm:pt-12 border-t border-border/50"
+                        transition={{ duration: 0.8, delay: 0.6 }}
+                        className="mt-16 mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 border-t-4 border-foreground pt-10 relative"
                     >
-                        <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Need help?</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                            <div className="p-4 sm:p-5 rounded-xl border border-border/60 bg-muted/20 hover:border-primary/30 hover:bg-muted/30 transition-all duration-300">
-                                <h3 className="text-xs sm:text-sm font-medium mb-2">View all commands</h3>
-                                <p className="text-[11px] sm:text-xs text-muted-foreground mb-2 sm:mb-3">
-                                    See all available CLI options and flags
-                                </p>
-                                <code className="text-[11px] sm:text-xs font-mono bg-muted px-1.5 sm:px-2 py-1 rounded">
-                                    amai --help
-                                </code>
-                            </div>
-                            <div className="p-4 sm:p-5 rounded-xl border border-border/60 bg-muted/20 hover:border-primary/30 hover:bg-muted/30 transition-all duration-300">
-                                <h3 className="text-xs sm:text-sm font-medium mb-2">Check version</h3>
-                                <p className="text-[11px] sm:text-xs text-muted-foreground mb-2 sm:mb-3">
-                                    Make sure you have the latest version installed
-                                </p>
-                                <code className="text-[11px] sm:text-xs font-mono bg-muted px-1.5 sm:px-2 py-1 rounded">
-                                    amai --version
-                                </code>
-                            </div>
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/20 mix-blend-difference rounded-full blur-3xl pointer-events-none" />
+                        
+                        <div className="p-6 border-rough border-2 border-foreground bg-background hover:bg-foreground hover:text-background transition-colors group cursor-pointer shadow-[4px_4px_0px_var(--color-primary)]">
+                            <h3 className="font-display text-2xl uppercase mb-3">Command Ref</h3>
+                            <code className="font-mono text-xs bg-foreground text-background px-3 py-1.5 group-hover:bg-primary group-hover:text-primary-foreground font-bold">amai --help</code>
+                            <p className="font-mono text-[10px] mt-4 uppercase opacity-70">Access structural parameters</p>
                         </div>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.6 }}
-                        className="mt-8 sm:mt-12 text-center"
-                    >
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
-                            Already installed? Head to the dashboard to start coding.
-                        </p>
-                        <Button asChild size="default" className="rounded-lg px-6 sm:px-8 font-medium text-sm sm:text-base sm:h-11">
-                            <Link to="/dashboard">
-                                Go to Dashboard
-                            </Link>
-                        </Button>
+                        <div className="p-6 border-rough border-2 border-foreground bg-background hover:bg-primary hover:text-primary-foreground transition-colors group shadow-[4px_4px_0px_var(--color-primary)] relative z-10 flex flex-col justify-between">
+                            <div>
+                                <h3 className="font-display text-2xl uppercase mb-3">Dashboard</h3>
+                                <p className="font-mono text-[10px] mb-4 uppercase opacity-70">Already injected? Start operation.</p>
+                            </div>
+                            <Button size="lg" className="rounded-none bg-foreground text-background hover:bg-background hover:text-foreground font-display text-xl uppercase border-2 border-transparent hover:border-foreground transition-colors h-14 shadow-[4px_4px_0px_var(--color-primary)] group-hover:shadow-[4px_4px_0px_var(--color-background)] w-full" asChild>
+                                <Link to="/dashboard">Engage Core</Link>
+                            </Button>
+                        </div>
                     </motion.div>
                 </div>
             </main>
 
-            <footer className="relative z-10 w-full py-6 sm:py-8 border-t border-border/50">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-12 lg:px-24 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-                    <div className="text-[11px] sm:text-xs text-muted-foreground">
-                        © {new Date().getFullYear()} Ama, Inc.
+            <footer className="relative z-10 w-full py-12 border-t-8 border-foreground bg-primary text-primary-foreground mt-24">
+                <div className="max-w-[1400px] mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center justify-between gap-6 uppercase font-mono text-sm font-bold">
+                    <div className="flex items-center gap-4 border-b-2 border-foreground pb-2 md:border-0 md:pb-0">
+                        <Terminal className="w-6 h-6 border-2 border-foreground" />
+                        AMA.DEV // {new Date().getFullYear()}
                     </div>
-                    <div className="flex items-center gap-4 sm:gap-6 text-[11px] sm:text-xs">
-                        <a
-                            href="https://x.com/amadotdev"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            Twitter
-                        </a>
+                    <div className="flex gap-8">
+                        <a href="https://x.com/amadotdev" target="_blank" rel="noopener noreferrer" className="hover:text-background transition-colors border-b-2 border-transparent hover:border-background">X/TWITTER</a>
+                        <a href="#" className="hover:text-background transition-colors border-b-2 border-transparent hover:border-background">GITHUB</a>
+                        <a href="#" className="hover:text-background transition-colors border-b-2 border-transparent hover:border-background">DISCORD</a>
                     </div>
                 </div>
             </footer>
