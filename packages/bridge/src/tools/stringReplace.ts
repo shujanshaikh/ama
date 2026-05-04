@@ -4,20 +4,14 @@ import { executeTool, type ToolExecutionContext } from "@/lib/executeTool";
 
 export function createStringReplaceTool(context: ToolExecutionContext) {
   return tool({
-    description: "Replace a string in a file.",
+    description: "Edit a single file using exact text replacement.",
     inputSchema: z.object({
-      file_path: z.string(),
-      new_string: z.string(),
-      old_string: z.string(),
-      replaceAll: z.boolean().optional(),
+      path: z.string().describe("Path to the file to edit (relative or absolute)"),
+      edits: z.array(z.object({
+        oldText: z.string().describe("Exact text for one targeted replacement."),
+        newText: z.string().describe("Replacement text for this targeted edit."),
+      })).describe("One or more targeted replacements."),
     }),
-    execute: async ({ file_path, new_string, old_string, replaceAll }) => {
-      return executeTool(context, "stringReplace", {
-        file_path,
-        new_string,
-        old_string,
-        replaceAll,
-      });
-    },
+    execute: async ({ path, edits }) => executeTool(context, "edit", { path, edits }),
   });
 }

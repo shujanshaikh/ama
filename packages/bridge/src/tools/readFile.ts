@@ -4,20 +4,12 @@ import { z } from "zod";
 
 export function createReadFileTool(context: ToolExecutionContext) {
   return tool({
-    description: "Reads a file or directory from the local filesystem.",
+    description: "Read the contents of a file.",
     inputSchema: z.object({
-      relative_file_path: z.string().describe("The path to the file or directory to read."),
-      should_read_entire_file: z.boolean().optional().default(true),
-      start_line_one_indexed: z.number().optional(),
-      end_line_one_indexed: z.number().optional(),
+      path: z.string().describe("Path to the file to read (relative or absolute)"),
+      offset: z.number().optional().describe("Line number to start reading from (1-indexed)"),
+      limit: z.number().optional().describe("Maximum number of lines to read"),
     }),
-    execute: async ({ relative_file_path, should_read_entire_file, start_line_one_indexed, end_line_one_indexed }) => {
-      return executeTool(context, "readFile", {
-        relative_file_path,
-        should_read_entire_file,
-        start_line_one_indexed,
-        end_line_one_indexed,
-      });
-    },
+    execute: async ({ path, offset, limit }) => executeTool(context, "read", { path, offset, limit }),
   });
 }
