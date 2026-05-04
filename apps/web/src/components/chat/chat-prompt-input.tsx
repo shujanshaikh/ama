@@ -38,7 +38,6 @@ interface ChatPromptInputProps {
   showContextSelector: boolean;
   cursorPosition: number;
   projectCwd?: string;
-  canUndo: boolean;
   hasGatewayKey: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onFileSelect: (file: string) => void;
@@ -61,7 +60,6 @@ export function ChatPromptInput({
   showContextSelector,
   cursorPosition,
   projectCwd,
-  canUndo: _canUndo,
   hasGatewayKey,
   onInputChange,
   onFileSelect,

@@ -1,7 +1,7 @@
-import { message, type DBMessage, chat, project, stream, snapshot, type Snapshot } from "./schema";
+import { message, type DBMessage, chat, project, stream } from "./schema";
 import { db } from "./index";
 import { eq } from "drizzle-orm";
-import { asc, desc } from "drizzle-orm";
+import { asc } from "drizzle-orm";
 
 export async function saveMessages({
   messages,
@@ -111,45 +111,3 @@ export async function createStreamId({
   }
 }
 
-// Snapshot queries for undo functionality
-export async function saveSnapshot({
-  chatId,
-  hash,
-  projectId,
-}: {
-  chatId: string;
-  hash: string;
-  projectId: string;
-}) {
-  try {
-    const [saved] = await db
-      .insert(snapshot)
-      .values({ chatId, hash, projectId })
-      .returning();
-    return saved;
-  } catch (error) {
-    throw new Error("Failed to save snapshot: " + error);
-  }
-}
-
-export async function getLatestSnapshotByChatId({ chatId }: { chatId: string }): Promise<Snapshot | null> {
-  try {
-    const [result] = await db
-      .select()
-      .from(snapshot)
-      .where(eq(snapshot.chatId, chatId))
-      .orderBy(desc(snapshot.createdAt))
-      .limit(1);
-    return result || null;
-  } catch (error) {
-    throw new Error("Failed to get latest snapshot: " + error);
-  }
-}
-
-export async function deleteSnapshotsByChatId({ chatId }: { chatId: string }) {
-  try {
-    await db.delete(snapshot).where(eq(snapshot.chatId, chatId));
-  } catch (error) {
-    throw new Error("Failed to delete snapshots: " + error);
-  }
-}

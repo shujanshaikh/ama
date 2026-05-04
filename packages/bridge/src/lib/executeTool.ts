@@ -33,32 +33,6 @@ export const executeTool = async (
   );
 };
 
-export const createSnapshot = async (
-  env: WorkerBindings,
-  userId: string,
-  projectId: string,
-): Promise<string | null> => {
-  const callId = crypto.randomUUID();
-
-  try {
-    const result = (await dispatchToAgent(
-      env,
-      userId,
-      {
-        type: "rpc_call",
-        id: callId,
-        method: "daemon:snapshot_track",
-        args: { projectId },
-      },
-      10000,
-    )) as { hash?: string };
-
-    return result?.hash || null;
-  } catch {
-    return null;
-  }
-};
-
 export const registerProject = async (
   env: WorkerBindings,
   userId: string,
@@ -87,29 +61,4 @@ export const registerProject = async (
   }
 };
 
-export const restoreSnapshot = async (
-  env: WorkerBindings,
-  userId: string,
-  projectId: string,
-  snapshotHash: string,
-): Promise<boolean> => {
-  const callId = crypto.randomUUID();
 
-  try {
-    const result = (await dispatchToAgent(
-      env,
-      userId,
-      {
-        type: "rpc_call",
-        id: callId,
-        method: "daemon:snapshot_restore",
-        args: { projectId, snapshot: snapshotHash },
-      },
-      30000,
-    )) as { success?: boolean };
-
-    return result?.success === true;
-  } catch {
-    return false;
-  }
-};

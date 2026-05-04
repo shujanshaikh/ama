@@ -20,9 +20,6 @@ import {
   getChatById,
   getStreamIdsByChatId,
   createStreamId,
-  saveSnapshot,
-  getLatestSnapshotByChatId,
-  deleteSnapshotsByChatId,
 } from "@/db";
 import {
   createGatewayModel,
@@ -33,7 +30,7 @@ import {
 } from "@/lib/model";
 import { readGatewayKeyFromVault } from "@/lib/vault";
 import { buildPlanSystemPrompt } from "@/lib/plan-prompt";
-import { createSnapshot, registerProject, restoreSnapshot } from "@/lib/executeTool";
+import { registerProject } from "@/lib/executeTool";
 import { buildCodexProviderOptions, codexRpc, createCodexModel } from "@/lib/codex";
 import { generateUUID } from "@/lib/utils";
 import { getRatelimit } from "@/lib/rate-limiter";
@@ -56,11 +53,6 @@ const agentProxyBodySchema = z.object({
   planMode: z.boolean().optional(),
   executePlan: z.boolean().optional(),
   planName: z.string().optional(),
-});
-
-const undoBodySchema = z.object({
-  chatId: z.string().min(1, "chatId is required"),
-  deleteOnly: z.boolean().optional(),
 });
 
 function buildCodexMessages(messages: ModelMessage[]): ModelMessage[] {
@@ -211,17 +203,8 @@ agentRouter.post("/agent-proxy", async (c) => {
           projectInfo.projectCwd,
           projectInfo.projectName,
         );
-
-        const snapshotHash = await createSnapshot(c.env, userId, projectInfo.projectId);
-        if (snapshotHash) {
-          await saveSnapshot(c.env, {
-            chatId,
-            hash: snapshotHash,
-            projectId: projectInfo.projectId,
-          });
-        }
       } catch {
-        // ignore snapshot failures
+        // ignore registration failures
       }
     }
 
@@ -468,66 +451,6 @@ agentRouter.get("/agent-proxy/:id/stream", async (c) => {
       Connection: "keep-alive",
     },
   );
-});
-
-agentRouter.post("/undo", async (c) => {
-  try {
-    const userId = c.get("userId");
-    const parseResult = undoBodySchema.safeParse(await c.req.json());
-    if (!parseResult.success) {
-      const msg =
-        parseResult.error.issues
-          .map((e: { message: string }) => e.message)
-          .join("; ") || "Invalid request body";
-      return c.json({ success: false, error: msg }, 400);
-    }
-
-    const { chatId, deleteOnly } = parseResult.data;
-
-    const ownerId = await getProjectUserIdByChatId(c.env, { chatId });
-    if (ownerId !== userId) {
-      return c.json({ success: false, error: "Chat not found" }, 404);
-    }
-
-    const snapshot = await getLatestSnapshotByChatId(c.env, { chatId });
-    if (!snapshot) {
-      return c.json(
-        { success: false, error: "No snapshot found for this chat" },
-        404,
-      );
-    }
-
-    if (!deleteOnly) {
-      if (!(await isAgentConnected(c.env, userId))) {
-        return c.json(
-          {
-            success: false,
-            error: "Daemon not connected. Make sure amai is running.",
-          },
-          503,
-        );
-      }
-
-      const restored = await restoreSnapshot(
-        c.env,
-        userId,
-        snapshot.projectId,
-        snapshot.hash,
-      );
-
-      if (!restored) {
-        return c.json({ success: false, error: "Failed to restore files" }, 500);
-      }
-    }
-
-    await deleteSnapshotsByChatId(c.env, { chatId });
-    return c.json({ success: true });
-  } catch (error: any) {
-    return c.json(
-      { success: false, error: error.message || "Unknown error" },
-      500,
-    );
-  }
 });
 
 export function createAgentRouter() {
