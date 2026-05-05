@@ -5,8 +5,6 @@ import {
   CheckCircle2,
   XCircle,
   Terminal,
-  Search,
-  Layers,
   ChevronRight,
 } from "lucide-react";
 import { PierreDiff } from "./pierre-diff";
@@ -51,26 +49,23 @@ const getToolDisplayInfo = (
   params: Record<string, unknown>,
 ): { label: string; detail?: string } => {
   switch (tool) {
-    case "readFile":
+    case "read":
       return {
         label: "Read",
-        detail: getFileName(params.relative_file_path as string),
-      };
-    case "deleteFile":
-      return { label: "Delete", detail: getFileName(params.path as string) };
-    case "listDirectory":
-      return {
-        label: "List",
         detail: getFileName(params.path as string) || ".",
       };
-    case "glob":
-      return { label: "Glob", detail: params.pattern as string };
+    case "ls":
+      return { label: "List", detail: getFileName(params.path as string) || "." };
+    case "find":
+      return { label: "Find", detail: params.pattern as string };
     case "grep":
-      return { label: "Grep", detail: params.query as string };
+      return { label: "Grep", detail: params.pattern as string };
+    case "edit":
+      return { label: "Edit", detail: getFileName(params.path as string) };
+    case "write":
+      return { label: "Write", detail: getFileName(params.path as string) };
     case "bash":
       return { label: "Run", detail: (params.command as string)?.slice(0, 30) };
-    case "webSearch":
-      return { label: "Search", detail: params.query as string };
     default:
       return { label: tool };
   }
@@ -82,16 +77,16 @@ export const ToolRenderer = ({
   part: ChatMessage["parts"][number];
 }) => {
   // Edit File
-  if (part.type === "tool-editFile") {
+  if (part.type === "tool-write") {
     const { toolCallId, state } = part;
-    const isMdFile = part.input?.target_file?.endsWith(".md");
+    const isMdFile = part.input?.path?.endsWith(".md");
 
-    const fileName = getFileName(part.input?.target_file);
+    const fileName = getFileName(part.input?.path);
 
     if (state === "input-streaming") {
       return isMdFile ? (
         <MarkdownEditor
-          fileName={part.input?.target_file}
+          fileName={part.input?.path}
           content={part.input?.content}
         />
       ) : (
@@ -122,31 +117,20 @@ export const ToolRenderer = ({
       if (isMdFile) {
         return (
           <MarkdownEditor
-            fileName={part.input?.target_file}
-            content={output?.new_string}
+            fileName={part.input?.path}
+            content={part.input?.content}
           />
         );
       }
-
-      const oldString: FileContents = {
-        contents: output?.old_string || "",
-        name: fileName,
-      };
-      const newString: FileContents = {
-        contents: output?.new_string || "",
-        name: fileName,
-      };
 
       return (
         <div className="mb-1">
           <DiffResult
             toolCallId={toolCallId}
-            label={output?.isNewFile ? "Created" : "Edited"}
+            label="Wrote"
             fileName={fileName}
-            oldString={oldString.contents}
-            newString={newString.contents}
-            linesAdded={output?.linesAdded}
-            linesRemoved={output?.linesRemoved}
+            oldString={""}
+            newString={part.input?.content || ""}
           />
         </div>
       );
@@ -181,9 +165,9 @@ export const ToolRenderer = ({
   }
 
   // Read File
-  if (part.type === "tool-readFile") {
+  if (part.type === "tool-read") {
     const { toolCallId, state } = part;
-    const fileName = getFileName(part.input?.relative_file_path);
+    const fileName = getFileName(part.input?.path);
 
     if (state === "input-streaming") {
       return (
@@ -216,7 +200,7 @@ export const ToolRenderer = ({
     }
   }
 
-  if (part.type === "tool-listDirectory") {
+  if (part.type === "tool-ls") {
     const { toolCallId, state } = part;
     const dirName = getFileName(part.input?.path);
 
@@ -232,35 +216,17 @@ export const ToolRenderer = ({
     }
 
     if (state === "output-available") {
-      const output = part.output as
-        | { files?: Array<{ name: string; type: string }> }
-        | undefined;
-      const fileCount =
-        output?.files?.filter((f) => f.type === "file").length || 0;
-      const dirCount =
-        output?.files?.filter((f) => f.type === "directory").length || 0;
-
       return (
         <div key={toolCallId} className="mb-1 py-0.5">
           <span className="text-sm">
             Listed <span className="text-foreground/50">{dirName}</span>
-            {(fileCount > 0 || dirCount > 0) && (
-              <span className="text-muted-foreground/50 ml-1.5">
-                ({fileCount} file{fileCount !== 1 ? "s" : ""}
-                {dirCount > 0
-                  ? `, ${dirCount} dir${dirCount !== 1 ? "s" : ""}`
-                  : ""}
-                )
-              </span>
-            )}
           </span>
         </div>
       );
     }
   }
 
-  // Glob Tool
-  if (part.type === "tool-glob") {
+  if (part.type === "tool-find") {
     const { toolCallId, state } = part;
 
     if (state === "input-streaming") {
@@ -275,10 +241,8 @@ export const ToolRenderer = ({
     }
 
     if (state === "output-available") {
-      const output = part.output as
-        | { files?: string[]; content?: string }
-        | undefined;
-      const fileCount = output?.files?.length ?? 0;
+      const output = part.output as { content?: string } | undefined;
+      const fileCount = output?.content?.split("\n").filter(Boolean).length ?? 0;
 
       return (
         <div key={toolCallId} className="mb-1 py-0.5">
@@ -321,26 +285,14 @@ export const ToolRenderer = ({
     }
   }
 
-  // String Replace
-  if (part.type === "tool-stringReplace") {
+  if (part.type === "tool-edit") {
     const { toolCallId, state } = part;
-    const fileName = getFileName(part.input?.file_path);
-    const inputOldString = part.input?.old_string || "";
-    const inputNewString = part.input?.new_string || "";
+    const fileName = getFileName(part.input?.path);
 
     if (state === "output-available") {
-      const output = part.output as
-        | {
-            linesAdded?: number;
-            linesRemoved?: number;
-            old_string?: string;
-            new_string?: string;
-            checkpointId?: string;
-            afterHash?: string;
-          }
-        | undefined;
-      const oldString = output?.old_string || inputOldString;
-      const newString = output?.new_string || inputNewString;
+      const inputEdits = (part.input?.edits as Array<{ oldText?: string; newText?: string }> | undefined) || [];
+      const oldString = inputEdits.map((e) => e.oldText ?? "").join("\n");
+      const newString = inputEdits.map((e) => e.newText ?? "").join("\n");
 
       return (
         <div key={toolCallId} className="mb-1">
@@ -350,8 +302,6 @@ export const ToolRenderer = ({
             fileName={fileName}
             oldString={oldString}
             newString={newString}
-            linesAdded={output?.linesAdded}
-            linesRemoved={output?.linesRemoved}
           />
         </div>
       );
@@ -462,264 +412,6 @@ export const ToolRenderer = ({
       );
     }
   }
-  // Web Search Tool
-  if (part.type === "tool-webSearch") {
-    const { toolCallId, state } = part;
-    const query = part.input?.query as string | undefined;
-
-    if (state === "input-streaming") {
-      return (
-        <div key={toolCallId} className="mb-1 py-0.5">
-          <div className="flex items-center gap-2">
-            <Search className="size-4 text-muted-foreground/60" />
-            <span className="text-sm">
-              Searching{" "}
-              <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">
-                {query || "..."}
-              </span>
-            </span>
-            <StreamingDots />
-          </div>
-        </div>
-      );
-    }
-
-    if (state === "input-available") {
-      return (
-        <div key={toolCallId} className="mb-1 py-0.5">
-          <div className="flex items-center gap-2">
-            <Search className="size-4 text-muted-foreground/60" />
-          </div>
-          <div className="text-sm">
-            Searching{" "}
-            <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">
-              {query || "..."}
-            </span>
-          </div>
-        </div>
-      );
-    }
-
-    if (state === "output-available") {
-      const output = part.output as
-        | {
-            success?: boolean;
-            message?: string;
-            error?: string;
-            results?: Array<{
-              url?: string;
-              title?: string;
-              text?: string;
-              summary?: string;
-              links?: string[];
-            }>;
-            // Legacy format support
-            markdown?: string;
-            links?: string[];
-            html?: string;
-          }
-        | undefined;
-
-      const results = output?.results || [];
-      const hasResults = results.length > 0;
-
-      return (
-        <div key={toolCallId} className="mb-1 py-0.5">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Search className="size-4 text-muted-foreground/70" />
-              <span className="text-sm">
-                Searched{" "}
-                <span className="font-mono text-xs bg-muted/50 px-1.5 py-0.5 rounded">
-                  {query}
-                </span>
-              </span>
-              {hasResults && (
-                <span className="text-xs text-muted-foreground/60">
-                  {results.length} result{results.length !== 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
-
-            {output?.error && (
-              <div className="ml-6">
-                <div className="text-xs font-mono bg-destructive/10 px-2 py-1 rounded border border-destructive/20">
-                  <div className="text-destructive/70 text-[10px] mb-0.5">
-                    ERROR:
-                  </div>
-                  <div className="text-destructive/90 whitespace-pre-wrap wrap-break-word">
-                    {output.error}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {output?.message && !hasResults && (
-              <div className="ml-6">
-                <div className="text-xs text-muted-foreground/70">
-                  {output.message}
-                </div>
-              </div>
-            )}
-
-            {hasResults && (
-              <div className="ml-6 space-y-2">
-                {results.slice(0, 5).map((result, idx) => (
-                  <div key={idx} className="space-y-1">
-                    {result.url && (
-                      <a
-                        href={result.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-foreground/80 hover:text-foreground hover:underline block truncate"
-                      >
-                        {result.title || result.url}
-                      </a>
-                    )}
-                    {result.summary && (
-                      <div className="text-xs text-muted-foreground/70 leading-relaxed line-clamp-2">
-                        {result.summary}
-                      </div>
-                    )}
-                    {result.text && !result.summary && (
-                      <div className="text-xs text-muted-foreground/70 leading-relaxed line-clamp-2">
-                        {result.text.slice(0, 200)}
-                        {result.text.length > 200 ? "..." : ""}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {results.length > 5 && (
-                  <div className="text-xs text-muted-foreground/50">
-                    +{results.length - 5} more result
-                    {results.length - 5 !== 1 ? "s" : ""}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Legacy format support */}
-            {!hasResults && output?.markdown && (
-              <div className="ml-6 space-y-2">
-                <div className="text-xs font-mono bg-muted/30 px-3 py-2 rounded border border-border/50 max-h-48 overflow-y-auto">
-                  <div className="text-muted-foreground/60 text-[10px] mb-1 font-semibold">
-                    CONTENT:
-                  </div>
-                  <div className="text-foreground/80 whitespace-pre-wrap wrap-break-word text-xs leading-relaxed">
-                    {output.markdown.slice(0, 500)}
-                    {output.markdown.length > 500 ? "..." : ""}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!hasResults && output?.links && output.links.length > 0 && (
-              <div className="ml-6 mt-2">
-                <div className="text-xs text-muted-foreground/70 mb-1">
-                  Links found: {output.links.length}
-                </div>
-                <div className="space-y-1">
-                  {output.links.slice(0, 3).map((link, idx) => (
-                    <a
-                      key={idx}
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-foreground/80 hover:text-foreground hover:underline block truncate"
-                    >
-                      {link}
-                    </a>
-                  ))}
-                  {output.links.length > 3 && (
-                    <div className="text-xs text-muted-foreground/50">
-                      +{output.links.length - 3} more links
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-  }
-
-  // Explore Tool (Sub-agent)
-  if (part.type === "tool-explore") {
-    const { toolCallId, state } = part;
-    const task = part.input?.task as string | undefined;
-    const output = part.output;
-
-    const isLoading = state === "input-streaming" || state === "input-available";
-
-    return (
-      <ExploreTool
-        key={toolCallId}
-        task={task || "codebase"}
-        isLoading={isLoading}
-        output={output}
-      />
-    );
-  }
-
-  // Batch Tool
-  if (part.type === "tool-batch") {
-    const { toolCallId, state } = part;
-    const toolCalls = part.input?.tool_calls as
-      | Array<{ tool: string; parameters: Record<string, unknown> }>
-      | undefined;
-    const toolCount = toolCalls?.length || 0;
-
-    if (state === "input-streaming") {
-      return (
-        <div key={toolCallId} className="mb-1 py-0.5">
-          <div className="flex items-center gap-2">
-            <Layers className="size-4 text-muted-foreground/60" />
-            <span className="text-sm">
-              Batching {toolCount} tool{toolCount !== 1 ? "s" : ""}...
-            </span>
-          </div>
-        </div>
-      );
-    }
-
-    if (state === "output-available") {
-      const output = part.output as
-        | {
-            success?: boolean;
-            message?: string;
-            totalCalls?: number;
-            successful?: number;
-            failed?: number;
-            results?: Array<{
-              tool: string;
-              success: boolean;
-              error?: string;
-              result?: unknown;
-            }>;
-          }
-        | undefined;
-
-      const successful = output?.successful || 0;
-      const failed = output?.failed || 0;
-      const total = output?.totalCalls || toolCount;
-      const allSuccess = failed === 0;
-      const results = output?.results || [];
-
-      return (
-        <BatchToolResult
-          toolCallId={toolCallId}
-          toolCalls={toolCalls || []}
-          results={results}
-          successful={successful}
-          failed={failed}
-          total={total}
-          allSuccess={allSuccess}
-        />
-      );
-    }
-  }
-
   return null;
 };
 
@@ -881,25 +573,21 @@ const BatchToolResult = ({
 function getSubagentToolLabel(part: SubagentToolPart): string {
   const input = part.input as Record<string, unknown> | undefined;
   switch (part.type) {
-    case "tool-readFile": {
-      const filePath = input?.relative_file_path as string | undefined;
+    case "tool-read": {
+      const filePath = input?.path as string | undefined;
       return `Read ${getFileName(filePath)}`;
     }
-    case "tool-listDirectory": {
+    case "tool-ls": {
       const dir = (input?.path as string) || ".";
       return `Listed ${dir}`;
     }
-    case "tool-glob": {
+    case "tool-find": {
       const pattern = input?.pattern as string | undefined;
-      return pattern ? `Glob ${pattern}` : "Glob";
+      return pattern ? `Find ${pattern}` : "Find";
     }
     case "tool-grep": {
-      const query = input?.query as string | undefined;
-      return query ? `Grep "${query}"` : "Grep";
-    }
-    case "tool-batch": {
-      const calls = input?.tool_calls as Array<{ tool: string }> | undefined;
-      return `Batch ${calls?.length ?? 0} tools`;
+      const pattern = input?.pattern as string | undefined;
+      return pattern ? `Grep "${pattern}"` : "Grep";
     }
     default:
       return part.type.replace("tool-", "");

@@ -295,11 +295,6 @@ export function createRpcCaller(call: ReturnType<typeof useUserStream>['call']) 
         getStatus: () =>
             call<{ connected: boolean; timestamp: number; platform: string; arch: string }>('daemon:status'),
 
-        // Snapshot methods for undo functionality
-        snapshotTrack: (projectId: string) =>
-            call<{ hash: string }>('daemon:snapshot_track', { projectId }),
 
-        snapshotRestore: (projectId: string, snapshot: string) =>
-            call<{ success: boolean }>('daemon:snapshot_restore', { projectId, snapshot }),
     };
 }

@@ -9,7 +9,8 @@
     "declaration": true,
     "declarationMap": true,
     "noEmit": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
   },
-  "include": ["src", "test"]
+  "include": ["src"]
 }

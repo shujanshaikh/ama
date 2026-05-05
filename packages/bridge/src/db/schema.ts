@@ -85,23 +85,4 @@ export const stream = pgTable(
 
 export type Stream = InferSelectModel<typeof stream>;
 
-export const snapshot = createTable("snapshot", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  chatId: uuid("chat_id").notNull().references(() => chat.id),
-  hash: text("hash").notNull(),
-  projectId: uuid("project_id").notNull().references(() => project.id),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
 
-export type Snapshot = InferSelectModel<typeof snapshot>;
-
-export const snapshotRelations = relations(snapshot, ({ one }) => ({
-  chat: one(chat, {
-    fields: [snapshot.chatId],
-    references: [chat.id],
-  }),
-  project: one(project, {
-    fields: [snapshot.projectId],
-    references: [project.id],
-  }),
-}));

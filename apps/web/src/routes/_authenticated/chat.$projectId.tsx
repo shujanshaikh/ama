@@ -77,8 +77,6 @@ function Chat() {
     const [selectedContextFiles, setSelectedContextFiles] = useState<string[]>(
         [],
     );
-    const [isUndoing, setIsUndoing] = useState(false);
-    const [isAccepting, setIsAccepting] = useState(false);
     const [showReview, setShowReview] = useState(false);
     const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
     const trpc = useTRPC();
@@ -122,90 +120,9 @@ function Chat() {
         }
     }, [_projectId, createChat]);
 
-    const { data: latestSnapshot, refetch: refetchSnapshot } = useQuery({
-        ...trpc.chat.getLatestSnapshot.queryOptions({ chatId: _chatId || "" }),
-        enabled: !!_chatId,
-    });
-
     const userStream = useUserStreamContextOptional();
 
-    const handleUndo = useCallback(async () => {
-        if (!_chatId || !latestSnapshot) return;
-        setIsUndoing(true);
 
-        try {
-            if (userStream?.isReady && userStream.rpc) {
-                const result = await userStream.rpc.snapshotRestore(
-                    latestSnapshot.projectId,
-                    latestSnapshot.hash,
-                );
-
-                if (result.success) {
-                    await fetch(`${API_URL}/undo`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            ...(gatewayTokenRef.current ? { Authorization: `Bearer ${gatewayTokenRef.current}` } : {}),
-                        },
-                        body: JSON.stringify({
-                            chatId: _chatId,
-                            deleteOnly: true,
-                        }),
-                    });
-                    await refetchSnapshot();
-                    console.log(
-                        "[undo] Files restored successfully via WebSocket",
-                    );
-                } else {
-                    console.error("[undo] WebSocket restore failed");
-                }
-            } else {
-                const response = await fetch(`${API_URL}/undo`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        ...(gatewayTokenRef.current ? { Authorization: `Bearer ${gatewayTokenRef.current}` } : {}),
-                    },
-                    body: JSON.stringify({ chatId: _chatId }),
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    await refetchSnapshot();
-                    console.log("[undo] Files restored successfully via HTTP");
-                } else {
-                    console.error("[undo] Failed:", result.error);
-                }
-            }
-        } catch (error) {
-            console.error("[undo] Error:", error);
-        } finally {
-            setIsUndoing(false);
-        }
-    }, [_chatId, latestSnapshot, refetchSnapshot, userStream]);
-
-    const handleAcceptAll = useCallback(async () => {
-        if (!_chatId || !latestSnapshot) return;
-        setIsAccepting(true);
-
-        try {
-            await fetch(`${API_URL}/undo`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(gatewayTokenRef.current ? { Authorization: `Bearer ${gatewayTokenRef.current}` } : {}),
-                },
-                body: JSON.stringify({ chatId: _chatId, deleteOnly: true }),
-            });
-            await refetchSnapshot();
-            console.log("[accept] Changes accepted, snapshot removed");
-        } catch (error) {
-            console.error("[accept] Error:", error);
-        } finally {
-            setIsAccepting(false);
-        }
-    }, [_chatId, latestSnapshot, refetchSnapshot]);
 
     const editorUrl = getEditorUrl(_projectId!);
 
@@ -313,27 +230,6 @@ function Chat() {
         transport,
         id: _chatId || "new-chat",
     });
-
-    const previousStatusRef = useRef(status);
-
-    useEffect(() => {
-        const prevStatus = previousStatusRef.current;
-        previousStatusRef.current = status;
-
-        if (
-            (prevStatus === "streaming" || prevStatus === "submitted") &&
-            status === "ready"
-        ) {
-            // AI just finished - refetch snapshot to show accept/undo buttons
-            refetchSnapshot();
-        }
-    }, [status, refetchSnapshot]);
-
-    const canUndo =
-        !!latestSnapshot &&
-        status !== "streaming" &&
-        status !== "submitted" &&
-        !isUndoing;
 
     const handleReview = useCallback(() => {
         setShowReview((prev) => !prev);
@@ -670,19 +566,8 @@ function Chat() {
                                                     <div className="relative">
                                                         <ChatStatusBar
                                                             status={status}
-                                                            canUndo={canUndo}
-                                                            isUndoing={
-                                                                isUndoing
-                                                            }
-                                                            isAccepting={
-                                                                isAccepting
-                                                            }
                                                             isReviewing={
                                                                 showReview
-                                                            }
-                                                            onUndo={handleUndo}
-                                                            onAcceptAll={
-                                                                handleAcceptAll
                                                             }
                                                             onReview={
                                                                 handleReview
@@ -705,7 +590,6 @@ function Chat() {
                                                             projectCwd={
                                                                 projectData?.cwd
                                                             }
-                                                            canUndo={canUndo}
                                                             hasGatewayKey={hasGatewayKey}
                                                             onInputChange={
                                                                 handleInputChange

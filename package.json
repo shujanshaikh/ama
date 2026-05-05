@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "dev": "turbo dev --filter=!@ama/server",
+    "dev": "turbo dev --filter=@ama/bridge --filter=@ama/web",
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:native": "turbo -F native dev",

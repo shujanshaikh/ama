@@ -1,6 +1,6 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { chat, message, project, snapshot, stream, type DBMessage, type Snapshot } from "@/db/schema";
+import { chat, message, project, stream, type DBMessage } from "@/db/schema";
 import type { WorkerBindings } from "@/env";
 
 export async function saveMessages(
@@ -73,31 +73,4 @@ export async function createStreamId(
   await db.insert(stream).values({ id: streamId, chatId, createdAt: new Date() });
 }
 
-export async function saveSnapshot(
-  env: WorkerBindings,
-  { chatId, hash, projectId }: { chatId: string; hash: string; projectId: string },
-) {
-  const db = getDb(env);
-  const [saved] = await db.insert(snapshot).values({ chatId, hash, projectId }).returning();
-  return saved;
-}
 
-export async function getLatestSnapshotByChatId(
-  env: WorkerBindings,
-  { chatId }: { chatId: string },
-): Promise<Snapshot | null> {
-  const db = getDb(env);
-  const [result] = await db
-    .select()
-    .from(snapshot)
-    .where(eq(snapshot.chatId, chatId))
-    .orderBy(desc(snapshot.createdAt))
-    .limit(1);
-
-  return result || null;
-}
-
-export async function deleteSnapshotsByChatId(env: WorkerBindings, { chatId }: { chatId: string }) {
-  const db = getDb(env);
-  await db.delete(snapshot).where(eq(snapshot.chatId, chatId));
-}

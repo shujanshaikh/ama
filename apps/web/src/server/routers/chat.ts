@@ -1,4 +1,4 @@
-import { db, chat, project, getMessagesByChatId, eq, and, getLatestSnapshotByChatId, deleteSnapshotsByChatId, getProjectByChatId, getProjectUserIdByChatId } from "@ama/db";
+import { db, chat, project, getMessagesByChatId, eq, and, getProjectUserIdByChatId } from "@ama/db";
 import { protectedProcedure, router } from "../index";
 import { convertToUIMessages } from "../lib/convertToUIMessage";
 import { z } from "zod";
@@ -53,47 +53,5 @@ export const chatRouter = router({
         return uiMessages;
     }),
 
-    getLatestSnapshot: protectedProcedure.input(z.object({
-        chatId: z.string(),
-    })).query(async ({ ctx, input }) => {
-        const { chatId } = input;
-        const userId = ctx.session.user?.id!;
-        const ownerId = await getProjectUserIdByChatId({ chatId });
-        if (ownerId !== userId) {
-            throw new Error("Chat not found");
-        }
-        const snapshot = await getLatestSnapshotByChatId({ chatId });
-        return snapshot;
-    }),
 
-    undoChanges: protectedProcedure.input(z.object({
-        chatId: z.string(),
-    })).mutation(async ({ ctx, input }) => {
-        const { chatId } = input;
-        const userId = ctx.session.user?.id!;
-        const ownerId = await getProjectUserIdByChatId({ chatId });
-        if (ownerId !== userId) {
-            return { success: false, error: "Chat not found" };
-        }
-
-        const snapshot = await getLatestSnapshotByChatId({ chatId });
-        if (!snapshot) {
-            return { success: false, error: "No snapshot found for this chat" };
-        }
-
-        const projectInfo = await getProjectByChatId({ chatId });
-        if (!projectInfo) {
-            return { success: false, error: "Project not found" };
-        }
-
-        await deleteSnapshotsByChatId({ chatId });
-
-        return {
-            success: true,
-            snapshot: {
-                hash: snapshot.hash,
-                projectId: snapshot.projectId,
-            }
-        };
-    }),
 });

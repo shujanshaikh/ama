@@ -6,7 +6,6 @@ import { createReadFileTool } from "@/tools/readFile";
 import { createGlobTool } from "@/tools/glob";
 import { createListDirectoryTool } from "@/tools/listDirectory";
 import { createGrepTool } from "@/tools/grep";
-import { createBatchTool } from "@/tools/batch";
 
 export function createExploreTool(context: ToolExecutionContext) {
   const exploreSubagent = new ToolLoopAgent({
@@ -17,7 +16,6 @@ export function createExploreTool(context: ToolExecutionContext) {
       glob: createGlobTool(context),
       listDirectory: createListDirectoryTool(context),
       grep: createGrepTool(context),
-      batch: createBatchTool(context),
     },
   });
 
