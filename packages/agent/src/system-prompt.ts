@@ -1,4 +1,4 @@
-import { toolSnippets, type ToolName } from "./pi.ts";
+import { toolSnippets, type ToolName } from "./index.ts";
 
 export interface BuildSystemPromptOptions {
   customPrompt?: string;
